@@ -345,10 +345,7 @@ details[open] .faq-arrow { transform: rotate(45deg); }
   }
 
   .app-grid-main { min-width: 0; }
-  .app-grid-side {
-    position: sticky;
-    top: 96px;
-  }
+  .app-grid-side { min-width: 0; }
 
   .bottom-nav-mobile { display: none !important; }
   .sidebar-nav { display: block; }
@@ -507,8 +504,6 @@ details[open] .faq-arrow { transform: rotate(45deg); }
   border-radius: 18px;
   padding: 20px;
   box-shadow: 4px 4px 0 #0A1F3D;
-  position: sticky;
-  top: 88px;
 }
 .side-nav-link {
   display: flex;

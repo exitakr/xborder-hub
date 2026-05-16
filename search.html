@@ -9,7 +9,6 @@
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="apple-touch-icon" href="favicon.svg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,448 +16,284 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="styles.css">
+
+<style>
+  /* Native select styled to match design */
+  .filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #FFF6E8;
+    border: 1.5px solid #0A1F3D;
+    border-radius: 14px;
+    padding: 12px 36px 12px 14px;
+    font-family: 'Bricolage Grotesque', 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #0A1F3D;
+    width: 100%;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230A1F3D' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    transition: box-shadow 0.15s;
+  }
+  .filter-select:focus, .filter-select:hover {
+    outline: none;
+    box-shadow: 2px 2px 0 #0A1F3D;
+  }
+  .filter-select.filled {
+    background-color: #0A1F3D;
+    color: #FFF6E8;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFC93C' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  }
+</style>
 </head>
-<body class="noise pb-24">
+<body class="noise pb-24 lg:pb-0">
 
 <!-- HEADER -->
 <header class="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
-  <div class="container-narrow px-5 py-3.5 flex items-center justify-between">
-    <a href="home.html" class="flex items-center gap-2 text-ink">
-      <button class="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
+  <div class="container-app py-3.5 flex items-center justify-between">
+    <a href="home.html" class="flex items-center gap-2.5">
+      <div class="logo-mark">×</div>
+      <div>
+        <div class="display font-bold text-[15px] leading-none tracking-tight text-ink">X Border Hub</div>
+        <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">crossing borders</div>
+      </div>
     </a>
-    <div class="text-center">
-      <div class="display font-bold text-[15px] tracking-tight text-ink">フロー検索</div>
-      <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">FIND THE JOURNEY</div>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">About</a>
+      <a href="home.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">ホーム</a>
+      <a href="search.html" class="hidden lg:inline text-[12px] font-bold text-blue px-3 py-2">フロー検索</a>
+      <a href="threads.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">スレッド</a>
+      <a href="mypage.html" class="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink">YT</a>
     </div>
-    <button class="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 5H3M17 12H3M11 19H3"/></svg>
-    </button>
   </div>
 </header>
 
-<main class="container-narrow px-5 relative z-10">
+<main class="container-app py-6 lg:py-10 relative z-10">
 
-  <!-- HERO -->
-  <section class="pt-5 rise">
-    <div class="flex items-center gap-2 mb-2">
-      <span class="w-1.5 h-1.5 rounded-full bg-blue pulse-soft"></span>
-      <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">前後の経路で人を探す</p>
-    </div>
-    <h1 class="display font-bold text-[28px] leading-[1.15] tracking-tight text-ink">
-      <span class="serif-it text-[32px] u-blue">A → B</span> を歩いた<br>人を見つける
-    </h1>
-    <p class="mt-2.5 text-[13px] text-ink-soft leading-relaxed">
-      LinkedInにできない検索。<br>
-      移動前と移動後、それぞれの国・業界・職種で絞り込み。
-    </p>
-  </section>
+  <div class="app-grid">
+    <!-- MAIN -->
+    <div class="app-grid-main">
 
-  <!-- QUERY BUILDER -->
-  <section class="mt-5 rise" style="animation-delay:0.06s">
-    <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-4 shadow-pop">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-[10px] uppercase tracking-[0.22em] font-bold text-ink-soft">クエリビルダー</span>
-        <button id="clear-all" class="text-[10px] text-blue font-bold underline-offset-2">クリア</button>
-      </div>
-
-      <!-- FROM section -->
-      <div class="relative">
-        <div class="absolute -left-1 top-0 bottom-0 w-1 bg-ink rounded-full"></div>
-        <div class="pl-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="display font-bold text-[10px] uppercase tracking-widest bg-ink text-cream px-2 py-0.5 rounded-full">FROM</span>
-            <span class="text-[10px] text-ink-faint font-bold uppercase tracking-wider">移動前</span>
-          </div>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="country" data-side="from">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">国 / 都市</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="industry" data-side="from">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">業界</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="role" data-side="from">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">職種</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-          </div>
+      <!-- Hero - one line, no LinkedIn copy -->
+      <section class="mb-6 rise">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-base">🔀</span>
+          <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">flow search</p>
         </div>
-      </div>
-
-      <!-- Arrow divider -->
-      <div class="flex items-center justify-center my-3">
-        <div class="flex-1 h-px border-t border-dashed border-ink/30"></div>
-        <div class="px-3">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" fill="#0055A4" stroke="#0A1F3D" stroke-width="1.5"/>
-            <path d="M10 16h12M16 10l6 6-6 6" stroke="#FFF6E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="flex-1 h-px border-t border-dashed border-ink/30"></div>
-      </div>
-
-      <!-- TO section -->
-      <div class="relative">
-        <div class="absolute -left-1 top-0 bottom-0 w-1 bg-blue rounded-full"></div>
-        <div class="pl-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="display font-bold text-[10px] uppercase tracking-widest bg-blue text-cream px-2 py-0.5 rounded-full">TO</span>
-            <span class="text-[10px] text-ink-faint font-bold uppercase tracking-wider">移動後</span>
-          </div>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="country" data-side="to">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">国 / 都市</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="industry" data-side="to">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">業界</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-            <button class="search-input filter-btn px-2 py-2.5 text-[11px] text-left" data-type="role" data-side="to">
-              <div class="text-[8px] uppercase tracking-wider opacity-60 font-bold mb-0.5">職種</div>
-              <div class="placeholder text-ink-faint">指定なし</div>
-              <div class="value hidden font-bold"></div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Extra filters -->
-      <div class="mt-3 pt-3 border-t border-dashed border-ink/20 flex items-center gap-2 overflow-x-auto hide-scroll">
-        <span class="text-[10px] uppercase tracking-wider text-ink-faint font-bold whitespace-nowrap">+追加</span>
-        <button class="chip flex-none px-2.5 py-1 bg-cream border-[1.5px] border-ink rounded-full text-[10px] font-bold text-ink">年代</button>
-        <button class="chip flex-none px-2.5 py-1 bg-cream border-[1.5px] border-ink rounded-full text-[10px] font-bold text-ink">在籍年数</button>
-        <button class="chip flex-none px-2.5 py-1 bg-cream border-[1.5px] border-ink rounded-full text-[10px] font-bold text-ink">学歴</button>
-        <button class="chip flex-none px-2.5 py-1 bg-cream border-[1.5px] border-ink rounded-full text-[10px] font-bold text-ink">相談料金</button>
-      </div>
-    </div>
-
-    <!-- Quick presets -->
-    <div class="mt-4">
-      <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold mb-2">⚡ よくある経路</p>
-      <div class="flex gap-2 overflow-x-auto hide-scroll -mx-5 px-5 pb-1">
-        <button class="chip flex-none px-3 py-2 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold flex items-center gap-1.5 shadow-pop-sm text-ink whitespace-nowrap">
-          🇯🇵→🇸🇬 商社 BD
-        </button>
-        <button class="chip flex-none px-3 py-2 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold flex items-center gap-1.5 shadow-pop-sm text-ink whitespace-nowrap">
-          🇯🇵→🇸🇬 Tech PM
-        </button>
-        <button class="chip flex-none px-3 py-2 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold flex items-center gap-1.5 shadow-pop-sm text-ink whitespace-nowrap">
-          🇸🇬→🇯🇵 Finance
-        </button>
-        <button class="chip flex-none px-3 py-2 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold flex items-center gap-1.5 shadow-pop-sm text-ink whitespace-nowrap">
-          🇭🇰→🇯🇵 IB
-        </button>
-        <button class="chip flex-none px-3 py-2 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold flex items-center gap-1.5 shadow-pop-sm text-ink whitespace-nowrap">
-          事業会社→コンサル
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- RESULTS HEADER -->
-  <section class="mt-8 rise" style="animation-delay:0.12s">
-    <div class="flex items-end justify-between mb-3">
-      <div>
-        <div class="display font-bold text-[22px] leading-tight text-ink">
-          <span class="text-blue" id="result-count">47</span> 人が見つかりました
-        </div>
-        <p class="text-[11px] text-ink-soft mt-1" id="result-meta">すべての経路 · 全業界 · 全職種</p>
-      </div>
-      <button class="text-[11px] flex items-center gap-1 text-ink-soft font-bold">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
-        フィルタ
-      </button>
-    </div>
-
-    <div class="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl shadow-pop-sm">
-      <button class="sort-tab active px-3 py-1.5 rounded-lg text-[11px] font-bold">新着順</button>
-      <button class="sort-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">人気順</button>
-      <button class="sort-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">あなたに近い</button>
-      <button class="sort-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">相談可</button>
-    </div>
-  </section>
-
-  <!-- RESULTS -->
-  <section class="mt-5 space-y-5 rise" style="animation-delay:0.18s">
-
-    <a href="profile.html" class="block result-card pass p-4">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <div class="relative">
-            <div class="w-12 h-12 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-sm border-[1.5px] border-ink">YT</div>
-            <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-jade border-[1.5px] border-ink"></span>
-          </div>
-          <div>
-            <div class="font-bold text-[14px] text-ink">YT さん</div>
-            <div class="text-[11px] text-ink-soft">34歳 · 在SG 3年目</div>
-          </div>
-        </div>
-        <div class="flex flex-col items-end gap-0.5">
-          <span class="text-[9px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">⚡ 相談可</span>
-          <span class="text-[9px] uppercase tracking-wider text-ink-faint font-bold">⭐ 4.9 · 23件</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between gap-1 my-3">
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-ink">TYO</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">Sony</div>
-          <div class="text-[8px] text-ink-faint">PM · 5yr</div>
-        </div>
-        <svg width="24" height="14" viewBox="0 0 24 14">
-          <path d="M 2 7 Q 12 0 22 7" fill="none" stroke="#0A1F3D" stroke-width="1.3" stroke-dasharray="2 2"/>
-          <polygon points="20,4 24,7 20,10" fill="#0A1F3D"/>
-        </svg>
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-blue">SIN</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">Shopee</div>
-          <div class="text-[8px] text-ink-faint">Sr.PM · 2yr</div>
-        </div>
-        <svg width="24" height="14" viewBox="0 0 24 14">
-          <path d="M 2 7 Q 12 0 22 7" fill="none" stroke="#0055A4" stroke-width="1.3" stroke-dasharray="2 2"/>
-          <polygon points="20,4 24,7 20,10" fill="#0055A4"/>
-        </svg>
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-ink-faint">?</div>
-          <div class="text-[8px] text-blue uppercase mt-1 font-bold">志望中</div>
-          <div class="text-[8px] text-ink-faint">VP級</div>
-        </div>
-      </div>
-
-      <div class="bg-mustard/20 border border-mustard rounded-lg px-2.5 py-1.5 flex items-center gap-2 mb-3">
-        <span class="display font-bold text-[10px] text-ink">MATCH</span>
-        <span class="text-[10px] text-ink-soft font-bold">あなたと <span class="text-ink">国・業界</span> が一致</span>
-      </div>
-
-      <div class="flex flex-wrap gap-1.5 mb-3">
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">日系→現地Tech</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">ビザ EP</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">英語の壁</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">+2</span>
-      </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-dashed border-ink/25">
-        <span class="text-[11px] text-ink-soft font-semibold">プロフィール →</span>
-        <span class="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[11px]">☕ 話を聞く · SGD 30</span>
-      </div>
-    </a>
-
-    <a href="profile.html" class="block result-card pass p-4">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink">RN</div>
-          <div>
-            <div class="font-bold text-[14px] text-ink">RN さん</div>
-            <div class="text-[11px] text-ink-soft">29歳 · 在SG 1年目</div>
-          </div>
-        </div>
-        <span class="text-[9px] uppercase tracking-wider text-ink-faint font-bold">⭐ 4.7</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-1 my-3">
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-ink">TYO</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">DeNA</div>
-          <div class="text-[8px] text-ink-faint">PM · 3yr</div>
-        </div>
-        <svg width="24" height="14" viewBox="0 0 24 14">
-          <path d="M 2 7 Q 12 0 22 7" fill="none" stroke="#0A1F3D" stroke-width="1.3" stroke-dasharray="2 2"/>
-          <polygon points="20,4 24,7 20,10" fill="#0A1F3D"/>
-        </svg>
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-blue">SIN</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">Grab</div>
-          <div class="text-[8px] text-ink-faint">PM · 1yr</div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap gap-1.5 mb-3">
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">転職活動</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">給与交渉</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">PMキャリア</span>
-      </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-dashed border-ink/25">
-        <span class="text-[11px] text-ink-soft font-semibold">プロフィール →</span>
-        <span class="px-3 py-1.5 bg-paper text-ink border-[1.5px] border-ink rounded-full font-bold text-[11px]">無料で話す</span>
-      </div>
-    </a>
-
-    <a href="profile.html" class="block result-card pass p-4 relative">
-      <div class="absolute -top-3 -right-2 stamp z-10">
-        <div class="bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border-[1.5px] border-ink uppercase tracking-widest shadow-pop-sm">人気</div>
-      </div>
-
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <div class="relative">
-            <div class="w-12 h-12 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink">HK</div>
-            <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-jade border-[1.5px] border-ink"></span>
-          </div>
-          <div>
-            <div class="font-bold text-[14px] text-ink">HK さん</div>
-            <div class="text-[11px] text-ink-soft">42歳 · SG/VN 拠点</div>
-          </div>
-        </div>
-        <div class="flex flex-col items-end gap-0.5">
-          <span class="text-[9px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">⚡ 相談可</span>
-          <span class="text-[9px] uppercase tracking-wider text-ink-faint font-bold">⭐ 5.0 · 48件</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between gap-1 my-3">
-        <div class="text-center">
-          <div class="display font-bold text-[16px] leading-none text-ink">TYO</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">商社</div>
-        </div>
-        <svg width="20" height="12" viewBox="0 0 20 12">
-          <path d="M 2 6 Q 10 0 18 6" fill="none" stroke="#0A1F3D" stroke-width="1.2" stroke-dasharray="2 2"/>
-          <polygon points="16,3 20,6 16,9" fill="#0A1F3D"/>
-        </svg>
-        <div class="text-center">
-          <div class="display font-bold text-[16px] leading-none text-ink">SIN</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">現法長</div>
-        </div>
-        <svg width="20" height="12" viewBox="0 0 20 12">
-          <path d="M 2 6 Q 10 0 18 6" fill="none" stroke="#0A1F3D" stroke-width="1.2" stroke-dasharray="2 2"/>
-          <polygon points="16,3 20,6 16,9" fill="#0A1F3D"/>
-        </svg>
-        <div class="text-center">
-          <div class="display font-bold text-[16px] leading-none text-blue">SGN</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">起業</div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap gap-1.5 mb-3">
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">商社→現法</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">VN起業</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">家族同行</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">+5</span>
-      </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-dashed border-ink/25">
-        <span class="text-[11px] text-ink-soft font-semibold">プロフィール →</span>
-        <span class="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[11px]">30min · SGD 80</span>
-      </div>
-    </a>
-
-    <a href="profile.html" class="block result-card pass p-4">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-full bg-blue-soft text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink">SK</div>
-          <div>
-            <div class="font-bold text-[14px] text-ink">SK さん</div>
-            <div class="text-[11px] text-ink-soft">37歳 · 在SG 6年目</div>
-          </div>
-        </div>
-        <span class="text-[9px] uppercase tracking-wider text-ink-faint font-bold">⭐ 4.8 · 12件</span>
-      </div>
-
-      <div class="flex items-center justify-between gap-1 my-3">
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-ink">OSA</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">P&G</div>
-          <div class="text-[8px] text-ink-faint">BD · 8yr</div>
-        </div>
-        <svg width="24" height="14" viewBox="0 0 24 14">
-          <path d="M 2 7 Q 12 0 22 7" fill="none" stroke="#0A1F3D" stroke-width="1.3" stroke-dasharray="2 2"/>
-          <polygon points="20,4 24,7 20,10" fill="#0A1F3D"/>
-        </svg>
-        <div class="text-center flex-1">
-          <div class="display font-bold text-[18px] leading-none text-blue">SIN</div>
-          <div class="text-[8px] text-ink-faint uppercase mt-1 font-bold">P&G APAC</div>
-          <div class="text-[8px] text-ink-faint">Director</div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap gap-1.5 mb-3">
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">同社内駐在</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">家族の教育</span>
-        <span class="text-[10px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">Consumer業界</span>
-      </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-dashed border-ink/25">
-        <span class="text-[11px] text-ink-soft font-semibold">プロフィール →</span>
-        <span class="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[11px]">30min · SGD 50</span>
-      </div>
-    </a>
-
-  </section>
-
-  <section class="mt-6 mb-4 text-center">
-    <button class="w-full py-3.5 bg-cream border-[1.5px] border-ink rounded-2xl text-[13px] font-bold flex items-center justify-center gap-2 shadow-pop-sm text-ink">
-      もっと見る (あと 43人)
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-    </button>
-  </section>
-
-  <section class="mt-6 mb-4">
-    <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-5 relative overflow-hidden shadow-pop">
-      <div class="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-jade opacity-25"></div>
-      <div class="relative">
-        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold mb-1">この経路のインサイト</p>
-        <h3 class="display font-bold text-[20px] leading-[1.15] text-ink">
-          <span class="serif-it text-[24px]">TYO → SIN</span> Tech PM<br>
-          平均給与は <span class="text-blue">+47%</span> 上昇
-        </h3>
-        <p class="text-[11px] text-ink-soft mt-2 leading-relaxed">
-          中央値: ¥8.2M → SGD 9,400/mo · 47件のデータより
+        <h1 class="display font-bold leading-tight tracking-tight text-ink whitespace-nowrap" style="font-size:clamp(18px, 5.5vw, 30px);">
+          <span class="serif-it u-blue" style="font-size:1.05em;">A → B</span> を歩いた人を見つける
+        </h1>
+        <p class="text-[12px] lg:text-[13px] text-ink-soft mt-3 leading-relaxed">
+          出発地・到着地・業界・職種を選ぶだけ。経験者がリストアップされます。
         </p>
-        <button class="mt-3 text-[11px] font-bold text-blue">給与データを見る →</button>
-      </div>
-    </div>
-  </section>
+      </section>
 
+      <!-- FILTERS (inline, no popup) -->
+      <section class="mb-6 rise" style="animation-delay:0.06s">
+        <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-4 lg:p-5 shadow-pop">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="label">出発地</label>
+              <select id="filter-from" class="filter-select">
+                <option value="">指定なし</option>
+                <option value="Japan">🇯🇵 Japan</option>
+                <option value="Singapore">🇸🇬 Singapore</option>
+                <option value="Hong Kong">🇭🇰 Hong Kong</option>
+                <option value="Thailand">🇹🇭 Thailand</option>
+                <option value="Vietnam">🇻🇳 Vietnam</option>
+                <option value="United States">🇺🇸 United States</option>
+                <option value="Indonesia">🇮🇩 Indonesia</option>
+                <option value="Malaysia">🇲🇾 Malaysia</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">到着地</label>
+              <select id="filter-to" class="filter-select">
+                <option value="">指定なし</option>
+                <option value="Singapore">🇸🇬 Singapore</option>
+                <option value="Japan">🇯🇵 Japan</option>
+                <option value="Hong Kong">🇭🇰 Hong Kong</option>
+                <option value="Thailand">🇹🇭 Thailand</option>
+                <option value="Vietnam">🇻🇳 Vietnam</option>
+                <option value="United States">🇺🇸 United States</option>
+                <option value="Indonesia">🇮🇩 Indonesia</option>
+                <option value="Malaysia">🇲🇾 Malaysia</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">業界</label>
+              <select id="filter-industry" class="filter-select">
+                <option value="">指定なし</option>
+                <option value="Tech">💻 Tech</option>
+                <option value="Finance">🏦 Finance</option>
+                <option value="Startup">🚀 Startup</option>
+                <option value="Manufacturing">🏭 Manufacturing</option>
+                <option value="Consumer">🛍 Consumer</option>
+                <option value="Healthcare">🏥 Healthcare</option>
+                <option value="Education">🎓 Education</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">職種</label>
+              <select id="filter-role" class="filter-select">
+                <option value="">指定なし</option>
+                <option value="Product Manager">📐 Product Manager</option>
+                <option value="Engineer">⚙️ Engineer</option>
+                <option value="BD / Sales">💼 BD / Sales</option>
+                <option value="Marketing">📣 Marketing</option>
+                <option value="Designer">🎨 Designer</option>
+                <option value="Finance / Accounting">📊 Finance / Accounting</option>
+                <option value="HR / People">👥 HR / People</option>
+                <option value="駐在帯同(無職)">🏠 駐在帯同(無職)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-dashed border-ink/20">
+            <button id="reset-filters" class="text-[11px] text-ink-soft font-bold underline-offset-2 underline">リセット</button>
+            <p class="text-[11px] text-ink-soft font-bold">
+              <span id="result-count" class="text-ink font-bold display text-[14px]">0</span> 人が見つかりました
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section class="rise" style="animation-delay:0.12s">
+        <div id="results-list" class="space-y-3"></div>
+
+        <div class="mt-5 flex flex-col items-center gap-3">
+          <button id="load-more" class="px-6 py-3 bg-cream border-[1.5px] border-ink rounded-full text-[13px] font-bold shadow-pop-sm text-ink">
+            もっと見る
+          </button>
+        </div>
+      </section>
+
+      <!-- Premium CTA -->
+      <section class="mt-10 rise" style="animation-delay:0.18s">
+        <div class="bg-ink text-cream border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop-blue relative overflow-hidden">
+          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-mustard opacity-20"></div>
+          <div class="relative">
+            <div class="inline-flex items-center gap-1.5 bg-mustard text-ink rounded-full px-2 py-1 mb-3">
+              <span>✦</span>
+              <span class="text-[9px] uppercase tracking-widest font-bold">PREMIUM</span>
+            </div>
+            <h3 class="display font-bold text-[20px] lg:text-[24px] leading-tight">給与の本当の数字を見る</h3>
+            <p class="text-[12px] opacity-80 mt-2 leading-relaxed">
+              中央値・四分位・ボーナス・株式まで。先に行った人のリアルな手取りを公開。
+            </p>
+            <a href="premium.html" class="mt-4 inline-flex items-center gap-2 bg-mustard text-ink rounded-full px-5 py-2.5 font-bold text-[13px]">
+              給与データを見る
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- SIDE -->
+    <aside class="app-grid-side hidden lg:block space-y-4">
+      <div class="side-nav-card">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">メニュー</p>
+        <nav class="space-y-1">
+          <a href="home.html" class="side-nav-link">🌏 ホーム</a>
+          <a href="search.html" class="side-nav-link active">🔀 フロー検索</a>
+          <a href="threads.html" class="side-nav-link">💬 スレッド</a>
+          <a href="mypage.html" class="side-nav-link">👤 マイページ</a>
+        </nav>
+      </div>
+
+      <div class="side-nav-card">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-blue font-bold mb-2">人気の経路</p>
+        <div class="space-y-2 text-[12px]">
+          <p class="font-bold text-ink flex items-center justify-between">Japan → Singapore <span class="text-jade-deep">128人</span></p>
+          <p class="font-bold text-ink flex items-center justify-between">Japan → United States <span class="text-jade-deep">63人</span></p>
+          <p class="font-bold text-ink flex items-center justify-between">Singapore → Vietnam <span class="text-jade-deep">42人</span></p>
+        </div>
+      </div>
+    </aside>
+  </div>
 </main>
 
-<!-- FILTER MODAL -->
+<!-- APPLICATION MODAL -->
 <div id="modal-overlay" class="modal-overlay"></div>
-<div id="modal-sheet" class="modal-sheet">
+<div id="app-sheet" class="modal-sheet">
   <div class="px-5 pt-2">
     <div class="w-10 h-1 bg-ink/20 rounded-full mx-auto mb-4"></div>
-    <div class="flex items-center justify-between mb-1">
-      <h3 id="modal-title" class="display font-bold text-[20px] text-ink">国・都市を選ぶ</h3>
-      <button id="modal-close" class="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-ink-faint font-bold">Coffee Chat申請</p>
+        <h3 class="display font-bold text-[20px] text-ink mt-1">話を聞きたい</h3>
+      </div>
+      <button id="close-app" class="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <p id="modal-sub" class="text-[11px] text-ink-soft mb-3 font-semibold">移動前(FROM)を指定</p>
 
-    <input id="modal-search" type="text" placeholder="検索..." class="w-full px-3 py-2.5 bg-paper border-[1.5px] border-ink rounded-xl text-[13px] font-bold text-ink placeholder:text-ink-faint placeholder:font-medium mb-3 outline-none">
+    <!-- Target person info -->
+    <div class="bg-paper border-[1.5px] border-ink rounded-2xl p-3 mb-4 flex items-center gap-3">
+      <div id="app-avatar" class="w-12 h-12 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0"></div>
+      <div class="min-w-0 flex-1">
+        <p class="font-bold text-[14px] text-ink" id="app-name"></p>
+        <p class="text-[11px] text-ink-soft" id="app-route"></p>
+      </div>
+    </div>
 
-    <div id="modal-options" class="space-y-1 pb-4"></div>
+    <!-- Form -->
+    <div class="space-y-4 pb-6">
+      <div>
+        <label class="label">話を聞きたい内容 *</label>
+        <textarea id="app-message" class="field" rows="5" placeholder="例: SG現地Tech企業への転職活動の進め方について、面接対策と給与交渉のコツを伺いたいです。" maxlength="500"></textarea>
+        <p class="text-[10px] text-ink-faint mt-1 text-right"><span id="char-count">0</span> / 500</p>
+      </div>
+
+      <div>
+        <label class="label">希望日時(任意)</label>
+        <input type="text" id="app-date" class="field" placeholder="例: 平日夜 / 週末午後">
+      </div>
+
+      <div class="bg-paper border-[1.5px] border-ink rounded-xl p-3">
+        <p class="text-[11px] font-bold text-ink mb-1">📌 申請の流れ</p>
+        <ol class="text-[11px] text-ink-soft space-y-0.5 pl-4 list-decimal">
+          <li>相手が内容を確認</li>
+          <li>承認されたらトークルームが開きます</li>
+          <li>日時を決めて実施</li>
+        </ol>
+      </div>
+    </div>
+
+    <button id="submit-app" class="btn-primary w-full mb-4">
+      申請を送る
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+    </button>
   </div>
 </div>
 
+<!-- SUCCESS TOAST -->
+<div id="toast" class="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-jade-deep text-cream rounded-full px-5 py-3 shadow-pop-lg border-[1.5px] border-ink font-bold text-[13px] opacity-0 pointer-events-none transition-opacity duration-300">
+  ✓ 申請を送りました
+</div>
+
 <!-- BOTTOM NAV -->
-<nav class="fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
-  <div class="container-narrow px-4 py-2 flex items-center justify-around">
+<nav class="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+  <div class="container-app py-2 flex items-center justify-around">
     <a href="home.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
       <span class="text-[9px] font-bold uppercase tracking-wider">ホーム</span>
     </a>
     <a href="search.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink relative">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L 9 6 L 9 9 L 15 9 L 15 6 L 21 12 L 15 18 L 15 15 L 9 15 L 9 18 Z"/></svg>
-      <span class="text-[9px] font-bold uppercase tracking-wider">フロー検索</span>
+      <span class="text-[9px] font-bold uppercase tracking-wider">検索</span>
       <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue rounded-full"></span>
     </a>
-    <button class="flex flex-col items-center justify-center -mt-6 w-14 h-14 bg-blue border-[1.5px] border-ink rounded-full text-cream shadow-pop-sm">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-    <button class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+    <a href="threads.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span class="text-[9px] font-bold uppercase tracking-wider">スレッド</span>
-    </button>
-    <a href="profile.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+    </a>
+    <a href="mypage.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
       <span class="text-[9px] font-bold uppercase tracking-wider">自分</span>
     </a>
