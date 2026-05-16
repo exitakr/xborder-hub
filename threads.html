@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FFF6E8">
+<title>X Border Hub — スレッド</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="noise pb-24 lg:pb-0">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
+  <div class="container-app py-3.5 flex items-center justify-between">
+    <a href="home.html" class="flex items-center gap-2.5">
+      <div class="logo-mark">×</div>
+      <div>
+        <div class="display font-bold text-[15px] leading-none tracking-tight text-ink">X Border Hub</div>
+        <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">crossing borders</div>
+      </div>
+    </a>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">About</a>
+      <a href="home.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">ホーム</a>
+      <a href="search.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">フロー検索</a>
+      <a href="threads.html" class="hidden lg:inline text-[12px] font-bold text-blue px-3 py-2">スレッド</a>
+      <a href="mypage.html" class="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink">あ</a>
+    </div>
+  </div>
+</header>
+
+<main class="container-app py-6 lg:py-10 relative z-10">
+
+  <div class="app-grid">
+    <!-- MAIN -->
+    <div class="app-grid-main">
+
+      <!-- Hero -->
+      <section class="mb-6 rise">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-base">💬</span>
+          <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">コミュニティ</p>
+        </div>
+        <div class="flex items-end justify-between gap-3 flex-wrap">
+          <h1 class="display font-bold text-[26px] lg:text-[32px] leading-[1.15] tracking-tight text-ink">
+            みんなの<span class="serif-it text-[30px] lg:text-[36px] u-blue">スレッド</span>
+          </h1>
+          <button id="open-compose" class="btn-primary text-[13px] py-2.5 px-5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
+            投稿する
+          </button>
+        </div>
+      </section>
+
+      <!-- Filter chips -->
+      <section class="mb-5 rise" style="animation-delay:0.06s">
+        <div class="flex gap-2 overflow-x-auto hide-scroll pb-1">
+          <button data-filter="all" class="thr-tag active flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🌏 すべて</button>
+          <button data-filter="career" class="thr-tag flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">💼 キャリア</button>
+          <button data-filter="life" class="thr-tag flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🏠 生活</button>
+          <button data-filter="visa" class="thr-tag flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🛂 ビザ</button>
+          <button data-filter="salary" class="thr-tag flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">💰 給与</button>
+          <button data-filter="family" class="thr-tag flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">👨‍👩‍👧 家族</button>
+        </div>
+      </section>
+
+      <!-- Sort -->
+      <section class="mb-5 flex items-center justify-between">
+        <p class="text-[11px] text-ink-soft font-bold">128件のスレッド</p>
+        <div class="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl shadow-pop-sm">
+          <button class="sort-tab active px-3 py-1 rounded-lg text-[10px] font-bold">新着</button>
+          <button class="sort-tab px-3 py-1 rounded-lg text-[10px] font-bold text-ink-soft">人気</button>
+          <button class="sort-tab px-3 py-1 rounded-lg text-[10px] font-bold text-ink-soft">未解決</button>
+        </div>
+      </section>
+
+      <!-- Thread list -->
+      <section class="space-y-3" id="thread-list">
+
+        <article class="thread-card" onclick="openThread(1)">
+          <div class="flex items-start justify-between mb-2 gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0">RN</div>
+              <div class="min-w-0">
+                <p class="font-bold text-[12px] text-ink">RN さん</p>
+                <p class="text-[10px] text-ink-faint">SIN · 2時間前</p>
+              </div>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30 flex-shrink-0">💼 キャリア</span>
+          </div>
+          <h3 class="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1.5">
+            SG現地Tech企業の面接、英語だけど日本語訛りでも大丈夫?
+          </h3>
+          <p class="text-[12px] text-ink-soft leading-relaxed line-clamp-2">
+            来月Shopee/Grabの最終面接を控えています。TOEIC900はあるけど発音はバキバキの日本語訛り。皆さんどう乗り越えました?
+          </p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dashed border-ink/15">
+            <button class="vote-btn voted-up" onclick="event.stopPropagation();">👍 23</button>
+            <button class="vote-btn" onclick="event.stopPropagation();">👎 1</button>
+            <span class="text-[11px] text-ink-soft font-bold ml-auto">💬 14件</span>
+          </div>
+        </article>
+
+        <article class="thread-card" onclick="openThread(2)">
+          <div class="flex items-start justify-between mb-2 gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0">HK</div>
+              <div class="min-w-0">
+                <p class="font-bold text-[12px] text-ink">HK さん</p>
+                <p class="text-[10px] text-ink-faint">SGN · 5時間前</p>
+              </div>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30 flex-shrink-0">👨‍👩‍👧 家族</span>
+          </div>
+          <h3 class="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1.5">
+            子供のインターナショナルスクール、ホーチミンで月いくらかかってますか?
+          </h3>
+          <p class="text-[12px] text-ink-soft leading-relaxed line-clamp-2">
+            日本から移ってきたばかりで、想像の3倍くらい高くて驚いています。皆さんの実例を共有してもらえると助かります。
+          </p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dashed border-ink/15">
+            <button class="vote-btn voted-up" onclick="event.stopPropagation();">👍 47</button>
+            <button class="vote-btn" onclick="event.stopPropagation();">👎 0</button>
+            <span class="text-[11px] text-ink-soft font-bold ml-auto">💬 28件</span>
+          </div>
+        </article>
+
+        <article class="thread-card" onclick="openThread(3)">
+          <div class="flex items-start justify-between mb-2 gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0">MS</div>
+              <div class="min-w-0">
+                <p class="font-bold text-[12px] text-ink">MS さん</p>
+                <p class="text-[10px] text-ink-faint">BKK · 昨日</p>
+              </div>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30 flex-shrink-0">🛂 ビザ</span>
+          </div>
+          <h3 class="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1.5">
+            タイのSmart Visa、起業家枠の最新申請プロセス(2026年版)
+          </h3>
+          <p class="text-[12px] text-ink-soft leading-relaxed line-clamp-2">
+            最近ルールが変わったので備忘録です。総資本金、雇用要件、ローカルパートナーの扱いなど、まとめて書きました。
+          </p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dashed border-ink/15">
+            <button class="vote-btn voted-up" onclick="event.stopPropagation();">👍 89</button>
+            <button class="vote-btn" onclick="event.stopPropagation();">👎 2</button>
+            <span class="text-[11px] text-ink-soft font-bold ml-auto">💬 42件</span>
+          </div>
+        </article>
+
+        <article class="thread-card" onclick="openThread(4)">
+          <div class="flex items-start justify-between mb-2 gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-plum text-cream font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0">TM</div>
+              <div class="min-w-0">
+                <p class="font-bold text-[12px] text-ink">TM さん</p>
+                <p class="text-[10px] text-ink-faint">TYO · 2日前</p>
+              </div>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30 flex-shrink-0">💰 給与</span>
+          </div>
+          <h3 class="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1.5">
+            東京年収1,200万 vs SG SGD 11k、本当の手取り比較
+          </h3>
+          <p class="text-[12px] text-ink-soft leading-relaxed line-clamp-2">
+            オファーをもらって悩んでいます。SGは税金安いけど家賃高い…リアルな手取りと生活費の差を計算してみました。
+          </p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dashed border-ink/15">
+            <button class="vote-btn voted-up" onclick="event.stopPropagation();">👍 156</button>
+            <button class="vote-btn" onclick="event.stopPropagation();">👎 8</button>
+            <span class="text-[11px] text-ink-soft font-bold ml-auto">💬 67件</span>
+          </div>
+        </article>
+
+        <article class="thread-card" onclick="openThread(5)">
+          <div class="flex items-start justify-between mb-2 gap-3">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="w-9 h-9 rounded-full bg-blue-soft text-ink font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0">SK</div>
+              <div class="min-w-0">
+                <p class="font-bold text-[12px] text-ink">SK さん</p>
+                <p class="text-[10px] text-ink-faint">SIN · 3日前</p>
+              </div>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30 flex-shrink-0">🏠 生活</span>
+          </div>
+          <h3 class="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1.5">
+            SGのコンドミニアム、家族で住むなら結局どのエリア?
+          </h3>
+          <p class="text-[12px] text-ink-soft leading-relaxed line-clamp-2">
+            Bukit Timah、East Coast、River Valley…日本人駐在員の定番をまとめました。価格帯と通学のしやすさで分けてます。
+          </p>
+          <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dashed border-ink/15">
+            <button class="vote-btn voted-up" onclick="event.stopPropagation();">👍 72</button>
+            <button class="vote-btn" onclick="event.stopPropagation();">👎 3</button>
+            <span class="text-[11px] text-ink-soft font-bold ml-auto">💬 31件</span>
+          </div>
+        </article>
+
+      </section>
+
+      <button class="mt-6 w-full py-3.5 bg-cream border-[1.5px] border-ink rounded-2xl text-[13px] font-bold flex items-center justify-center gap-2 shadow-pop-sm text-ink">
+        もっと見る
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <!-- SIDE -->
+    <aside class="app-grid-side hidden lg:block">
+      <div class="side-nav-card">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">メニュー</p>
+        <nav class="space-y-1">
+          <a href="home.html" class="side-nav-link">🌏 ホーム</a>
+          <a href="search.html" class="side-nav-link">🔀 フロー検索</a>
+          <a href="threads.html" class="side-nav-link active">💬 スレッド</a>
+          <a href="mypage.html" class="side-nav-link">👤 マイページ</a>
+        </nav>
+      </div>
+
+      <div class="side-nav-card mt-4">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-blue font-bold mb-2">今週のトレンド</p>
+        <div class="space-y-2">
+          <div class="text-[12px]">
+            <p class="font-bold text-ink">#SG面接対策</p>
+            <p class="text-[10px] text-ink-faint">23件の投稿</p>
+          </div>
+          <div class="text-[12px]">
+            <p class="font-bold text-ink">#インターナショナルスクール</p>
+            <p class="text-[10px] text-ink-faint">18件の投稿</p>
+          </div>
+          <div class="text-[12px]">
+            <p class="font-bold text-ink">#給与交渉</p>
+            <p class="text-[10px] text-ink-faint">14件の投稿</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- COMPOSE MODAL -->
+<div id="modal-overlay" class="modal-overlay"></div>
+<div id="compose-sheet" class="modal-sheet">
+  <div class="px-5 pt-2">
+    <div class="w-10 h-1 bg-ink/20 rounded-full mx-auto mb-4"></div>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="display font-bold text-[20px] text-ink">新しいスレッド</h3>
+      <button id="close-compose" class="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4 pb-6">
+      <div>
+        <label class="label">カテゴリ</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">💼 キャリア</button>
+          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">🏠 生活</button>
+          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">🛂 ビザ</button>
+          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">💰 給与</button>
+          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">👨‍👩‍👧 家族</button>
+        </div>
+      </div>
+      <div>
+        <label class="label">タイトル</label>
+        <input type="text" class="field" placeholder="例: SG現地Tech企業の面接、日本語訛りでも大丈夫?" maxlength="80">
+      </div>
+      <div>
+        <label class="label">内容</label>
+        <textarea class="field" rows="6" placeholder="状況、聞きたいこと、相談したいことを自由に書いてください。匿名で投稿されます。" maxlength="2000"></textarea>
+      </div>
+      <div class="bg-paper border-[1.5px] border-ink rounded-xl p-3 text-[11px] text-ink-soft">
+        <p class="font-bold text-ink mb-1">📌 投稿のヒント</p>
+        <ul class="space-y-0.5 pl-3 list-disc">
+          <li>個人情報・会社の機密は書かない</li>
+          <li>具体的な状況を書くと回答が集まりやすい</li>
+          <li>誹謗中傷は禁止です</li>
+        </ul>
+      </div>
+    </div>
+
+    <button class="btn-primary w-full mb-4">投稿する</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+  <div class="container-app py-2 flex items-center justify-around">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">ホーム</span>
+    </a>
+    <a href="search.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L 9 6 L 9 9 L 15 9 L 15 6 L 21 12 L 15 18 L 15 15 L 9 15 L 9 18 Z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">検索</span>
+    </a>
+    <a href="threads.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink relative">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">スレッド</span>
+      <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue rounded-full"></span>
+    </a>
+    <a href="mypage.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">自分</span>
+    </a>
+  </div>
+</nav>
+
+<script>
+  const overlay = document.getElementById('modal-overlay');
+  const sheet = document.getElementById('compose-sheet');
+
+  document.getElementById('open-compose').addEventListener('click', () => {
+    overlay.classList.add('open');
+    sheet.classList.add('open');
+  });
+  document.getElementById('close-compose').addEventListener('click', closeCompose);
+  overlay.addEventListener('click', closeCompose);
+  function closeCompose() {
+    overlay.classList.remove('open');
+    sheet.classList.remove('open');
+  }
+
+  // category pick
+  let pickedCat = null;
+  document.querySelectorAll('.cat-pick').forEach(b => {
+    b.addEventListener('click', () => {
+      if (pickedCat) {
+        pickedCat.style.background = '';
+        pickedCat.style.color = '';
+      }
+      b.style.background = '#0A1F3D';
+      b.style.color = '#FFF6E8';
+      pickedCat = b;
+    });
+  });
+
+  // Filter tags
+  document.querySelectorAll('.thr-tag').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.thr-tag').forEach(t => {
+        t.classList.remove('active');
+        t.style.background = '';
+        t.style.color = '';
+      });
+      b.classList.add('active');
+      b.style.background = '#0A1F3D';
+      b.style.color = '#FFF6E8';
+    });
+  });
+
+  // initial active
+  const firstTag = document.querySelector('.thr-tag.active');
+  firstTag.style.background = '#0A1F3D';
+  firstTag.style.color = '#FFF6E8';
+
+  // Vote
+  document.querySelectorAll('.vote-btn').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isUp = b.textContent.includes('👍');
+      b.classList.toggle(isUp ? 'voted-up' : 'voted-down');
+    });
+  });
+
+  function openThread(id) {
+    window.location.href = `thread.html?id=${id}`;
+  }
+
+  // sort tabs
+  document.querySelectorAll('.sort-tab').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.sort-tab').forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('text-ink-soft');
+      });
+      b.classList.add('active');
+      b.classList.remove('text-ink-soft');
+    });
+  });
+</script>
+
+</body>
+</html>

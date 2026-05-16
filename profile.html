@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FFF6E8">
+<title>X Border Hub — YT さんのプロフィール</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+
+<style>
+  /* Career river timeline */
+  .river-step {
+    position: relative;
+    padding-left: 28px;
+  }
+  .river-step::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 22px; bottom: -16px;
+    width: 2px;
+    background: repeating-linear-gradient(to bottom, #0A1F3D 0, #0A1F3D 4px, transparent 4px, transparent 8px);
+  }
+  .river-step:last-child::before { display: none; }
+  .river-dot {
+    position: absolute;
+    left: 0; top: 8px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #FFF6E8;
+    border: 2px solid #0A1F3D;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .river-dot.major {
+    background: #0055A4;
+    box-shadow: 0 0 0 4px rgba(0,85,164,0.15);
+  }
+  .river-dot.future {
+    background: #FFC93C;
+    border-style: dashed;
+  }
+</style>
+</head>
+<body class="noise pb-24">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
+  <div class="container-narrow px-5 py-3.5 flex items-center justify-between">
+    <a href="search.html" class="flex items-center gap-2 text-ink">
+      <button class="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+    </a>
+    <div class="text-center">
+      <div class="display font-bold text-[15px] tracking-tight text-ink">プロフィール</div>
+      <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">CAREER JOURNEY</div>
+    </div>
+    <button class="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="container-narrow px-5 relative z-10">
+
+  <!-- IDENTITY -->
+  <section class="pt-5 rise">
+    <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-5 shadow-pop relative overflow-hidden">
+      <div class="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-blue opacity-15"></div>
+      <div class="absolute -bottom-10 -left-6 w-20 h-20 rounded-full bg-mustard opacity-20"></div>
+
+      <div class="relative">
+        <div class="flex items-start gap-4 mb-4">
+          <div class="relative flex-shrink-0">
+            <div class="w-20 h-20 rounded-2xl bg-blue text-cream font-bold flex items-center justify-center text-2xl border-[1.5px] border-ink shadow-pop-sm display">YT</div>
+            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-jade border-[1.5px] border-ink flex items-center justify-center">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A1F3D" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </span>
+          </div>
+          <div class="flex-1">
+            <h1 class="display font-bold text-[22px] text-ink leading-tight">YT さん</h1>
+            <p class="text-[12px] text-ink-soft mt-1 font-semibold">34歳 · 在SG 3年目</p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">⚡ 相談可</span>
+              <span class="text-[10px] uppercase tracking-wider text-ink-faint font-bold">⭐ 4.9 · 23件</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="serif-it text-[15px] text-ink leading-relaxed">
+          "日系大手から東南アジアのTech企業へ。<br>
+          言葉と文化の壁を、3年で乗り越えた話なら<br>
+          いつでもどうぞ。"
+        </p>
+
+        <!-- Aspiration flags -->
+        <div class="mt-4 pt-4 border-t border-dashed border-ink/25">
+          <p class="text-[9px] uppercase tracking-wider text-ink-faint mb-2 font-bold">🎯 次に目指す</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink">🇺🇸 US</span>
+            <span class="text-[11px] px-2 py-0.5 bg-mustard border border-ink rounded-full font-bold text-ink">🚀 Startup</span>
+            <span class="text-[11px] px-2 py-0.5 bg-jade border border-ink rounded-full font-bold text-ink">VP級</span>
+            <span class="text-[11px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">Tech</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAREER RIVER -->
+  <section class="mt-8 rise" style="animation-delay:0.08s">
+    <div class="mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-base">🌊</span>
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">キャリアの川</p>
+      </div>
+      <h2 class="display font-bold text-[22px] mt-1 leading-tight text-ink">
+        歩んできた<span class="serif-it text-[26px] u-blue">軌跡</span>
+      </h2>
+    </div>
+
+    <div class="space-y-5 mt-6">
+
+      <!-- Step 1: Tokyo Sony -->
+      <div class="river-step">
+        <div class="river-dot"></div>
+        <div class="pass p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="display font-bold text-[16px] text-ink">TYO</span>
+              <span class="text-[11px] text-ink-soft font-bold">東京 · 日本</span>
+            </div>
+            <span class="text-[10px] text-ink-faint font-bold">2014 - 2019</span>
+          </div>
+          <p class="font-bold text-[14px] text-ink">Sony</p>
+          <p class="text-[11px] text-ink-soft mt-0.5">Product Manager · 5年</p>
+          <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+            映像機器のグローバル展開を担当。最後の1年でアジア市場の責任者へ。
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 2: Singapore Sony -->
+      <div class="river-step">
+        <div class="river-dot"></div>
+        <div class="pass p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="display font-bold text-[16px] text-ink">SIN</span>
+              <span class="text-[11px] text-ink-soft font-bold">Singapore · 駐在</span>
+            </div>
+            <span class="text-[10px] text-ink-faint font-bold">2019 - 2022</span>
+          </div>
+          <p class="font-bold text-[14px] text-ink">Sony Asia Pacific</p>
+          <p class="text-[11px] text-ink-soft mt-0.5">Regional PM · 3年</p>
+          <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+            日本本社からSGリージョナルへ駐在。多国籍チームでの仕事の難しさと面白さを学ぶ。
+          </p>
+        </div>
+      </div>
+
+      <!-- Step 3: Singapore Shopee (current) -->
+      <div class="river-step">
+        <div class="river-dot major"></div>
+        <div class="pass p-4 relative">
+          <div class="absolute -top-2 -right-2 bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border-[1.5px] border-ink uppercase tracking-widest shadow-pop-sm">現在</div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="display font-bold text-[16px] text-blue">SIN</span>
+              <span class="text-[11px] text-ink-soft font-bold">Singapore · 現地採用</span>
+            </div>
+            <span class="text-[10px] text-ink-faint font-bold">2022 - 現在</span>
+          </div>
+          <p class="font-bold text-[14px] text-ink">Shopee</p>
+          <p class="text-[11px] text-ink-soft mt-0.5">Senior Product Manager · 2年</p>
+          <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+            日系から現地Techへ。給与は1.7倍に。文化適応とPM職としての成長を両立中。
+          </p>
+        </div>
+      </div>
+
+      <!-- Future -->
+      <div class="river-step">
+        <div class="river-dot future"></div>
+        <div class="bg-cream border-[1.5px] border-dashed border-ink rounded-3xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="display font-bold text-[16px] text-ink-faint">?</span>
+              <span class="text-[11px] text-blue font-bold uppercase tracking-wider">志望中</span>
+            </div>
+            <span class="text-[10px] text-ink-faint font-bold">~ 2027</span>
+          </div>
+          <p class="font-bold text-[14px] text-ink">US Tech Startup · VP級</p>
+          <p class="text-[11px] text-ink-soft mt-2 leading-relaxed">
+            次はUSのスタートアップでVP級を狙いたい。今、英語力と業界の動向を学んでいる最中。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOPICS -->
+  <section class="mt-10 rise" style="animation-delay:0.16s">
+    <div class="mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-base">💬</span>
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">話せるトピック</p>
+      </div>
+      <h2 class="display font-bold text-[22px] mt-1 leading-tight text-ink">
+        相談できる<span class="serif-it text-[26px] u-blue">内容</span>
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <p class="display font-bold text-[13px] text-ink leading-tight">日系→現地Techへの転職</p>
+        <p class="text-[10px] text-ink-soft mt-1">面接・給与交渉のリアル</p>
+      </div>
+      <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <p class="display font-bold text-[13px] text-ink leading-tight">EPビザ取得</p>
+        <p class="text-[10px] text-ink-soft mt-1">日系/現地での違い</p>
+      </div>
+      <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <p class="display font-bold text-[13px] text-ink leading-tight">英語の壁を越える</p>
+        <p class="text-[10px] text-ink-soft mt-1">PM職の実体験</p>
+      </div>
+      <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <p class="display font-bold text-[13px] text-ink leading-tight">SG生活の現実</p>
+        <p class="text-[10px] text-ink-soft mt-1">家賃・税金・教育費</p>
+      </div>
+      <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <p class="display font-bold text-[13px] text-ink leading-tight">PMキャリア戦略</p>
+        <p class="text-[10px] text-ink-soft mt-1">日系vs外資の進路</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SALARY (premium) -->
+  <section class="mt-10 rise" style="animation-delay:0.24s">
+    <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-5 shadow-pop relative overflow-hidden">
+      <div class="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-mustard opacity-30"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">📊 給与レンジ</p>
+          <span class="text-[9px] uppercase tracking-wider bg-ink text-mustard px-2 py-0.5 rounded-full font-bold">PREMIUM</span>
+        </div>
+        <h3 class="display font-bold text-[20px] leading-tight text-ink">
+          現職: <span class="text-blue serif-it text-[24px]">SGD 9,400</span> / 月
+        </h3>
+        <p class="text-[11px] text-ink-soft mt-2 leading-relaxed">
+          前職比 <span class="font-bold text-ink">+72%</span> · ベース給与のみ<br>
+          ※プレミアム会員限定でボーナス・株式分も閲覧可
+        </p>
+        <button class="mt-4 px-4 py-2 bg-mustard text-ink rounded-full font-bold text-[12px] border-[1.5px] border-ink">
+          詳細を見る (Premium)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIMILAR PEOPLE -->
+  <section class="mt-10 rise" style="animation-delay:0.32s">
+    <div class="mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-base">✨</span>
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">似た経路の人</p>
+      </div>
+      <h2 class="display font-bold text-[22px] mt-1 leading-tight text-ink">
+        この道を歩いた<span class="serif-it text-[26px] u-blue">他の人</span>
+      </h2>
+    </div>
+
+    <div class="space-y-3">
+      <a href="profile.html" class="flex items-center gap-3 bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <div class="w-12 h-12 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0">RN</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-[13px] text-ink">RN さん</p>
+          <p class="text-[10px] text-ink-soft mt-0.5">TYO(DeNA) → SIN(Grab) · 29歳 PM</p>
+        </div>
+        <span class="text-[11px] text-ink-soft font-bold">無料 →</span>
+      </a>
+
+      <a href="profile.html" class="flex items-center gap-3 bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm">
+        <div class="w-12 h-12 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0">HK</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-[13px] text-ink">HK さん</p>
+          <p class="text-[10px] text-ink-soft mt-0.5">TYO(商社) → SIN → SGN · 42歳 起業</p>
+        </div>
+        <span class="text-[11px] text-ink-soft font-bold">SGD 80 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="mt-10 mb-20 text-center">
+    <div class="display text-[10px] uppercase tracking-[0.32em] text-ink-faint">X Border Hub</div>
+    <div class="serif-it text-[14px] text-ink-soft mt-1">crossing borders, one career at a time.</div>
+  </section>
+
+</main>
+
+<!-- CONSULT FAB (sticky) -->
+<div class="fixed bottom-20 left-0 right-0 z-30 px-5 pointer-events-none">
+  <div class="container-narrow pointer-events-auto">
+    <div class="bg-ink text-cream rounded-2xl p-3 flex items-center justify-between gap-3 shadow-pop-blue">
+      <div>
+        <p class="text-[10px] uppercase tracking-wider text-mustard font-bold">☕ Coffee Chat</p>
+        <p class="display font-bold text-[15px] text-cream">SGD 30 · 20分</p>
+      </div>
+      <button class="px-5 py-2.5 bg-mustard text-ink rounded-full font-bold text-[13px]">
+        話を聞く →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+  <div class="container-narrow px-4 py-2 flex items-center justify-around">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">ホーム</span>
+    </a>
+    <a href="search.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L 9 6 L 9 9 L 15 9 L 15 6 L 21 12 L 15 18 L 15 15 L 9 15 L 9 18 Z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">フロー検索</span>
+    </a>
+    <button class="flex flex-col items-center justify-center -mt-6 w-14 h-14 bg-blue border-[1.5px] border-ink rounded-full text-cream shadow-pop-sm">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">スレッド</span>
+    </button>
+    <a href="profile.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink relative">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">自分</span>
+      <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue rounded-full"></span>
+    </a>
+  </div>
+</nav>
+
+</body>
+</html>

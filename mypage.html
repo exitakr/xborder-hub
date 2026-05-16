@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FFF6E8">
+<title>X Border Hub — マイページ</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="noise pb-24 lg:pb-0">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
+  <div class="container-app py-3.5 flex items-center justify-between">
+    <a href="home.html" class="flex items-center gap-2.5">
+      <div class="logo-mark">×</div>
+      <div>
+        <div class="display font-bold text-[15px] leading-none tracking-tight text-ink">X Border Hub</div>
+        <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">crossing borders</div>
+      </div>
+    </a>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">About</a>
+      <a href="home.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">ホーム</a>
+      <a href="search.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">フロー検索</a>
+      <a href="threads.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">スレッド</a>
+      <button onclick="logout()" class="text-[11px] font-bold text-ink-soft px-2 py-1.5">ログアウト</button>
+    </div>
+  </div>
+</header>
+
+<main class="container-app py-6 lg:py-10 relative z-10">
+
+  <div class="app-grid">
+    <!-- ============ MAIN ============ -->
+    <div class="app-grid-main space-y-8">
+
+      <!-- IDENTITY CARD -->
+      <section class="rise">
+        <div class="bg-paper border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop relative overflow-hidden">
+          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-blue opacity-15"></div>
+          <div class="absolute -bottom-12 -left-6 w-24 h-24 rounded-full bg-mustard opacity-20"></div>
+
+          <div class="relative">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-start gap-4">
+                <div class="relative flex-shrink-0">
+                  <div id="profile-avatar" class="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl bg-blue text-cream font-bold flex items-center justify-center text-2xl lg:text-3xl border-[1.5px] border-ink shadow-pop-sm display">YT</div>
+                </div>
+                <div>
+                  <h1 class="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight" id="display-name">YT さん</h1>
+                  <p class="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold" id="display-meta">34歳 · 在SG 3年目</p>
+                  <div class="flex items-center gap-2 mt-2 flex-wrap">
+                    <span class="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">⚡ 相談可</span>
+                    <span class="text-[10px] uppercase tracking-wider text-ink-faint font-bold">⭐ 4.9 · 23件</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="openEdit('identity')" class="text-[11px] font-bold text-blue underline-offset-2 underline whitespace-nowrap">編集</button>
+            </div>
+
+            <p class="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4" id="display-bio">
+              "日系大手から東南アジアのTech企業へ。<br>
+              言葉と文化の壁を、3年で乗り越えた話なら<br>
+              いつでもどうぞ。"
+            </p>
+
+            <div class="mt-5 pt-4 border-t border-dashed border-ink/25">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-[9px] uppercase tracking-wider text-ink-faint font-bold">🎯 次に目指す</p>
+                <button onclick="openEdit('goals')" class="text-[10px] text-blue font-bold">編集</button>
+              </div>
+              <div class="flex flex-wrap gap-1.5" id="display-goals">
+                <span class="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink">🇺🇸 US</span>
+                <span class="text-[11px] px-2 py-0.5 bg-mustard border border-ink rounded-full font-bold text-ink">🚀 Startup</span>
+                <span class="text-[11px] px-2 py-0.5 bg-jade border border-ink rounded-full font-bold text-ink">VP級</span>
+                <span class="text-[11px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">Tech</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COFFEE CHAT 履歴 -->
+      <section class="rise" style="animation-delay:0.08s">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base">☕</span>
+              <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">Coffee Chat 履歴</p>
+            </div>
+            <h2 class="display font-bold text-[22px] lg:text-[24px] mt-1 leading-tight text-ink">予約・申請</h2>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
+          <button data-cc-tab="sent" class="cc-tab active px-3 py-1.5 rounded-lg text-[11px] font-bold">📤 申請した</button>
+          <button data-cc-tab="received" class="cc-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">📥 受けた</button>
+        </div>
+
+        <div id="cc-sent" class="cc-list space-y-3">
+          <!-- 申請中 -->
+          <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-start justify-between mb-2 gap-3">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">RN</div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-[13px] text-ink truncate">RN さん</p>
+                  <p class="text-[10px] text-ink-soft">TYO(DeNA) → SIN(Grab)</p>
+                </div>
+              </div>
+              <span class="status-badge status-pending">申請中</span>
+            </div>
+            <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+              <span class="font-bold text-ink">相談内容:</span> SG現地Tech企業への転職活動の進め方について、面接対策と給与交渉のコツを伺いたいです。
+            </p>
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-ink/20">
+              <p class="text-[10px] text-ink-faint">申請日: 2026/05/12 · 無料</p>
+              <button class="text-[11px] text-ink-soft font-bold">取消</button>
+            </div>
+          </div>
+
+          <!-- 承認済 → トークルームあり -->
+          <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-start justify-between mb-2 gap-3">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">HK</div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-[13px] text-ink truncate">HK さん</p>
+                  <p class="text-[10px] text-ink-soft">TYO(商社)→SIN→SGN</p>
+                </div>
+              </div>
+              <span class="status-badge status-approved">✓ 承認</span>
+            </div>
+            <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+              <span class="font-bold text-ink">相談内容:</span> 商社からVN起業までの道のりと、家族同行の現実を聞きたい。
+            </p>
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-ink/20">
+              <p class="text-[10px] text-ink-faint">日程: 2026/05/18 14:00 · SGD 80</p>
+              <a href="chat.html?with=HK" class="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]">💬 トークルーム</a>
+            </div>
+          </div>
+
+          <!-- 完了 -->
+          <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm opacity-90">
+            <div class="flex items-start justify-between mb-2 gap-3">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">SK</div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-[13px] text-ink truncate">SK さん</p>
+                  <p class="text-[10px] text-ink-soft">OSA(P&G) → SIN(P&G APAC)</p>
+                </div>
+              </div>
+              <span class="status-badge status-completed">✓ 完了</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-ink/20">
+              <p class="text-[10px] text-ink-faint">2026/04/22 実施 · SGD 50</p>
+              <button class="text-[11px] text-blue font-bold">レビューする</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="cc-received" class="cc-list space-y-3 hidden">
+          <div class="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-start justify-between mb-2 gap-3">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="w-10 h-10 rounded-full bg-plum text-cream font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">TM</div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-[13px] text-ink truncate">TM さん</p>
+                  <p class="text-[10px] text-ink-soft">TYO → 検討中</p>
+                </div>
+              </div>
+              <span class="status-badge status-pending">未対応</span>
+            </div>
+            <p class="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+              <span class="font-bold text-ink">相談内容:</span> SGに行く前に、PMとして英語環境でやっていけるか不安です。準備しておくべきことを教えてください。
+            </p>
+            <div class="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
+              <button class="px-3 py-1.5 bg-cream border-[1.5px] border-ink text-ink rounded-full font-bold text-[10px]">却下</button>
+              <button class="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[10px]">✓ 承認</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAREER -->
+      <section class="rise" style="animation-delay:0.16s">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base">🌊</span>
+              <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">キャリアの川</p>
+            </div>
+            <h2 class="display font-bold text-[22px] lg:text-[24px] mt-1 leading-tight text-ink">歩んできた軌跡</h2>
+          </div>
+          <button onclick="openEdit('career')" class="text-[11px] font-bold text-blue">+ ステップ追加</button>
+        </div>
+
+        <div class="space-y-3" id="career-list">
+          <div class="pass p-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="display font-bold text-[16px] text-ink">Tokyo</span>
+                <span class="text-[11px] text-ink-soft font-bold">日本</span>
+              </div>
+              <span class="text-[10px] text-ink-faint font-bold">2014 - 2019</span>
+            </div>
+            <p class="font-bold text-[14px] text-ink">Sony</p>
+            <p class="text-[11px] text-ink-soft mt-0.5">Product Manager · 5年</p>
+            <button class="text-[10px] text-blue font-bold mt-2">編集</button>
+          </div>
+
+          <div class="pass p-4">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="display font-bold text-[16px] text-ink">Singapore</span>
+                <span class="text-[11px] text-ink-soft font-bold">駐在</span>
+              </div>
+              <span class="text-[10px] text-ink-faint font-bold">2019 - 2022</span>
+            </div>
+            <p class="font-bold text-[14px] text-ink">Sony Asia Pacific</p>
+            <p class="text-[11px] text-ink-soft mt-0.5">Regional PM · 3年</p>
+            <button class="text-[10px] text-blue font-bold mt-2">編集</button>
+          </div>
+
+          <div class="pass p-4 relative">
+            <div class="absolute -top-2 -right-2 bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border-[1.5px] border-ink uppercase tracking-widest shadow-pop-sm">現在</div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="display font-bold text-[16px] text-blue">Singapore</span>
+                <span class="text-[11px] text-ink-soft font-bold">現地</span>
+              </div>
+              <span class="text-[10px] text-ink-faint font-bold">2022 - 現在</span>
+            </div>
+            <p class="font-bold text-[14px] text-ink">Shopee</p>
+            <p class="text-[11px] text-ink-soft mt-0.5">Senior Product Manager · 2年</p>
+            <button class="text-[10px] text-blue font-bold mt-2">編集</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="rise" style="animation-delay:0.24s">
+        <h2 class="display font-bold text-[20px] lg:text-[22px] mt-1 leading-tight text-ink mb-4">⚙️ 設定</h2>
+        <div class="space-y-2">
+          <button class="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">✦</span>
+              <div class="text-left">
+                <p class="font-bold text-[13px] text-ink">プレミアム会員</p>
+                <p class="text-[11px] text-ink-soft" id="premium-status">未加入</p>
+              </div>
+            </div>
+            <a href="premium.html" class="text-[11px] text-blue font-bold">登録 →</a>
+          </button>
+          <button class="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🔔</span>
+              <div class="text-left">
+                <p class="font-bold text-[13px] text-ink">通知設定</p>
+                <p class="text-[11px] text-ink-soft">メール・プッシュ通知</p>
+              </div>
+            </div>
+            <span class="text-[11px] text-ink-soft">›</span>
+          </button>
+          <button class="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🔒</span>
+              <div class="text-left">
+                <p class="font-bold text-[13px] text-ink">プライバシー</p>
+                <p class="text-[11px] text-ink-soft">公開範囲・匿名設定</p>
+              </div>
+            </div>
+            <span class="text-[11px] text-ink-soft">›</span>
+          </button>
+          <button onclick="logout()" class="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🚪</span>
+              <div class="text-left">
+                <p class="font-bold text-[13px] text-ink">ログアウト</p>
+              </div>
+            </div>
+            <span class="text-[11px] text-ink-soft">›</span>
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ============ SIDE (Desktop only) ============ -->
+    <aside class="app-grid-side hidden lg:block">
+      <div class="side-nav-card">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">メニュー</p>
+        <nav class="space-y-1">
+          <a href="home.html" class="side-nav-link">🌏 ホーム</a>
+          <a href="search.html" class="side-nav-link">🔀 フロー検索</a>
+          <a href="threads.html" class="side-nav-link">💬 スレッド</a>
+          <a href="mypage.html" class="side-nav-link active">👤 マイページ</a>
+        </nav>
+      </div>
+
+      <div class="side-nav-card mt-4 bg-ink text-cream" style="background:#0A1F3D;">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-2">✦ Premium</p>
+        <p class="display font-bold text-[15px] leading-tight text-cream">給与データを<br>すべて見る</p>
+        <a href="premium.html" class="mt-3 block text-center py-2 bg-mustard text-ink rounded-full font-bold text-[11px]">無料トライアル →</a>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- EDIT MODAL -->
+<div id="modal-overlay" class="modal-overlay"></div>
+<div id="edit-sheet" class="modal-sheet">
+  <div class="px-5 pt-2">
+    <div class="w-10 h-1 bg-ink/20 rounded-full mx-auto mb-4"></div>
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="edit-title" class="display font-bold text-[20px] text-ink">プロフィール編集</h3>
+      <button onclick="closeEdit()" class="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div id="edit-body" class="pb-6 space-y-4">
+      <!-- dynamically filled -->
+    </div>
+
+    <button onclick="saveEdit()" class="btn-primary w-full mb-4">保存する</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+  <div class="container-app py-2 flex items-center justify-around">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">ホーム</span>
+    </a>
+    <a href="search.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L 9 6 L 9 9 L 15 9 L 15 6 L 21 12 L 15 18 L 15 15 L 9 15 L 9 18 Z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">検索</span>
+    </a>
+    <a href="threads.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">スレッド</span>
+    </a>
+    <a href="mypage.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink relative">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">自分</span>
+      <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue rounded-full"></span>
+    </a>
+  </div>
+</nav>
+
+<script>
+  // CC tabs
+  document.querySelectorAll('.cc-tab').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.cc-tab').forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('text-ink-soft');
+      });
+      b.classList.add('active');
+      b.classList.remove('text-ink-soft');
+      document.querySelectorAll('.cc-list').forEach(l => l.classList.add('hidden'));
+      document.getElementById('cc-' + b.dataset.ccTab).classList.remove('hidden');
+    });
+  });
+
+  // Edit modal
+  const overlay = document.getElementById('modal-overlay');
+  const sheet = document.getElementById('edit-sheet');
+
+  function openEdit(type) {
+    const body = document.getElementById('edit-body');
+    const title = document.getElementById('edit-title');
+
+    if (type === 'identity') {
+      title.textContent = '基本情報を編集';
+      body.innerHTML = `
+        <div>
+          <label class="label">表示名</label>
+          <input type="text" class="field" id="f-name" value="YT さん">
+        </div>
+        <div>
+          <label class="label">年齢</label>
+          <input type="number" class="field" id="f-age" value="34">
+        </div>
+        <div>
+          <label class="label">現在地</label>
+          <input type="text" class="field" id="f-location" value="Singapore">
+        </div>
+        <div>
+          <label class="label">滞在年数</label>
+          <input type="text" class="field" id="f-tenure" value="3年目">
+        </div>
+        <div>
+          <label class="label">自己紹介</label>
+          <textarea class="field" id="f-bio" rows="4">日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。</textarea>
+        </div>
+      `;
+    } else if (type === 'goals') {
+      title.textContent = '次に目指すゴールを編集';
+      body.innerHTML = `
+        <p class="text-[12px] text-ink-soft">カンマ区切りで入力(例: 🇺🇸 US, Startup, VP級)</p>
+        <input type="text" class="field" id="f-goals" value="🇺🇸 US, 🚀 Startup, VP級, Tech">
+      `;
+    } else if (type === 'career') {
+      title.textContent = 'キャリアステップを追加';
+      body.innerHTML = `
+        <div>
+          <label class="label">国・都市</label>
+          <input type="text" class="field" placeholder="例: Singapore">
+        </div>
+        <div>
+          <label class="label">会社</label>
+          <input type="text" class="field" placeholder="例: Shopee">
+        </div>
+        <div>
+          <label class="label">役職</label>
+          <input type="text" class="field" placeholder="例: Senior Product Manager">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label">開始年</label>
+            <input type="number" class="field" placeholder="2022">
+          </div>
+          <div>
+            <label class="label">終了年</label>
+            <input type="text" class="field" placeholder="現在">
+          </div>
+        </div>
+      `;
+    }
+
+    overlay.classList.add('open');
+    sheet.classList.add('open');
+  }
+
+  function closeEdit() {
+    overlay.classList.remove('open');
+    sheet.classList.remove('open');
+  }
+
+  function saveEdit() {
+    closeEdit();
+  }
+
+  overlay.addEventListener('click', closeEdit);
+
+  function logout() {
+    localStorage.removeItem('xbh_authed');
+    localStorage.removeItem('xbh_premium');
+    window.location.href = 'index.html';
+  }
+
+  // Tab activation
+  const styleTab = document.createElement('style');
+  styleTab.textContent = `.cc-tab.active { background: #0A1F3D; color: #FFF6E8 !important; }`;
+  document.head.appendChild(styleTab);
+
+  // Premium status check
+  if (localStorage.getItem('xbh_premium') === '1') {
+    document.getElementById('premium-status').textContent = '✦ 加入中';
+  }
+</script>
+
+</body>
+</html>

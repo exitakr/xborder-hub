@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FFF6E8">
+<title>X Border Hub — トークルーム</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+
+<style>
+  .chat-shell {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 64px);
+  }
+  @media (min-width: 1024px) {
+    .chat-shell { height: calc(100dvh - 80px); }
+  }
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chat-row { display: flex; }
+  .chat-row.me { justify-content: flex-end; }
+  .chat-row.other { justify-content: flex-start; gap: 8px; }
+  .chat-input-row {
+    border-top: 1.5px solid #0A1F3D;
+    padding: 14px 16px;
+    background: #FFF6E8;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: #FBF0DD;
+    border: 1.5px solid #0A1F3D;
+    border-radius: 18px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0A1F3D;
+    resize: none;
+    max-height: 100px;
+    outline: none;
+  }
+  .chat-input:focus { box-shadow: 2px 2px 0 #0055A4; }
+  .chat-send {
+    width: 44px; height: 44px;
+    background: #0A1F3D; color: #FFF6E8;
+    border: 1.5px solid #0A1F3D; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 2px 2px 0 #0055A4;
+    cursor: pointer;
+  }
+  .day-divider {
+    align-self: center;
+    background: #FBF0DD;
+    border: 1px solid rgba(10,31,61,0.2);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #7C8597;
+    margin: 8px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-cream/95 backdrop-blur-md border-b-[1.5px] border-ink">
+  <div class="container-app py-2.5 flex items-center justify-between gap-3">
+    <a href="mypage.html" class="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <div class="flex items-center gap-2.5 flex-1 min-w-0">
+      <div class="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0">HK</div>
+      <div class="min-w-0">
+        <div class="display font-bold text-[14px] tracking-tight text-ink truncate">HK さん</div>
+        <div class="text-[10px] text-ink-soft truncate">TYO→SIN→SGN · 起業家</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span class="status-badge status-approved">✓ 承認</span>
+    </div>
+  </div>
+</header>
+
+<main class="container-app">
+  <div class="chat-shell">
+
+    <!-- 予約情報バナー -->
+    <div class="bg-paper border-b border-ink/20 px-4 py-2.5 flex items-center justify-between text-[11px]">
+      <div class="flex items-center gap-1.5 text-ink-soft font-bold">
+        <span>📅</span>
+        <span>2026/05/18 14:00 · SGD 80 · 30min</span>
+      </div>
+      <button class="text-blue font-bold">詳細</button>
+    </div>
+
+    <!-- Chat area -->
+    <div class="chat-area" id="chat-area">
+      <div class="day-divider">2026年5月13日</div>
+
+      <div class="chat-row other">
+        <div class="w-7 h-7 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[10px] border-[1.5px] border-ink flex-shrink-0">HK</div>
+        <div class="chat-bubble chat-other">
+          こんにちは!Coffee Chatのご申請ありがとうございます ☕
+        </div>
+      </div>
+
+      <div class="chat-row other">
+        <div class="w-7 h-7 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[10px] border-[1.5px] border-ink flex-shrink-0">HK</div>
+        <div class="chat-bubble chat-other">
+          商社からVN起業までの道のり、家族同行の現実、何でも聞いてください。事前に聞きたいトピックを共有いただけると、当日の時間を有効に使えると思います!
+        </div>
+      </div>
+
+      <div class="chat-row me">
+        <div class="chat-bubble chat-me">
+          ご連絡ありがとうございます!特に気になっているのは、起業初期の資金繰りと、家族(妻+子2人)を連れての生活立ち上げです。
+        </div>
+      </div>
+
+      <div class="chat-row me">
+        <div class="chat-bubble chat-me">
+          当日はZoomでお願いできますか?
+        </div>
+      </div>
+
+      <div class="chat-row other">
+        <div class="w-7 h-7 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[10px] border-[1.5px] border-ink flex-shrink-0">HK</div>
+        <div class="chat-bubble chat-other">
+          もちろん!当日 14:00 にZoomリンクをこちらにお送りします。事前にこちらの記事(過去の起業体験談)に目を通しておくと話がスムーズかもしれません 🚀
+        </div>
+      </div>
+
+      <div class="day-divider">2026年5月16日</div>
+
+      <div class="chat-row me">
+        <div class="chat-bubble chat-me">
+          記事拝読しました!特に "現地パートナー探しの3つの基準" が刺さりました。当日深く聞かせてください。
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-row">
+      <textarea id="chat-input" class="chat-input" rows="1" placeholder="メッセージを入力..."></textarea>
+      <button id="chat-send" class="chat-send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </div>
+  </div>
+</main>
+
+<script>
+  const area = document.getElementById('chat-area');
+  const input = document.getElementById('chat-input');
+  const send = document.getElementById('chat-send');
+
+  function scrollBottom() {
+    area.scrollTop = area.scrollHeight;
+  }
+  scrollBottom();
+
+  function sendMsg() {
+    const text = input.value.trim();
+    if (!text) return;
+    const row = document.createElement('div');
+    row.className = 'chat-row me';
+    row.innerHTML = `<div class="chat-bubble chat-me">${text.replace(/</g, '&lt;')}</div>`;
+    area.appendChild(row);
+    input.value = '';
+    input.style.height = 'auto';
+    scrollBottom();
+  }
+
+  send.addEventListener('click', sendMsg);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMsg();
+    }
+  });
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+  });
+</script>
+
+</body>
+</html>

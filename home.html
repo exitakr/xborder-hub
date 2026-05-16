@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja" style="color-scheme: light;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#FFF6E8">
+<title>X Border Hub — 今、誰がどこで活躍している?</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="noise pb-24 lg:pb-0">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
+  <div class="container-app py-3.5 flex items-center justify-between">
+    <a href="home.html" class="flex items-center gap-2.5">
+      <div class="logo-mark">×</div>
+      <div>
+        <div class="display font-bold text-[15px] leading-none tracking-tight text-ink">X Border Hub</div>
+        <div class="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">crossing borders</div>
+      </div>
+    </a>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">About</a>
+      <a href="home.html" class="hidden lg:inline text-[12px] font-bold text-blue px-3 py-2">ホーム</a>
+      <a href="search.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">フロー検索</a>
+      <a href="threads.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">スレッド</a>
+      <a href="mypage.html" class="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink">YT</a>
+    </div>
+  </div>
+</header>
+
+<main class="container-app py-6 lg:py-10 relative z-10">
+
+  <div class="app-grid">
+    <!-- MAIN -->
+    <div class="app-grid-main">
+
+      <!-- Hero -->
+      <section class="mb-6 rise">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-base">🌏</span>
+          <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">migration map · live</p>
+        </div>
+        <h1 class="display font-bold text-[24px] sm:text-[28px] lg:text-[34px] leading-[1.15] tracking-tight text-ink">
+          今、誰がどこで<br class="sm:hidden">
+          <span class="serif-it text-[28px] sm:text-[32px] lg:text-[40px] u-blue">活躍している?</span>
+        </h1>
+        <p class="text-[12px] lg:text-[13px] text-ink-soft mt-3 leading-relaxed">
+          先週、<span class="font-bold text-ink" id="week-total">234</span>人が新しい街で一歩を踏み出した。
+        </p>
+      </section>
+
+      <!-- Region tabs -->
+      <section class="mb-5 rise" style="animation-delay:0.06s">
+        <div class="flex gap-2 overflow-x-auto hide-scroll pb-1">
+          <button data-region="asia" class="region-btn active flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🌏 アジア</button>
+          <button data-region="japan" class="region-btn flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🇯🇵 日本</button>
+          <button data-region="namerica" class="region-btn flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🗽 北米</button>
+          <button data-region="europe" class="region-btn flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🏰 ヨーロッパ</button>
+          <button data-region="oceania" class="region-btn flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🏝 オセアニア</button>
+          <button data-region="africa" class="region-btn flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm text-ink whitespace-nowrap">🦓 アフリカ</button>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="mb-8 rise" style="animation-delay:0.12s">
+        <div class="map-card-desktop bg-paper border-[1.5px] border-ink rounded-3xl p-4 lg:p-5 shadow-pop relative overflow-hidden">
+          <!-- corner stamps -->
+          <div class="absolute top-3 left-3 text-[8px] text-ink-faint font-bold uppercase tracking-widest">N ↑</div>
+          <div class="absolute top-3 right-3 stamp">
+            <div class="bg-blue text-cream text-[8px] font-bold px-1.5 py-0.5 rounded border border-ink uppercase tracking-widest">LIVE</div>
+          </div>
+
+          <!-- Region label -->
+          <div class="flex items-center justify-between mb-3 mt-4">
+            <p class="display font-bold text-[14px] text-ink tracking-tight" id="region-label">ASIA-PAC</p>
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-blue pulse-soft"></div>
+              <span class="text-[10px] font-bold text-ink-soft uppercase tracking-wider">+<span id="week-num">234</span> 今週</span>
+            </div>
+          </div>
+
+          <!-- SVG MAP container -->
+          <div class="bg-cream border border-ink/15 rounded-2xl p-2 mb-3" style="aspect-ratio: 360/280;">
+            <svg id="migration-map" viewBox="0 0 360 280" preserveAspectRatio="xMidYMid meet" class="w-full h-full"></svg>
+          </div>
+
+          <!-- Legend / Top routes -->
+          <div class="border-t border-dashed border-ink/25 pt-3">
+            <p class="text-[9px] uppercase tracking-[0.22em] text-ink-faint font-bold mb-2">今週のTOP移動</p>
+            <div class="space-y-1.5" id="top-flows">
+              <!-- filled by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trending -->
+      <section class="mb-8 rise" style="animation-delay:0.18s">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base">📈</span>
+              <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">今週のトレンド</p>
+            </div>
+            <h2 class="display font-bold text-[22px] lg:text-[26px] mt-1 leading-tight text-ink">伸びている経路</h2>
+          </div>
+        </div>
+
+        <div class="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
+          <button data-trend="country" class="trend-tab active px-3 py-1.5 rounded-lg text-[11px] font-bold">🌏 国</button>
+          <button data-trend="industry" class="trend-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">💼 業界</button>
+          <button data-trend="role" class="trend-tab px-3 py-1.5 rounded-lg text-[11px] font-bold text-ink-soft">👔 職種</button>
+        </div>
+
+        <div class="space-y-2" id="trend-list"></div>
+      </section>
+
+      <!-- Recent careers -->
+      <section class="mb-8 rise" style="animation-delay:0.24s">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base">✦</span>
+              <p class="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">新着キャリア</p>
+            </div>
+            <h2 class="display font-bold text-[22px] lg:text-[26px] mt-1 leading-tight text-ink">最近の道</h2>
+          </div>
+          <a href="search.html" class="text-[11px] font-bold text-blue underline-offset-2 underline">すべて見る</a>
+        </div>
+
+        <div class="space-y-3">
+          <a href="profile.html" class="block pass p-4">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-xs border-[1.5px] border-ink shadow-pop-sm">YT</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-[13px] text-ink truncate">YT さん</p>
+                <p class="text-[10px] text-ink-soft">34歳 · PM · 在SG 3年目</p>
+              </div>
+              <span class="text-[9px] uppercase tracking-wider bg-jade/20 text-jade-deep px-1.5 py-0.5 rounded border border-jade font-bold">⚡ 相談可</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] mt-2">
+              <span class="font-bold text-ink">Tokyo</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0055A4" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <span class="font-bold text-blue">Singapore</span>
+              <span class="text-ink-faint">· Sony→Shopee</span>
+            </div>
+          </a>
+
+          <a href="profile.html" class="block pass p-4">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink shadow-pop-sm">RN</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-[13px] text-ink truncate">RN さん</p>
+                <p class="text-[10px] text-ink-soft">31歳 · Engineer · 在SG 1年目</p>
+              </div>
+              <span class="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-1.5 py-0.5 rounded border border-blue/30 font-bold">NEW</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] mt-2">
+              <span class="font-bold text-ink">Tokyo</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0055A4" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <span class="font-bold text-blue">Singapore</span>
+              <span class="text-ink-faint">· DeNA→Grab</span>
+            </div>
+          </a>
+
+          <a href="profile.html" class="block pass p-4">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink shadow-pop-sm">HK</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-[13px] text-ink truncate">HK さん</p>
+                <p class="text-[10px] text-ink-soft">42歳 · 起業家 · 在SGN 4年目</p>
+              </div>
+              <span class="text-[9px] uppercase tracking-wider bg-mustard/30 text-ink px-1.5 py-0.5 rounded border border-mustard font-bold">⭐ 4.9</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] mt-2 flex-wrap">
+              <span class="font-bold text-ink">Tokyo</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0055A4" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <span class="font-bold text-ink">Singapore</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0055A4" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              <span class="font-bold text-blue">Ho Chi Minh</span>
+            </div>
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- SIDE -->
+    <aside class="app-grid-side hidden lg:block">
+      <div class="side-nav-card">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">メニュー</p>
+        <nav class="space-y-1">
+          <a href="home.html" class="side-nav-link active">🌏 ホーム</a>
+          <a href="search.html" class="side-nav-link">🔀 フロー検索</a>
+          <a href="threads.html" class="side-nav-link">💬 スレッド</a>
+          <a href="mypage.html" class="side-nav-link">👤 マイページ</a>
+        </nav>
+      </div>
+
+      <div class="side-nav-card mt-4">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-blue font-bold mb-2">今週のトレンド</p>
+        <div class="space-y-2">
+          <div class="text-[12px]">
+            <p class="font-bold text-ink flex items-center justify-between">Tokyo → Singapore <span class="text-jade-deep">+12</span></p>
+          </div>
+          <div class="text-[12px]">
+            <p class="font-bold text-ink flex items-center justify-between">Singapore → Bangkok <span class="text-jade-deep">+8</span></p>
+          </div>
+          <div class="text-[12px]">
+            <p class="font-bold text-ink flex items-center justify-between">Tokyo → SF <span class="text-jade-deep">+7</span></p>
+          </div>
+        </div>
+        <a href="search.html" class="mt-3 block text-center py-2 bg-ink text-cream rounded-full font-bold text-[11px]">フローで探す →</a>
+      </div>
+
+      <div class="side-nav-card mt-4 bg-ink text-cream" style="background:#0A1F3D;">
+        <p class="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-2">✦ Premium</p>
+        <p class="display font-bold text-[15px] leading-tight text-cream">給与の本当の数字を<br>見る</p>
+        <a href="premium.html" class="mt-3 block text-center py-2 bg-mustard text-ink rounded-full font-bold text-[11px]">無料トライアル →</a>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- BOTTOM NAV (mobile, 4 tabs, no + center) -->
+<nav class="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+  <div class="container-app py-2 flex items-center justify-around">
+    <a href="home.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink relative">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">ホーム</span>
+      <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue rounded-full"></span>
+    </a>
+    <a href="search.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L 9 6 L 9 9 L 15 9 L 15 6 L 21 12 L 15 18 L 15 15 L 9 15 L 9 18 Z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">検索</span>
+    </a>
+    <a href="threads.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">スレッド</span>
+    </a>
+    <a href="mypage.html" class="flex flex-col items-center gap-0.5 py-1.5 px-2 text-ink-soft">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></svg>
+      <span class="text-[9px] font-bold uppercase tracking-wider">自分</span>
+    </a>
+  </div>
+</nav>
+
+<script src="map-data.js"></script>
+<script src="home.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "X Border Hub",
+  "short_name": "X Border Hub",
+  "description": "海外で働く前に、答え合わせができる場所。先に行った人が、道を残す。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF6E8",
+  "theme_color": "#FFF6E8",
+  "lang": "ja",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
