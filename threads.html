@@ -16,6 +16,37 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="styles.css">
+
+<style>
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: 90px;
+    z-index: 35;
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: #0055A4;
+    color: #FFF6E8;
+    border: 1.5px solid #0A1F3D;
+    box-shadow: 4px 4px 0 #0A1F3D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .fab:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 #0A1F3D;
+  }
+  .fab:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #0A1F3D;
+  }
+  @media (min-width: 1024px) {
+    .fab { bottom: 32px; right: 32px; width: 64px; height: 64px; }
+  }
+</style>
 </head>
 <body class="noise pb-24 lg:pb-0">
 
@@ -34,7 +65,7 @@
       <a href="home.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">ホーム</a>
       <a href="search.html" class="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2">フロー検索</a>
       <a href="threads.html" class="hidden lg:inline text-[12px] font-bold text-blue px-3 py-2">スレッド</a>
-      <a href="mypage.html" class="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink">あ</a>
+      <a href="mypage.html" class="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink">YT</a>
     </div>
   </div>
 </header>
@@ -42,7 +73,6 @@
 <main class="container-app py-6 lg:py-10 relative z-10">
 
   <div class="app-grid">
-    <!-- MAIN -->
     <div class="app-grid-main">
 
       <!-- Hero -->
@@ -55,10 +85,6 @@
           <h1 class="display font-bold text-[26px] lg:text-[32px] leading-[1.15] tracking-tight text-ink">
             みんなの<span class="serif-it text-[30px] lg:text-[36px] u-blue">スレッド</span>
           </h1>
-          <button id="open-compose" class="btn-primary text-[13px] py-2.5 px-5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
-            投稿する
-          </button>
         </div>
       </section>
 
@@ -214,84 +240,13 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
       </button>
     </div>
-
-    <!-- SIDE -->
-    <aside class="app-grid-side hidden lg:block">
-      <div class="side-nav-card">
-        <p class="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">メニュー</p>
-        <nav class="space-y-1">
-          <a href="home.html" class="side-nav-link">🌏 ホーム</a>
-          <a href="search.html" class="side-nav-link">🔀 フロー検索</a>
-          <a href="threads.html" class="side-nav-link active">💬 スレッド</a>
-          <a href="mypage.html" class="side-nav-link">👤 マイページ</a>
-        </nav>
-      </div>
-
-      <div class="side-nav-card mt-4">
-        <p class="text-[10px] uppercase tracking-[0.24em] text-blue font-bold mb-2">今週のトレンド</p>
-        <div class="space-y-2">
-          <div class="text-[12px]">
-            <p class="font-bold text-ink">#SG面接対策</p>
-            <p class="text-[10px] text-ink-faint">23件の投稿</p>
-          </div>
-          <div class="text-[12px]">
-            <p class="font-bold text-ink">#インターナショナルスクール</p>
-            <p class="text-[10px] text-ink-faint">18件の投稿</p>
-          </div>
-          <div class="text-[12px]">
-            <p class="font-bold text-ink">#給与交渉</p>
-            <p class="text-[10px] text-ink-faint">14件の投稿</p>
-          </div>
-        </div>
-      </div>
-    </aside>
   </div>
 </main>
 
-<!-- COMPOSE MODAL -->
-<div id="modal-overlay" class="modal-overlay"></div>
-<div id="compose-sheet" class="modal-sheet">
-  <div class="px-5 pt-2">
-    <div class="w-10 h-1 bg-ink/20 rounded-full mx-auto mb-4"></div>
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="display font-bold text-[20px] text-ink">新しいスレッド</h3>
-      <button id="close-compose" class="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-
-    <div class="space-y-4 pb-6">
-      <div>
-        <label class="label">カテゴリ</label>
-        <div class="flex flex-wrap gap-1.5">
-          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">💼 キャリア</button>
-          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">🏠 生活</button>
-          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">🛂 ビザ</button>
-          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">💰 給与</button>
-          <button class="cat-pick flex-none px-3 py-1.5 bg-cream border-[1.5px] border-ink rounded-full text-[11px] font-bold text-ink">👨‍👩‍👧 家族</button>
-        </div>
-      </div>
-      <div>
-        <label class="label">タイトル</label>
-        <input type="text" class="field" placeholder="例: SG現地Tech企業の面接、日本語訛りでも大丈夫?" maxlength="80">
-      </div>
-      <div>
-        <label class="label">内容</label>
-        <textarea class="field" rows="6" placeholder="状況、聞きたいこと、相談したいことを自由に書いてください。匿名で投稿されます。" maxlength="2000"></textarea>
-      </div>
-      <div class="bg-paper border-[1.5px] border-ink rounded-xl p-3 text-[11px] text-ink-soft">
-        <p class="font-bold text-ink mb-1">📌 投稿のヒント</p>
-        <ul class="space-y-0.5 pl-3 list-disc">
-          <li>個人情報・会社の機密は書かない</li>
-          <li>具体的な状況を書くと回答が集まりやすい</li>
-          <li>誹謗中傷は禁止です</li>
-        </ul>
-      </div>
-    </div>
-
-    <button class="btn-primary w-full mb-4">投稿する</button>
-  </div>
-</div>
+<!-- FLOATING + BUTTON (FAB) -->
+<a href="thread-new.html" class="fab" aria-label="新しいスレッドを投稿">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</a>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
@@ -317,35 +272,6 @@
 </nav>
 
 <script>
-  const overlay = document.getElementById('modal-overlay');
-  const sheet = document.getElementById('compose-sheet');
-
-  document.getElementById('open-compose').addEventListener('click', () => {
-    overlay.classList.add('open');
-    sheet.classList.add('open');
-  });
-  document.getElementById('close-compose').addEventListener('click', closeCompose);
-  overlay.addEventListener('click', closeCompose);
-  function closeCompose() {
-    overlay.classList.remove('open');
-    sheet.classList.remove('open');
-  }
-
-  // category pick
-  let pickedCat = null;
-  document.querySelectorAll('.cat-pick').forEach(b => {
-    b.addEventListener('click', () => {
-      if (pickedCat) {
-        pickedCat.style.background = '';
-        pickedCat.style.color = '';
-      }
-      b.style.background = '#0A1F3D';
-      b.style.color = '#FFF6E8';
-      pickedCat = b;
-    });
-  });
-
-  // Filter tags
   document.querySelectorAll('.thr-tag').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.thr-tag').forEach(t => {
@@ -358,13 +284,12 @@
       b.style.color = '#FFF6E8';
     });
   });
-
-  // initial active
   const firstTag = document.querySelector('.thr-tag.active');
-  firstTag.style.background = '#0A1F3D';
-  firstTag.style.color = '#FFF6E8';
+  if (firstTag) {
+    firstTag.style.background = '#0A1F3D';
+    firstTag.style.color = '#FFF6E8';
+  }
 
-  // Vote
   document.querySelectorAll('.vote-btn').forEach(b => {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -377,7 +302,6 @@
     window.location.href = `thread.html?id=${id}`;
   }
 
-  // sort tabs
   document.querySelectorAll('.sort-tab').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.sort-tab').forEach(t => {
