@@ -15,8 +15,10 @@ const config: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   async rewrites() {
+    // `/` and `/404` are served by app/page.tsx and app/not-found.tsx.
+    // Remaining legacy HTML routes are exposed under clean URLs until each
+    // page is migrated to an App Router route.
     return [
-      { source: "/", destination: "/index.html" },
       { source: "/home", destination: "/home.html" },
       { source: "/search", destination: "/search.html" },
       { source: "/profile", destination: "/profile.html" },

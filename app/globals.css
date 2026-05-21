@@ -3,7 +3,32 @@
 @tailwind utilities;
 
 /*
- * Application-wide styles live in /public/styles.css and are loaded by each
- * legacy HTML page directly. New React routes can import shared tokens via
- * Tailwind utilities defined in tailwind.config.ts.
+ * Application-wide styles live in /public/styles.css and are loaded via a
+ * <link> tag in app/layout.tsx so that both legacy HTML pages and new React
+ * routes share the same design tokens, animations, and component classes.
+ *
+ * Tailwind utilities defined in tailwind.config.ts are the primary mechanism
+ * for new components. Page-specific styles that are too small to deserve
+ * their own CSS module live below.
  */
+
+/* ===== Landing (/) ===== */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.2;
+  filter: blur(40px);
+}
+.fear-card {
+  transition: transform 0.2s;
+}
+.fear-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #0a1f3d;
+}

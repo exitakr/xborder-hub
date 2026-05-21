@@ -37,6 +37,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const GOOGLE_FONTS =
+  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap";
+
 export default function RootLayout({
   children,
 }: {
@@ -44,7 +47,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" style={{ colorScheme: "light" }}>
-      <body>{children}</body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link href={GOOGLE_FONTS} rel="stylesheet" />
+        <link rel="stylesheet" href="/styles.css" />
+      </head>
+      <body className="noise">{children}</body>
     </html>
   );
 }
