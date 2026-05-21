@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Application-wide styles live in /public/styles.css and are loaded by each
+ * legacy HTML page directly. New React routes can import shared tokens via
+ * Tailwind utilities defined in tailwind.config.ts.
+ */

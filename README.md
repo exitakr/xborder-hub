@@ -7,60 +7,80 @@
 
 ```
 /
-├── index.html         # ランディング/サービス概要(エントリーポイント)
-├── home.html          # アプリホーム(移動地図 + トレンド + 新着フィード)
-├── search.html        # フロー検索(A→B の経路で人を探す)
-├── profile.html       # プロフィール詳細(YT さんサンプル)
-├── 404.html           # 404 ページ
-│
-├── styles.css         # 共通スタイル(色トークン・アニメーション・コンポーネント)
-├── home.js            # ホーム: 地図描画 + トレンド切り替え
-├── search.js          # 検索: フィルタモーダル + 結果計算
-├── map-data.js        # 共有: 都市・移動データ + トレンドデータ
-│
-├── favicon.svg        # X マーク + マスタードドット
-├── manifest.json      # PWA マニフェスト
-├── robots.txt         # SEO
-└── sitemap.xml        # SEO
+├── app/                      # Next.js App Router(新規ページはここに追加)
+│   ├── layout.tsx            # ルートレイアウト(メタデータ・フォント設定)
+│   ├── page.tsx              # / → /index.html へリダイレクト
+│   ├── not-found.tsx         # / → /404.html へリダイレクト
+│   └── globals.css           # Tailwind エントリ
+├── lib/
+│   └── supabase/
+│       ├── client.ts         # ブラウザ用 Supabase クライアント
+│       └── server.ts         # サーバー用 Supabase クライアント
+├── public/                   # 静的ファイル(従来のサイト一式)
+│   ├── index.html            # ランディング
+│   ├── home.html             # アプリホーム
+│   ├── search.html           # フロー検索
+│   ├── profile.html          # プロフィール詳細
+│   ├── mypage.html           # マイページ
+│   ├── premium.html          # プレミアム案内
+│   ├── login.html            # ログイン(現状はダミー)
+│   ├── chat.html             # チャット
+│   ├── threads.html          # スレッド一覧
+│   ├── thread.html           # スレッド詳細
+│   ├── thread-new.html       # スレッド新規作成
+│   ├── 404.html              # 404
+│   ├── styles.css            # 共通スタイル
+│   ├── home.js               # ホーム: 地図 + トレンド
+│   ├── search.js             # 検索: フィルタ + 結果計算
+│   ├── map-data.js           # 都市・移動・トレンドデータ
+│   ├── favicon.svg
+│   ├── manifest.json
+│   ├── robots.txt
+│   └── sitemap.xml
+├── next.config.ts            # /home → /home.html などのリライト + セキュリティヘッダ
+├── tailwind.config.ts        # カラートークン
+├── tsconfig.json
+└── .env.example              # Supabase の環境変数テンプレート
 ```
 
-## 公開方法
+## アーキテクチャ
 
-### 静的ホスティング (推奨)
+現在は **Next.js シェル + 既存の静的 HTML を `public/` から配信** するハイブリッド構成です。
+段階的に各 HTML を `app/` 配下の TSX へ移植しつつ、Supabase Auth/DB を追加していきます。
 
-任意の静的ホスティングサービスに、上記ファイル一式をアップロードするだけです。
-バックエンド不要。すべてクライアントサイドで動作します。
+- `/` は `public/index.html` を表示
+- `/home`、`/search` などのクリーン URL は `next.config.ts` のリライトで `*.html` に解決
+- 直リンク `/home.html` も従来通り動作
 
-**Vercel** (最も簡単):
+## セットアップ
+
+```bash
+# 依存関係をインストール
+npm install
+
+# 環境変数を用意(Supabase プロジェクトを作成して値を入れる)
+cp .env.example .env.local
+
+# 開発サーバー
+npm run dev          # http://localhost:3000
+
+# 型チェック
+npm run typecheck
+
+# 本番ビルド
+npm run build && npm start
+```
+
+## デプロイ
+
+`next.config.ts` を持つ Next.js プロジェクトとしてデプロイします。
+
+**Vercel** (推奨):
 ```bash
 npx vercel deploy --prod
 ```
 
-**Netlify**:
-```bash
-npx netlify deploy --prod --dir=.
-```
-
-**Cloudflare Pages**:
-```bash
-npx wrangler pages deploy . --project-name=x-border-hub
-```
-
-**GitHub Pages**: ファイルを `main` ブランチに push し、Settings → Pages で有効化。
-
-### ローカル確認
-
-```bash
-# Python
-python3 -m http.server 8000
-
-# Node.js
-npx serve
-
-# 任意のサーバー
-```
-
-ブラウザで `http://localhost:8000` を開く。
+Vercel ダッシュボードで `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY` を設定してください。
 
 ## 設計仕様
 
@@ -93,28 +113,22 @@ npx serve
 ## カスタマイズ
 
 ### コンテンツ更新
-- ビジョン/メッセージ: `index.html` の各セクション
-- 地図データ: `map-data.js` の `regions` オブジェクト
-- トレンドデータ: `map-data.js` の `trends` オブジェクト
-- 検索の選択肢: `search.js` の `options` オブジェクト
+- ビジョン/メッセージ: `public/index.html` の各セクション
+- 地図データ: `public/map-data.js` の `regions` オブジェクト
+- トレンドデータ: `public/map-data.js` の `trends` オブジェクト
+- 検索の選択肢: `public/search.js` の `options` オブジェクト
 
 ### カラー変更
-`styles.css` の色トークンと、各 HTML 内の `tailwind.config` を一括変更。
+`public/styles.css` の色トークンと `tailwind.config.ts` を揃えて変更。
 
-## 既知の制限事項
+## ロードマップ
 
-このバージョンはフロントエンドのみのデモです:
-- 認証・ユーザー登録は未実装(ボタンのみ)
-- データはハードコード
-- 投稿・相談予約機能は未実装
-
-本番運用には以下が追加で必要:
-- 認証 (Supabase Auth 等)
-- データベース (Supabase / Firebase 等)
-- 決済 (Stripe Connect)
-- メール送信 (Resend)
-- 多言語化 (DeepL API)
-- 利用規約・プライバシーポリシー・PDPA 対応
+- [x] **Phase 1**: Next.js 足場 + 既存 HTML を `public/` から配信(現在地)
+- [ ] **Phase 2**: 各 HTML を App Router の TSX に段階移植・共通レイアウト抽出
+- [ ] **Phase 3**: Supabase Auth でログイン/サインアップを実装、middleware でセッション保護
+- [ ] **Phase 4**: DB スキーマ(`profiles` / `cities` / `moves` / `threads` / `messages`)+ RLS、ハードコードを Supabase クエリに置換
+- [ ] **Phase 5**: CSP/セキュリティヘッダ強化、依存脆弱性 CI、入力サニタイズ
+- [ ] **Phase 6**: 決済(Stripe Connect)、メール(Resend)、多言語(DeepL)、利用規約・プライバシー・PDPA
 
 ## ライセンス
 
