@@ -2,9 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { LogoMark } from "@/components/site/LogoMark";
+import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
-import { SideNavMenu } from "@/components/site/SideNavMenu";
 import { signOut } from "@/app/login/actions";
 
 type EditType = "identity" | "goals" | "career";
@@ -62,57 +61,9 @@ export function MyPageClient() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
-        <div className="container-app py-3.5 flex items-center justify-between">
-          <Link href="/home" className="flex items-center gap-2.5">
-            <LogoMark />
-            <div>
-              <div className="display font-bold text-[15px] leading-none tracking-tight text-ink">
-                X Border Hub
-              </div>
-              <div className="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">
-                crossing borders
-              </div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              About
-            </Link>
-            <Link
-              href="/home"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              ホーム
-            </Link>
-            <Link
-              href="/search"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              フロー検索
-            </Link>
-            <Link
-              href="/threads"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              スレッド
-            </Link>
-            <button
-              type="button"
-              onClick={logout}
-              disabled={signingOut}
-              className="text-[11px] font-bold text-ink-soft px-2 py-1.5 disabled:opacity-50"
-            >
-              {signingOut ? "ログアウト中…" : "ログアウト"}
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppTopBar />
 
-      <main className="container-app py-6 lg:py-10 relative z-10 pb-24 lg:pb-10">
+      <main className="container-app py-5 lg:py-6 relative z-10 pb-24 lg:pb-6">
         <div className="app-grid">
           {/* MAIN */}
           <div className="app-grid-main space-y-8">
@@ -520,18 +471,15 @@ export function MyPageClient() {
 
           {/* SIDE */}
           <aside className="app-grid-side hidden lg:block">
-            <SideNavMenu active="mypage" />
             <div
-              className="side-nav-card mt-4 bg-ink text-cream"
+              className="side-nav-card bg-ink text-cream"
               style={{ background: "#0A1F3D" }}
             >
               <p className="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-2">
                 ✦ Premium
               </p>
               <p className="display font-bold text-[15px] leading-tight text-cream">
-                給与データを
-                <br />
-                すべて見る
+                給与データをすべて見る
               </p>
               <Link
                 href="/premium"
@@ -703,7 +651,7 @@ export function MyPageClient() {
         </div>
       </div>
 
-      <BottomNavMobile active="mypage" />
+      <BottomNavMobile />
     </>
   );
 }

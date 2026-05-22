@@ -12,7 +12,7 @@ export function LandingFooter() {
               X Border Hub
             </div>
             <div className="text-[9px] uppercase tracking-[0.22em] text-ink-faint">
-              crossing borders
+              Global Career Path
             </div>
           </div>
         </div>

@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { LogoMark } from "@/components/site/LogoMark";
+import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
-import { SideNavMenu } from "@/components/site/SideNavMenu";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
 const FROM_OPTIONS = [
@@ -132,78 +131,20 @@ export function SearchClient() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
-        <div className="container-app py-3.5 flex items-center justify-between">
-          <Link href="/home" className="flex items-center gap-2.5">
-            <LogoMark />
-            <div>
-              <div className="display font-bold text-[15px] leading-none tracking-tight text-ink">
-                X Border Hub
-              </div>
-              <div className="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">
-                crossing borders
-              </div>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              About
-            </Link>
-            <Link
-              href="/home"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              ホーム
-            </Link>
-            <Link
-              href="/search"
-              className="hidden lg:inline text-[12px] font-bold text-blue px-3 py-2"
-            >
-              フロー検索
-            </Link>
-            <Link
-              href="/threads"
-              className="hidden lg:inline text-[12px] font-bold text-ink-soft px-3 py-2"
-            >
-              スレッド
-            </Link>
-            <Link
-              href="/mypage"
-              className="w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-sm font-bold shadow-pop-sm text-ink"
-            >
-              YT
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AppTopBar active="search" />
 
-      <main className="container-app py-6 lg:py-10 relative z-10 pb-24 lg:pb-10">
+      <main className="container-app py-4 lg:py-6 relative z-10 pb-24 lg:pb-6">
         <div className="app-grid">
           <div className="app-grid-main">
             {/* Hero */}
-            <section className="mb-6 rise">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-base">🔀</span>
-                <p className="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">
-                  flow search
-                </p>
-              </div>
-              <h1
-                className="display font-bold leading-tight tracking-tight text-ink whitespace-nowrap"
-                style={{ fontSize: "clamp(18px, 5.5vw, 30px)" }}
-              >
-                <span
-                  className="serif-it u-blue"
-                  style={{ fontSize: "1.05em" }}
-                >
-                  A → B
-                </span>{" "}
-                を歩いた人を見つける
+            <section className="mb-4 rise">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">
+                🔀 career path search
+              </p>
+              <h1 className="display font-bold leading-tight tracking-tight text-ink mt-1 text-[22px] sm:text-[26px] lg:text-[28px]">
+                Before → After を歩いた人を見つける
               </h1>
-              <p className="text-[12px] lg:text-[13px] text-ink-soft mt-3 leading-relaxed">
+              <p className="text-[12px] lg:text-[13px] text-ink-soft mt-2 leading-relaxed">
                 出発地・到着地・業界・職種を選ぶだけ。経験者がリストアップされます。
               </p>
             </section>
@@ -214,7 +155,7 @@ export function SearchClient() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="label" htmlFor="filter-from">
-                      出発地
+                      <span className="text-blue">Before</span> · 移動前の国
                     </label>
                     <select
                       id="filter-from"
@@ -231,7 +172,7 @@ export function SearchClient() {
                   </div>
                   <div>
                     <label className="label" htmlFor="filter-to">
-                      到着地
+                      <span className="text-blue">After</span> · 移動後の国
                     </label>
                     <select
                       id="filter-to"
@@ -451,7 +392,6 @@ export function SearchClient() {
 
           {/* Side */}
           <aside className="app-grid-side hidden lg:block space-y-4">
-            <SideNavMenu active="search" />
             <div className="side-nav-card">
               <p className="text-[10px] uppercase tracking-[0.24em] text-blue font-bold mb-2">
                 人気の経路

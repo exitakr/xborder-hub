@@ -1,247 +1,88 @@
-export type CitySize = "major" | "medium" | "small" | "mini";
-
 export type City = {
   code: string;
   name: string;
-  x: number;
-  y: number;
-  size: CitySize;
-  color?: string;
-  external?: boolean;
+  /** Latitude in degrees (-90 .. 90) */
+  lat: number;
+  /** Longitude in degrees (-180 .. 180) */
+  lng: number;
+  /** Visual hierarchy on the map */
+  tier: 1 | 2 | 3;
 };
+
+/** Curated set of cities that show up on the global map. */
+export const CITIES: City[] = [
+  { code: "TYO", name: "Tokyo", lat: 35.68, lng: 139.69, tier: 1 },
+  { code: "SIN", name: "Singapore", lat: 1.35, lng: 103.82, tier: 1 },
+  { code: "NYC", name: "New York", lat: 40.71, lng: -74.01, tier: 1 },
+  { code: "SFO", name: "San Francisco", lat: 37.77, lng: -122.42, tier: 1 },
+  { code: "LON", name: "London", lat: 51.51, lng: -0.13, tier: 1 },
+  { code: "HKG", name: "Hong Kong", lat: 22.32, lng: 114.17, tier: 2 },
+  { code: "BKK", name: "Bangkok", lat: 13.76, lng: 100.5, tier: 2 },
+  { code: "SGN", name: "Ho Chi Minh", lat: 10.82, lng: 106.63, tier: 2 },
+  { code: "SYD", name: "Sydney", lat: -33.87, lng: 151.21, tier: 2 },
+  { code: "BER", name: "Berlin", lat: 52.52, lng: 13.4, tier: 2 },
+  { code: "PAR", name: "Paris", lat: 48.86, lng: 2.35, tier: 2 },
+  { code: "DXB", name: "Dubai", lat: 25.2, lng: 55.27, tier: 2 },
+  { code: "TPE", name: "Taipei", lat: 25.03, lng: 121.57, tier: 3 },
+  { code: "SEL", name: "Seoul", lat: 37.57, lng: 126.98, tier: 3 },
+  { code: "KUL", name: "Kuala Lumpur", lat: 3.14, lng: 101.69, tier: 3 },
+  { code: "JKT", name: "Jakarta", lat: -6.21, lng: 106.85, tier: 3 },
+  { code: "OSA", name: "Osaka", lat: 34.69, lng: 135.5, tier: 3 },
+  { code: "LAX", name: "Los Angeles", lat: 34.05, lng: -118.24, tier: 3 },
+  { code: "SEA", name: "Seattle", lat: 47.61, lng: -122.33, tier: 3 },
+  { code: "AMS", name: "Amsterdam", lat: 52.37, lng: 4.9, tier: 3 },
+  { code: "MEL", name: "Melbourne", lat: -37.81, lng: 144.96, tier: 3 },
+];
 
 export type Flow = {
   from: string;
   to: string;
-  volume: number;
+  /** Annual aggregate count of moves */
+  count: number;
+};
+
+/** Annual aggregated career moves across borders. Demo data. */
+export const FLOWS: Flow[] = [
+  { from: "TYO", to: "SIN", count: 624 },
+  { from: "TYO", to: "SFO", count: 364 },
+  { from: "TYO", to: "NYC", count: 260 },
+  { from: "TYO", to: "LON", count: 208 },
+  { from: "SIN", to: "BKK", count: 416 },
+  { from: "SIN", to: "TYO", count: 260 },
+  { from: "HKG", to: "TYO", count: 156 },
+  { from: "TYO", to: "BKK", count: 208 },
+  { from: "SIN", to: "SGN", count: 156 },
+  { from: "TYO", to: "SYD", count: 156 },
+  { from: "LON", to: "PAR", count: 156 },
+  { from: "TYO", to: "BER", count: 104 },
+  { from: "NYC", to: "TYO", count: 104 },
+  { from: "SFO", to: "SEA", count: 104 },
+  { from: "SIN", to: "KUL", count: 104 },
+  { from: "TYO", to: "DXB", count: 78 },
+  { from: "TPE", to: "TYO", count: 78 },
+  { from: "SEL", to: "SIN", count: 104 },
+];
+
+export type AnnualTopFlow = {
+  label: string;
+  count: number;
   color: string;
 };
 
-export type TopFlow = {
-  label: string;
-  vol: string;
-  color: string;
-};
-
-export type Region = {
-  key: RegionKey;
-  emoji: string;
-  tabLabel: string;
-  label: string;
-  weekTotal: number;
-  cities: City[];
-  flows: Flow[];
-  topFlows: TopFlow[];
-};
-
-export type RegionKey =
-  | "asia"
-  | "japan"
-  | "namerica"
-  | "europe"
-  | "oceania"
-  | "africa";
-
-export const REGIONS: Record<RegionKey, Region> = {
-  asia: {
-    key: "asia",
-    emoji: "🌏",
-    tabLabel: "アジア",
-    label: "ASIA-PAC",
-    weekTotal: 234,
-    cities: [
-      { code: "TYO", name: "Tokyo", x: 258, y: 55, size: "major", color: "#0A1F3D" },
-      { code: "OSA", name: "Osaka", x: 235, y: 75, size: "small" },
-      { code: "SEL", name: "Seoul", x: 265, y: 35, size: "small" },
-      { code: "SIN", name: "Singapore", x: 128, y: 195, size: "major", color: "#0055A4" },
-      { code: "BKK", name: "Bangkok", x: 88, y: 138, size: "medium", color: "#1FA89E" },
-      { code: "HKG", name: "Hong Kong", x: 185, y: 115, size: "small" },
-      { code: "TPE", name: "Taipei", x: 218, y: 108, size: "small" },
-      { code: "SGN", name: "Ho Chi Minh", x: 82, y: 178, size: "small" },
-      { code: "KUL", name: "Kuala Lumpur", x: 115, y: 215, size: "small" },
-      { code: "JKT", name: "Jakarta", x: 148, y: 235, size: "small" },
-      { code: "MNL", name: "Manila", x: 200, y: 158, size: "small" },
-    ],
-    flows: [
-      { from: "TYO", to: "SIN", volume: 12, color: "#0055A4" },
-      { from: "SIN", to: "BKK", volume: 8, color: "#1FA89E" },
-      { from: "SIN", to: "TYO", volume: 5, color: "#6B4F8E" },
-      { from: "TYO", to: "BKK", volume: 4, color: "#FFC93C" },
-      { from: "HKG", to: "TYO", volume: 3, color: "#1FA89E" },
-      { from: "SEL", to: "SIN", volume: 2, color: "#0A1F3D" },
-    ],
-    topFlows: [
-      { label: "Tokyo→Singapore", vol: "+12", color: "#0055A4" },
-      { label: "Singapore→Bangkok", vol: "+8", color: "#1FA89E" },
-      { label: "Singapore→Tokyo", vol: "+5", color: "#6B4F8E" },
-      { label: "Hong Kong→Tokyo", vol: "+3", color: "#0A1F3D" },
-    ],
-  },
-  japan: {
-    key: "japan",
-    emoji: "🇯🇵",
-    tabLabel: "日本",
-    label: "JAPAN",
-    weekTotal: 87,
-    cities: [
-      { code: "SPK", name: "Sapporo", x: 260, y: 55, size: "small" },
-      { code: "TYO", name: "Tokyo", x: 215, y: 120, size: "major", color: "#0055A4" },
-      { code: "NGO", name: "Nagoya", x: 185, y: 142, size: "small" },
-      { code: "OSA", name: "Osaka", x: 155, y: 158, size: "medium", color: "#1FA89E" },
-      { code: "FUK", name: "Fukuoka", x: 80, y: 195, size: "medium", color: "#0A1F3D" },
-      { code: "OKA", name: "Okinawa", x: 50, y: 235, size: "small" },
-      { code: "SIN", name: "Singapore", x: 25, y: 225, size: "mini", external: true },
-      { code: "NYC", name: "New York", x: 315, y: 70, size: "mini", external: true },
-    ],
-    flows: [
-      { from: "OSA", to: "TYO", volume: 8, color: "#1FA89E" },
-      { from: "TYO", to: "OSA", volume: 6, color: "#0055A4" },
-      { from: "SIN", to: "TYO", volume: 5, color: "#FFC93C" },
-      { from: "TYO", to: "FUK", volume: 3, color: "#6B4F8E" },
-      { from: "TYO", to: "NYC", volume: 2, color: "#0055A4" },
-      { from: "FUK", to: "TYO", volume: 2, color: "#1FA89E" },
-    ],
-    topFlows: [
-      { label: "Osaka→Tokyo", vol: "+8", color: "#1FA89E" },
-      { label: "Tokyo→Osaka", vol: "+6", color: "#0055A4" },
-      { label: "Singapore→Tokyo", vol: "+5", color: "#FFC93C" },
-      { label: "Tokyo→Fukuoka", vol: "+3", color: "#6B4F8E" },
-    ],
-  },
-  namerica: {
-    key: "namerica",
-    emoji: "🗽",
-    tabLabel: "北米",
-    label: "NORTH AMERICA",
-    weekTotal: 41,
-    cities: [
-      { code: "YVR", name: "Vancouver", x: 60, y: 65, size: "small" },
-      { code: "SEA", name: "Seattle", x: 65, y: 90, size: "small" },
-      { code: "SFO", name: "San Francisco", x: 50, y: 140, size: "major", color: "#1FA89E" },
-      { code: "LAX", name: "Los Angeles", x: 65, y: 185, size: "medium" },
-      { code: "AUS", name: "Austin", x: 155, y: 200, size: "small" },
-      { code: "CHI", name: "Chicago", x: 185, y: 115, size: "small" },
-      { code: "YYZ", name: "Toronto", x: 230, y: 95, size: "small" },
-      { code: "NYC", name: "New York", x: 265, y: 125, size: "major", color: "#0055A4" },
-      { code: "BOS", name: "Boston", x: 275, y: 100, size: "small" },
-      { code: "MIA", name: "Miami", x: 245, y: 215, size: "small" },
-      { code: "TYO", name: "Tokyo", x: 305, y: 225, size: "mini", external: true },
-    ],
-    flows: [
-      { from: "TYO", to: "SFO", volume: 7, color: "#0055A4" },
-      { from: "TYO", to: "NYC", volume: 5, color: "#1FA89E" },
-      { from: "SFO", to: "NYC", volume: 3, color: "#6B4F8E" },
-      { from: "NYC", to: "TYO", volume: 2, color: "#FFC93C" },
-      { from: "SFO", to: "SEA", volume: 2, color: "#0A1F3D" },
-    ],
-    topFlows: [
-      { label: "Tokyo→San Francisco", vol: "+7", color: "#0055A4" },
-      { label: "Tokyo→New York", vol: "+5", color: "#1FA89E" },
-      { label: "SF→New York", vol: "+3", color: "#6B4F8E" },
-      { label: "New York→Tokyo", vol: "+2", color: "#FFC93C" },
-    ],
-  },
-  europe: {
-    key: "europe",
-    emoji: "🏰",
-    tabLabel: "ヨーロッパ",
-    label: "EUROPE",
-    weekTotal: 23,
-    cities: [
-      { code: "STK", name: "Stockholm", x: 215, y: 35, size: "small" },
-      { code: "DUB", name: "Dublin", x: 60, y: 80, size: "small" },
-      { code: "LON", name: "London", x: 115, y: 90, size: "major", color: "#0055A4" },
-      { code: "AMS", name: "Amsterdam", x: 150, y: 85, size: "small" },
-      { code: "BER", name: "Berlin", x: 205, y: 80, size: "medium", color: "#1FA89E" },
-      { code: "PAR", name: "Paris", x: 135, y: 125, size: "medium" },
-      { code: "ZRH", name: "Zürich", x: 175, y: 130, size: "small" },
-      { code: "MIL", name: "Milan", x: 185, y: 148, size: "small" },
-      { code: "MAD", name: "Madrid", x: 85, y: 190, size: "small" },
-      { code: "TYO", name: "Tokyo", x: 310, y: 135, size: "mini", external: true },
-    ],
-    flows: [
-      { from: "TYO", to: "LON", volume: 4, color: "#0055A4" },
-      { from: "LON", to: "PAR", volume: 3, color: "#1FA89E" },
-      { from: "TYO", to: "BER", volume: 2, color: "#FFC93C" },
-      { from: "PAR", to: "BER", volume: 2, color: "#6B4F8E" },
-      { from: "LON", to: "AMS", volume: 1, color: "#0A1F3D" },
-    ],
-    topFlows: [
-      { label: "Tokyo→London", vol: "+4", color: "#0055A4" },
-      { label: "London→Paris", vol: "+3", color: "#1FA89E" },
-      { label: "Tokyo→Berlin", vol: "+2", color: "#FFC93C" },
-      { label: "Paris→Berlin", vol: "+2", color: "#6B4F8E" },
-    ],
-  },
-  oceania: {
-    key: "oceania",
-    emoji: "🏝",
-    tabLabel: "オセアニア",
-    label: "OCEANIA",
-    weekTotal: 11,
-    cities: [
-      { code: "TYO", name: "Tokyo", x: 165, y: 30, size: "mini", external: true },
-      { code: "PER", name: "Perth", x: 80, y: 165, size: "small" },
-      { code: "ADL", name: "Adelaide", x: 180, y: 195, size: "small" },
-      { code: "BNE", name: "Brisbane", x: 255, y: 130, size: "small" },
-      { code: "SYD", name: "Sydney", x: 240, y: 175, size: "major", color: "#0055A4" },
-      { code: "MEL", name: "Melbourne", x: 220, y: 215, size: "medium", color: "#1FA89E" },
-      { code: "AKL", name: "Auckland", x: 305, y: 225, size: "small" },
-    ],
-    flows: [
-      { from: "TYO", to: "SYD", volume: 3, color: "#0055A4" },
-      { from: "SYD", to: "MEL", volume: 2, color: "#1FA89E" },
-      { from: "TYO", to: "MEL", volume: 2, color: "#FFC93C" },
-      { from: "SYD", to: "AKL", volume: 1, color: "#6B4F8E" },
-    ],
-    topFlows: [
-      { label: "Tokyo→Sydney", vol: "+3", color: "#0055A4" },
-      { label: "Sydney→Melbourne", vol: "+2", color: "#1FA89E" },
-      { label: "Tokyo→Melbourne", vol: "+2", color: "#FFC93C" },
-      { label: "Sydney→Auckland", vol: "+1", color: "#6B4F8E" },
-    ],
-  },
-  africa: {
-    key: "africa",
-    emoji: "🦓",
-    tabLabel: "アフリカ",
-    label: "AFRICA",
-    weekTotal: 4,
-    cities: [
-      { code: "CAS", name: "Casablanca", x: 80, y: 65, size: "small" },
-      { code: "CAI", name: "Cairo", x: 220, y: 60, size: "small" },
-      { code: "LOS", name: "Lagos", x: 115, y: 135, size: "small" },
-      { code: "NBO", name: "Nairobi", x: 240, y: 140, size: "medium", color: "#0055A4" },
-      { code: "JNB", name: "Johannesburg", x: 205, y: 205, size: "medium", color: "#1FA89E" },
-      { code: "CPT", name: "Cape Town", x: 175, y: 235, size: "small" },
-      { code: "TYO", name: "Tokyo", x: 310, y: 85, size: "mini", external: true },
-    ],
-    flows: [
-      { from: "TYO", to: "NBO", volume: 2, color: "#0055A4" },
-      { from: "TYO", to: "JNB", volume: 1, color: "#FFC93C" },
-      { from: "JNB", to: "CPT", volume: 1, color: "#1FA89E" },
-    ],
-    topFlows: [
-      { label: "Tokyo→Nairobi", vol: "+2", color: "#0055A4" },
-      { label: "Tokyo→Johannesburg", vol: "+1", color: "#FFC93C" },
-      { label: "Johannesburg→Cape Town", vol: "+1", color: "#1FA89E" },
-    ],
-  },
-};
-
-export const REGION_ORDER: RegionKey[] = [
-  "asia",
-  "japan",
-  "namerica",
-  "europe",
-  "oceania",
-  "africa",
+export const ANNUAL_TOP_FLOWS: AnnualTopFlow[] = [
+  { label: "Tokyo → Singapore", count: 624, color: "#0055A4" },
+  { label: "Singapore → Bangkok", count: 416, color: "#1FA89E" },
+  { label: "Tokyo → San Francisco", count: 364, color: "#6B4F8E" },
+  { label: "Tokyo → New York", count: 260, color: "#FFC93C" },
+  { label: "Singapore → Tokyo", count: 260, color: "#0055A4" },
+  { label: "Tokyo → London", count: 208, color: "#1FA89E" },
 ];
 
 export type TrendItem = {
   flag: string;
   name: string;
   count: number;
+  /** Year-over-year delta in percentage points */
   change: number;
 };
 
@@ -249,32 +90,32 @@ export type TrendKey = "country" | "industry" | "role";
 
 export const TRENDS: Record<TrendKey, TrendItem[]> = {
   country: [
-    { flag: "🇸🇬", name: "Singapore", count: 234, change: 18 },
-    { flag: "🇯🇵", name: "Japan", count: 187, change: 12 },
-    { flag: "🇭🇰", name: "Hong Kong", count: 96, change: -5 },
-    { flag: "🇹🇭", name: "Thailand", count: 72, change: 3 },
-    { flag: "🇻🇳", name: "Vietnam", count: 58, change: 22 },
-    { flag: "🇺🇸", name: "United States", count: 51, change: 8 },
-    { flag: "🇮🇩", name: "Indonesia", count: 41, change: 14 },
+    { flag: "🇸🇬", name: "Singapore", count: 11240, change: 18 },
+    { flag: "🇯🇵", name: "Japan", count: 9410, change: 12 },
+    { flag: "🇭🇰", name: "Hong Kong", count: 4810, change: -5 },
+    { flag: "🇹🇭", name: "Thailand", count: 3620, change: 3 },
+    { flag: "🇻🇳", name: "Vietnam", count: 2940, change: 22 },
+    { flag: "🇺🇸", name: "United States", count: 2580, change: 8 },
+    { flag: "🇮🇩", name: "Indonesia", count: 2050, change: 14 },
   ],
   industry: [
-    { flag: "💻", name: "Tech", count: 445, change: 14 },
-    { flag: "🏦", name: "Finance", count: 312, change: -3 },
-    { flag: "🚀", name: "Startup", count: 220, change: 32 },
-    { flag: "🏭", name: "Manufacturing", count: 156, change: 2 },
-    { flag: "🛍", name: "Consumer", count: 141, change: 8 },
-    { flag: "🏥", name: "Healthcare", count: 88, change: 11 },
-    { flag: "🎓", name: "Education", count: 54, change: -2 },
+    { flag: "💻", name: "Tech", count: 22450, change: 14 },
+    { flag: "🏦", name: "Finance", count: 15820, change: -3 },
+    { flag: "🚀", name: "Startup", count: 11220, change: 32 },
+    { flag: "🏭", name: "Manufacturing", count: 7860, change: 2 },
+    { flag: "🛍", name: "Consumer", count: 7140, change: 8 },
+    { flag: "🏥", name: "Healthcare", count: 4480, change: 11 },
+    { flag: "🎓", name: "Education", count: 2740, change: -2 },
   ],
   role: [
-    { flag: "📐", name: "Product Manager", count: 189, change: 21 },
-    { flag: "⚙️", name: "Engineer", count: 167, change: 9 },
-    { flag: "💼", name: "BD / Sales", count: 152, change: -2 },
-    { flag: "📣", name: "Marketing", count: 98, change: 6 },
-    { flag: "🎨", name: "Designer", count: 61, change: 15 },
-    { flag: "📊", name: "Finance / Accounting", count: 54, change: -1 },
-    { flag: "👥", name: "HR / People", count: 38, change: 5 },
-    { flag: "🏠", name: "駐在帯同(無職)", count: 42, change: 18 },
+    { flag: "📐", name: "Product Manager", count: 9550, change: 21 },
+    { flag: "⚙️", name: "Engineer", count: 8430, change: 9 },
+    { flag: "💼", name: "BD / Sales", count: 7680, change: -2 },
+    { flag: "📣", name: "Marketing", count: 4960, change: 6 },
+    { flag: "🎨", name: "Designer", count: 3080, change: 15 },
+    { flag: "📊", name: "Finance / Accounting", count: 2730, change: -1 },
+    { flag: "👥", name: "HR / People", count: 1920, change: 5 },
+    { flag: "🏠", name: "駐在帯同(無職)", count: 2120, change: 18 },
   ],
 };
 
