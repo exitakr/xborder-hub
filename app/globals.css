@@ -32,3 +32,87 @@
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 #0a1f3d;
 }
+
+/* ===== Threads (/threads) ===== */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 90px;
+  z-index: 35;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #0055a4;
+  color: #fff6e8;
+  border: 1.5px solid #0a1f3d;
+  box-shadow: 4px 4px 0 #0a1f3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.fab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #0a1f3d;
+}
+.fab:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #0a1f3d;
+}
+@media (min-width: 1024px) {
+  .fab {
+    bottom: 32px;
+    right: 32px;
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* ===== Tailwind line-clamp helper ===== */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== New thread composer (/thread/new) ===== */
+.compose-shell {
+  min-height: calc(100dvh - 64px);
+  display: flex;
+  flex-direction: column;
+}
+.compose-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: "Bricolage Grotesque", "Zen Kaku Gothic New", sans-serif;
+  font-weight: 800;
+  color: #0a1f3d;
+  line-height: 1.2;
+  padding: 0;
+  resize: none;
+}
+.compose-title::placeholder {
+  color: #7c8597;
+  font-weight: 700;
+}
+.compose-body {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: "Manrope", "Zen Kaku Gothic New", sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  color: #0a1f3d;
+  line-height: 1.7;
+  padding: 0;
+  resize: none;
+  min-height: 200px;
+  flex: 1;
+}
+.compose-body::placeholder {
+  color: #7c8597;
+}
