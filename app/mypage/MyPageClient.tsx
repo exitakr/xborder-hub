@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogoMark } from "@/components/site/LogoMark";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { SideNavMenu } from "@/components/site/SideNavMenu";
+import { signOut } from "@/app/login/actions";
 
 type EditType = "identity" | "goals" | "career";
 type CcTab = "sent" | "received";
@@ -44,19 +44,18 @@ const EDIT_TITLES: Record<EditType, string> = {
 };
 
 export function MyPageClient() {
-  const router = useRouter();
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [editType, setEditType] = useState<EditType | null>(null);
   const [premium, setPremium] = useState(false);
+  const [signingOut, startSignOut] = useTransition();
 
   useEffect(() => {
     setPremium(window.localStorage.getItem("xbh_premium") === "1");
   }, []);
 
   function logout() {
-    window.localStorage.removeItem("xbh_authed");
     window.localStorage.removeItem("xbh_premium");
-    router.push("/");
+    startSignOut(() => signOut());
   }
 
   const editOpen = editType !== null;
@@ -104,9 +103,10 @@ export function MyPageClient() {
             <button
               type="button"
               onClick={logout}
-              className="text-[11px] font-bold text-ink-soft px-2 py-1.5"
+              disabled={signingOut}
+              className="text-[11px] font-bold text-ink-soft px-2 py-1.5 disabled:opacity-50"
             >
-              ログアウト
+              {signingOut ? "ログアウト中…" : "ログアウト"}
             </button>
           </div>
         </div>
@@ -501,13 +501,14 @@ export function MyPageClient() {
                 <button
                   type="button"
                   onClick={logout}
-                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
+                  disabled={signingOut}
+                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm disabled:opacity-60"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🚪</span>
                     <div className="text-left">
                       <p className="font-bold text-[13px] text-ink">
-                        ログアウト
+                        {signingOut ? "ログアウト中…" : "ログアウト"}
                       </p>
                     </div>
                   </div>

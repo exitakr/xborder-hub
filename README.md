@@ -128,11 +128,24 @@ Vercel ダッシュボードで `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABA
 
 - [x] **Phase 1**: Next.js 足場 + 既存 HTML を `public/` から配信
 - [x] **Phase 2**: index / 404 / profile / premium / mypage / threads / thread / thread/new / chat / search を App Router の TSX に移植
-- [ ] **Phase 3**: Supabase Auth でログイン/サインアップを実装、middleware でセッション保護(新 `app/login` をゼロ設計)
+- [x] **Phase 3**: Supabase Auth(メール+パスワード / Magic Link)、middleware でセッション保護、新 `app/login` 設計
 - [ ] **Phase 3+**: ホーム画面の UI 再設計 → 新 `app/home`
 - [ ] **Phase 4**: DB スキーマ(`profiles` / `cities` / `moves` / `threads` / `messages`)+ RLS、ハードコードを Supabase クエリに置換
 - [ ] **Phase 5**: CSP/セキュリティヘッダ強化、依存脆弱性 CI、入力サニタイズ
 - [ ] **Phase 6**: 決済(Stripe Connect)、メール(Resend)、多言語(DeepL)、利用規約・プライバシー・PDPA
+
+## 認証フロー
+
+- `/login` でメール+パスワード、新規登録、Magic Link の 3 モード切替
+- Server Actions(`app/login/actions.ts`)が Supabase に投げる
+- OAuth/Magic Link は `/auth/callback` がコードをセッションに交換
+- `middleware.ts` が:
+  - 全リクエストで Supabase セッション cookie をリフレッシュ
+  - `/mypage` `/chat` `/profile` 系の未ログインアクセスを `/login?next=...` へリダイレクト
+  - ログイン済みで `/login` に来た場合は `/mypage` へ
+- Supabase ダッシュボードで **Site URL** と **Redirect URL** を以下に設定済みのこと:
+  - 開発: `http://localhost:3000`, `http://localhost:3000/auth/callback`
+  - 本番: Vercel のドメイン
 
 ## ライセンス
 
