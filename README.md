@@ -7,37 +7,42 @@
 
 ```
 /
-├── app/                      # Next.js App Router(新規ページはここに追加)
-│   ├── layout.tsx            # ルートレイアウト(メタデータ・フォント設定)
-│   ├── page.tsx              # / → /index.html へリダイレクト
-│   ├── not-found.tsx         # / → /404.html へリダイレクト
-│   └── globals.css           # Tailwind エントリ
+├── app/                      # Next.js App Router(全ルート TSX 化済み)
+│   ├── layout.tsx            # ルートレイアウト(メタデータ・フォント・/styles.css)
+│   ├── globals.css           # Tailwind + ページ固有の小スタイル
+│   ├── page.tsx              # / ランディング
+│   ├── not-found.tsx         # 404
+│   ├── profile/page.tsx      # プロフィール詳細
+│   ├── mypage/               # マイページ(フル Client Component)
+│   ├── premium/              # プレミアム案内 + Stripe スタブ
+│   ├── threads/              # スレッド一覧(フィルタ・ソート・投票)
+│   ├── thread/               # スレッド詳細 + コメント
+│   ├── thread/new/           # スレッド新規作成(3 ステップ)
+│   ├── chat/                 # トークルーム
+│   └── search/               # フロー検索(フィルタ + 申請モーダル)
+├── components/
+│   └── site/                 # 共通コンポーネント
+│       ├── LogoMark.tsx
+│       ├── LandingHeader.tsx
+│       ├── LandingFooter.tsx
+│       ├── AppHeader.tsx
+│       ├── BottomNavMobile.tsx
+│       └── SideNavMenu.tsx
 ├── lib/
 │   └── supabase/
 │       ├── client.ts         # ブラウザ用 Supabase クライアント
 │       └── server.ts         # サーバー用 Supabase クライアント
-├── public/                   # 静的ファイル(従来のサイト一式)
-│   ├── index.html            # ランディング
-│   ├── home.html             # アプリホーム
-│   ├── search.html           # フロー検索
-│   ├── profile.html          # プロフィール詳細
-│   ├── mypage.html           # マイページ
-│   ├── premium.html          # プレミアム案内
-│   ├── login.html            # ログイン(現状はダミー)
-│   ├── chat.html             # チャット
-│   ├── threads.html          # スレッド一覧
-│   ├── thread.html           # スレッド詳細
-│   ├── thread-new.html       # スレッド新規作成
-│   ├── 404.html              # 404
-│   ├── styles.css            # 共通スタイル
-│   ├── home.js               # ホーム: 地図 + トレンド
-│   ├── search.js             # 検索: フィルタ + 結果計算
-│   ├── map-data.js           # 都市・移動・トレンドデータ
+├── public/                   # 静的アセットと redesign 待ちのリファレンス
+│   ├── home.html             # ※リデザイン予定(/home からは未配信)
+│   ├── login.html            # ※リデザイン予定(/login からは未配信)
+│   ├── home.js               # home.html のスクリプト
+│   ├── map-data.js           # home.html が参照するデータ
+│   ├── styles.css            # 共通スタイル(layout から <link>)
 │   ├── favicon.svg
 │   ├── manifest.json
 │   ├── robots.txt
 │   └── sitemap.xml
-├── next.config.ts            # /home → /home.html などのリライト + セキュリティヘッダ
+├── next.config.ts            # セキュリティヘッダ
 ├── tailwind.config.ts        # カラートークン
 ├── tsconfig.json
 └── .env.example              # Supabase の環境変数テンプレート
@@ -45,12 +50,10 @@
 
 ## アーキテクチャ
 
-現在は **Next.js シェル + 既存の静的 HTML を `public/` から配信** するハイブリッド構成です。
-段階的に各 HTML を `app/` 配下の TSX へ移植しつつ、Supabase Auth/DB を追加していきます。
-
-- `/` は `public/index.html` を表示
-- `/home`、`/search` などのクリーン URL は `next.config.ts` のリライトで `*.html` に解決
-- 直リンク `/home.html` も従来通り動作
+すべての公開ルートが **Next.js App Router** で動いています。
+旧 `home.html` / `login.html` だけは `/home`・`/login` クリーン URL から外し、
+リデザイン待ちのリファレンスとして `public/` に残してあります(直リンク
+`/home.html` で閲覧可能)。
 
 ## セットアップ
 
@@ -123,9 +126,10 @@ Vercel ダッシュボードで `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABA
 
 ## ロードマップ
 
-- [x] **Phase 1**: Next.js 足場 + 既存 HTML を `public/` から配信(現在地)
-- [ ] **Phase 2**: 各 HTML を App Router の TSX に段階移植・共通レイアウト抽出
-- [ ] **Phase 3**: Supabase Auth でログイン/サインアップを実装、middleware でセッション保護
+- [x] **Phase 1**: Next.js 足場 + 既存 HTML を `public/` から配信
+- [x] **Phase 2**: index / 404 / profile / premium / mypage / threads / thread / thread/new / chat / search を App Router の TSX に移植
+- [ ] **Phase 3**: Supabase Auth でログイン/サインアップを実装、middleware でセッション保護(新 `app/login` をゼロ設計)
+- [ ] **Phase 3+**: ホーム画面の UI 再設計 → 新 `app/home`
 - [ ] **Phase 4**: DB スキーマ(`profiles` / `cities` / `moves` / `threads` / `messages`)+ RLS、ハードコードを Supabase クエリに置換
 - [ ] **Phase 5**: CSP/セキュリティヘッダ強化、依存脆弱性 CI、入力サニタイズ
 - [ ] **Phase 6**: 決済(Stripe Connect)、メール(Resend)、多言語(DeepL)、利用規約・プライバシー・PDPA
