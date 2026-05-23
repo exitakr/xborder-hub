@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
+// VERCEL-MARKER: latest-typing-fix-2026-05-22
+// If the Vercel build log still complains that `cookiesToSet` is implicitly
+// any on this file, the build is running against a commit older than
+// 2a8efc9 — trigger a manual Redeploy from the Deployments tab.
+
 type CookieToSet = {
   name: string;
   value: string;
