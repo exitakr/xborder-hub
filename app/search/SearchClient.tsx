@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { SAMPLE_PEOPLE, type Person } from "./data";
@@ -80,7 +81,8 @@ type ApplyTarget = {
   fg: string;
 };
 
-export function SearchClient() {
+export function SearchClient({ isLoggedIn = false }: { isLoggedIn?: boolean } = {}) {
+  const router = useRouter();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [industry, setIndustry] = useState("");
@@ -118,6 +120,10 @@ export function SearchClient() {
   }
 
   function openApply(p: Person) {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/search")}`);
+      return;
+    }
     setApplyTarget({
       initials: p.initials,
       name: p.name,

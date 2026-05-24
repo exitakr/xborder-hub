@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 
-type Sort = "new" | "popular" | "unsolved";
+type Sort = "new" | "popular";
 type CommunityKind = "country" | "industry" | "role";
 
 type Community = {
@@ -32,7 +33,6 @@ const COMMUNITIES: Community[] = [
 const SORTS: { id: Sort; label: string }[] = [
   { id: "new", label: "新着" },
   { id: "popular", label: "人気" },
-  { id: "unsolved", label: "未解決" },
 ];
 
 type Thread = {
@@ -151,9 +151,20 @@ const KIND_LABEL: Record<CommunityKind, string> = {
   role: "👤 職種",
 };
 
-export function ThreadsClient() {
+export function ThreadsClient({
+  isLoggedIn = false,
+}: { isLoggedIn?: boolean } = {}) {
+  const router = useRouter();
   const [communityId, setCommunityId] = useState<string | "all">("all");
   const [sort, setSort] = useState<Sort>("new");
+
+  function requireLoginThen(action: () => void, returnTo = "/threads") {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+    action();
+  }
   const [voted, setVoted] = useState<Record<number, "up" | "down" | null>>({
     1: "up",
     2: "up",
@@ -207,7 +218,7 @@ export function ThreadsClient() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setApplyOpen(true)}
+                  onClick={() => requireLoginThen(() => setApplyOpen(true))}
                   className="text-[11px] font-bold text-blue underline underline-offset-2"
                 >
                   + コミュニティを申請
@@ -301,12 +312,18 @@ export function ThreadsClient() {
                   <p className="text-[11px] text-ink-soft mt-1">
                     最初の一投目を書いてみませんか?
                   </p>
-                  <Link
-                    href="/thread/new"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      requireLoginThen(
+                        () => router.push("/thread/new"),
+                        "/thread/new",
+                      )
+                    }
                     className="mt-3 inline-block btn-primary text-[12px] py-2"
                   >
                     スレッドを立てる
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 visible.map((t) => (
@@ -399,8 +416,11 @@ export function ThreadsClient() {
 
       <BottomNavMobile active="threads" />
 
-      <Link
-        href="/thread/new"
+      <button
+        type="button"
+        onClick={() =>
+          requireLoginThen(() => router.push("/thread/new"), "/thread/new")
+        }
         className="fab"
         aria-label="新しいスレッドを投稿"
       >
@@ -415,7 +435,7 @@ export function ThreadsClient() {
         >
           <path d="M12 5v14M5 12h14" />
         </svg>
-      </Link>
+      </button>
 
       {/* Apply for new community */}
       <div

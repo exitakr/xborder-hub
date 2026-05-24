@@ -2,6 +2,23 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
+ * Non-redirecting session check. Returns the user, or null if Supabase is
+ * unavailable or the visitor isn't signed in. Safe to call from any
+ * public page that needs to know whether to gate an action behind login.
+ */
+export async function getCurrentUser() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Server-component auth guard. Redirects to /login if no session, returning
  * the verified user otherwise. Uses getUser() so the JWT is validated by
  * Supabase (cookies alone could be spoofed). Safe to call from any async

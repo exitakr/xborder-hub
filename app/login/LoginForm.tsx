@@ -6,11 +6,10 @@ import { LogoMark } from "@/components/site/LogoMark";
 import {
   signInWithPassword,
   signUpWithPassword,
-  sendMagicLink,
   type ActionState,
 } from "./actions";
 
-type Mode = "signin" | "signup" | "magic";
+type Mode = "signin" | "signup";
 
 const initial: ActionState = {};
 
@@ -31,26 +30,10 @@ export function LoginForm({
     signUpWithPassword,
     initial,
   );
-  const [magicState, magicAction, magicPending] = useActionState(
-    sendMagicLink,
-    initial,
-  );
 
-  const state =
-    mode === "signin"
-      ? signInState
-      : mode === "signup"
-        ? signUpState
-        : magicState;
-  const pending =
-    mode === "signin" ? signInPending : mode === "signup" ? signUpPending : magicPending;
-
-  const action =
-    mode === "signin"
-      ? signInAction
-      : mode === "signup"
-        ? signUpAction
-        : magicAction;
+  const state = mode === "signin" ? signInState : signUpState;
+  const pending = mode === "signin" ? signInPending : signUpPending;
+  const action = mode === "signin" ? signInAction : signUpAction;
 
   return (
     <main className="container-narrow px-5 py-10 lg:py-16 relative z-10 min-h-screen flex flex-col">
@@ -115,15 +98,6 @@ export function LoginForm({
           >
             新規登録
           </button>
-          <button
-            type="button"
-            onClick={() => setMode("magic")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
-              mode === "magic" ? "bg-ink text-cream" : "text-ink-soft"
-            }`}
-          >
-            ✉️ Magic Link
-          </button>
         </div>
 
         {state.ok && state.message && (
@@ -155,31 +129,29 @@ export function LoginForm({
             />
           </div>
 
-          {mode !== "magic" && (
-            <div>
-              <label className="label" htmlFor="password">
-                パスワード
-                {mode === "signup" && (
-                  <span className="text-ink-faint font-normal">
-                    {" "}
-                    (8 文字以上)
-                  </span>
-                )}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={mode === "signup" ? 8 : 1}
-                autoComplete={
-                  mode === "signup" ? "new-password" : "current-password"
-                }
-                className="field"
-                placeholder="••••••••"
-              />
-            </div>
-          )}
+          <div>
+            <label className="label" htmlFor="password">
+              パスワード
+              {mode === "signup" && (
+                <span className="text-ink-faint font-normal">
+                  {" "}
+                  (8 文字以上)
+                </span>
+              )}
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              minLength={mode === "signup" ? 8 : 1}
+              autoComplete={
+                mode === "signup" ? "new-password" : "current-password"
+              }
+              className="field"
+              placeholder="••••••••"
+            />
+          </div>
 
           <button
             type="submit"
@@ -190,9 +162,7 @@ export function LoginForm({
               ? "送信中…"
               : mode === "signup"
                 ? "アカウントを作成"
-                : mode === "magic"
-                  ? "Magic Link を送る"
-                  : "ログイン"}
+                : "ログイン"}
             <svg
               width="14"
               height="14"

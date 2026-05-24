@@ -49,7 +49,7 @@ export async function signUpWithPassword(
 
   const supabase = await createClient();
   const origin = await siteOrigin();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { emailRedirectTo: `${origin}/auth/callback` },
@@ -58,34 +58,19 @@ export async function signUpWithPassword(
     return { error: friendly(error.message) };
   }
 
-  return {
-    ok: true,
-    message:
-      "確認メールを送信しました。受信箱のリンクをクリックして登録を完了してください。",
-  };
-}
-
-export async function sendMagicLink(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  if (!email) return { error: "メールアドレスを入力してください" };
-
-  const supabase = await createClient();
-  const origin = await siteOrigin();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
-  });
-  if (error) {
-    return { error: friendly(error.message) };
+  // If Supabase project has "Confirm email" turned OFF, signUp returns a
+  // session immediately and we can drop the user straight into the app.
+  if (data.session) {
+    const next = String(formData.get("next") ?? "/mypage");
+    redirect(safeNext(next));
   }
 
+  // Otherwise an email confirmation was queued. The user has to click the
+  // link before they can sign in.
   return {
     ok: true,
     message:
-      "Magic Link を送信しました。メールのリンクをクリックすればログイン完了です。",
+      "確認メールを送信しました。受信箱(または迷惑メールフォルダ)のリンクをクリックして登録を完了してください。届かない場合は数分待ってから再度お試しください。",
   };
 }
 
@@ -112,6 +97,9 @@ function friendly(message: string) {
   }
   if (/rate limit/i.test(message)) {
     return "リクエストが多すぎます。しばらく待ってから再度お試しください。";
+  }
+  if (/email.*not.*allowed|disabled/i.test(message)) {
+    return "サインアップが無効化されているか、メールが許可されていません。管理者にお問い合わせください。";
   }
   return message;
 }

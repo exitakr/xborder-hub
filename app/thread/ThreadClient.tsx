@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type VoteState = "up" | "down" | null;
 
@@ -54,7 +55,10 @@ const COMMENTS = [
   },
 ] as const;
 
-export function ThreadClient() {
+export function ThreadClient({
+  isLoggedIn = false,
+}: { isLoggedIn?: boolean } = {}) {
+  const router = useRouter();
   const [postVote, setPostVote] = useState<VoteState>("up");
   const [commentVotes, setCommentVotes] = useState<Record<string, VoteState>>({
     a: "up",
@@ -64,7 +68,20 @@ export function ThreadClient() {
   const [comment, setComment] = useState("");
 
   function toggleCommentVote(id: string, kind: "up" | "down") {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
     setCommentVotes((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
+  }
+
+  function submitComment() {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
+    // TODO: persist via Supabase in Phase 4. Demo: just clear the input.
+    setComment("");
   }
 
   return (
@@ -254,13 +271,23 @@ export function ThreadClient() {
             rows={1}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="コメントを書く..."
+            onFocus={() => {
+              if (!isLoggedIn) {
+                router.push(
+                  `/login?next=${encodeURIComponent("/thread")}`,
+                );
+              }
+            }}
+            placeholder={
+              isLoggedIn ? "コメントを書く..." : "コメントするにはログイン"
+            }
             className="flex-1 px-3 py-2 bg-paper border-[1.5px] border-ink rounded-2xl text-[13px] font-medium text-ink resize-none outline-none focus:shadow-pop-sm"
             style={{ maxHeight: 80 }}
           />
           <button
             type="button"
-            disabled={!comment.trim()}
+            onClick={submitComment}
+            disabled={isLoggedIn && !comment.trim()}
             className="w-11 h-11 bg-ink text-cream rounded-full border-[1.5px] border-ink shadow-pop-sm flex items-center justify-center flex-shrink-0 disabled:opacity-40"
             aria-label="送信"
           >

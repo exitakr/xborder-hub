@@ -112,7 +112,7 @@ body { font-family: 'Manrope', 'Zen Kaku Gothic New', sans-serif; -webkit-font-s
 }
 @media (min-width: 768px) {
   .modal-sheet {
-    max-width: 40rem;
+    max-width: 36rem;
     left: 50%;
     right: auto;
     top: 50%;
@@ -122,14 +122,25 @@ body { font-family: 'Manrope', 'Zen Kaku Gothic New', sans-serif; -webkit-font-s
     border: 1.5px solid #0A1F3D;
     box-shadow: 8px 8px 0 #0A1F3D;
     max-height: 85vh;
+    padding: 16px 0 28px;
   }
   .modal-sheet.open {
     transform: translate(-50%, -50%) scale(1);
   }
 }
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .modal-sheet {
     max-width: 48rem;
+  }
+}
+@media (min-width: 1280px) {
+  .modal-sheet {
+    max-width: 56rem;
+  }
+}
+@media (min-width: 1536px) {
+  .modal-sheet {
+    max-width: 64rem;
   }
 }
 
