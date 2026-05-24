@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AppHeader } from "@/components/site/AppHeader";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { requireUser } from "@/lib/auth/guard";
 import { ConsultApply } from "./ConsultApply";
 
 export const metadata: Metadata = {
@@ -65,7 +66,8 @@ const SIMILAR = [
   },
 ];
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  await requireUser("/profile");
   return (
     <>
       <AppHeader
