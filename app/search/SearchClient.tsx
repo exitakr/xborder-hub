@@ -6,6 +6,22 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
+/** Country (as stored on Person.to) → flag emoji shown on the result card. */
+const COUNTRY_FLAGS: Record<string, string> = {
+  Japan: "🇯🇵",
+  Singapore: "🇸🇬",
+  "Hong Kong": "🇭🇰",
+  Thailand: "🇹🇭",
+  Vietnam: "🇻🇳",
+  "United States": "🇺🇸",
+  Indonesia: "🇮🇩",
+  Malaysia: "🇲🇾",
+};
+
+function countryFlag(country: string) {
+  return COUNTRY_FLAGS[country] ?? "🌏";
+}
+
 const FROM_OPTIONS = [
   { value: "", label: "指定なし" },
   { value: "Japan", label: "🇯🇵 Japan" },
@@ -262,13 +278,11 @@ export function SearchClient() {
                     >
                       <div className="flex items-start gap-3 mb-3">
                         <div
-                          className="w-12 h-12 rounded-full font-bold flex items-center justify-center text-sm border-[1.5px] border-ink shadow-pop-sm flex-shrink-0"
-                          style={{
-                            background: p.avatarBg,
-                            color: p.avatarText,
-                          }}
+                          className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-paper flex items-center justify-center text-[28px] lg:text-[34px] border-[1.5px] border-ink shadow-pop-sm flex-shrink-0"
+                          title={`現在: ${p.to}`}
+                          aria-label={`現在の拠点: ${p.to}`}
                         >
-                          {p.initials}
+                          {countryFlag(p.to)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -291,14 +305,18 @@ export function SearchClient() {
                         </Link>
                       </div>
 
-                      <div className="bg-paper border border-ink/20 rounded-xl p-2.5 mb-3">
+                      {/* Career move — large, prominent */}
+                      <div className="bg-paper border-[1.5px] border-ink rounded-xl p-3 lg:p-4 mb-3 shadow-pop-sm">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-ink-faint font-bold mb-1.5">
+                          career move
+                        </p>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="display font-bold text-[14px] text-ink">
+                          <span className="display font-bold text-[18px] lg:text-[22px] text-ink leading-none">
                             {p.fromCity}
                           </span>
                           <svg
-                            width="14"
-                            height="14"
+                            width="18"
+                            height="18"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="#0055A4"
@@ -306,16 +324,32 @@ export function SearchClient() {
                           >
                             <path d="M5 12h14M13 5l7 7-7 7" />
                           </svg>
-                          <span className="display font-bold text-[14px] text-blue">
+                          <span className="display font-bold text-[18px] lg:text-[22px] text-blue leading-none">
                             {p.toCity}
                           </span>
                         </div>
-                        <p className="text-[13px] font-bold text-ink mt-1.5">
-                          {p.industry} · {p.role}
-                        </p>
-                        <p className="text-[11px] text-ink-soft mt-0.5">
-                          {p.companies}
-                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5 mt-3">
+                          <div>
+                            <p className="text-[9px] uppercase tracking-[0.2em] text-ink-faint font-bold">
+                              職種 / 業界
+                            </p>
+                            <p className="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mt-0.5">
+                              {p.role}
+                              <span className="text-ink-soft font-bold">
+                                {" "}
+                                · {p.industry}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] uppercase tracking-[0.2em] text-ink-faint font-bold">
+                              企業遷移
+                            </p>
+                            <p className="display font-bold text-[14px] lg:text-[15px] text-ink leading-tight mt-0.5">
+                              {p.companies}
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
                       <p className="text-[12px] text-ink leading-relaxed mb-3">
