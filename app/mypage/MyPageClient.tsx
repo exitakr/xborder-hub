@@ -5,6 +5,8 @@ import Link from "next/link";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
+import type { VisibilitySettings } from "@/lib/anonymity/rules";
+import { PrivacySettings } from "./PrivacySettings";
 
 type EditType = "identity" | "goals" | "career";
 type CcTab = "sent" | "received";
@@ -42,7 +44,9 @@ const EDIT_TITLES: Record<EditType, string> = {
   career: "キャリアステップを追加",
 };
 
-export function MyPageClient() {
+export function MyPageClient({
+  visibilitySettings,
+}: { visibilitySettings?: VisibilitySettings } = {}) {
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [editType, setEditType] = useState<EditType | null>(null);
   const [premium, setPremium] = useState(false);
@@ -393,6 +397,8 @@ export function MyPageClient() {
                 ))}
               </div>
             </section>
+
+            <PrivacySettings initial={visibilitySettings} />
 
             {/* SETTINGS */}
             <section className="rise" style={{ animationDelay: "0.24s" }}>

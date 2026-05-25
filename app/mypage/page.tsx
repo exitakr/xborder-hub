@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/guard";
+import { getCurrentProfile } from "@/lib/profiles/getProfile";
 import { MyPageClient } from "./MyPageClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 
 export default async function MyPage() {
   await requireUser("/mypage");
-  return <MyPageClient />;
+  const profile = await getCurrentProfile();
+  return (
+    <MyPageClient
+      visibilitySettings={profile?.visibility_settings}
+    />
+  );
 }

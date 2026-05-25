@@ -130,6 +130,7 @@ Vercel ダッシュボードで `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABA
 - [x] **Phase 2**: index / 404 / profile / premium / mypage / threads / thread / thread/new / chat / search を App Router の TSX に移植
 - [x] **Phase 3**: Supabase Auth(メール+パスワード / Magic Link)、middleware でセッション保護、新 `app/login` 設計
 - [x] **Phase 3+**: ホーム画面の UI 再設計 → 新 `app/home`(マップ中心、地域ピル内包、トレンドストリップ、注目スレッド、新着フィード、CTA カード)
+- [ ] **Phase 4 (進行中)**: DB スキーマ(`profiles` / `compensation_data` / `career_profile`)。`supabase/migrations/0001_init.sql` を Supabase Dashboard → SQL Editor で 1 度だけ実行する。Feature C(匿名性ルール + プライバシー設定 UI)は実装済み、Feature A / B のフォーム実装はこれから。
 - [ ] **Phase 4**: DB スキーマ(`profiles` / `cities` / `moves` / `threads` / `messages`)+ RLS、ハードコードを Supabase クエリに置換
 - [ ] **Phase 5**: CSP/セキュリティヘッダ強化、依存脆弱性 CI、入力サニタイズ
 - [ ] **Phase 6**: 決済(Stripe Connect)、メール(Resend)、多言語(DeepL)、利用規約・プライバシー・PDPA
