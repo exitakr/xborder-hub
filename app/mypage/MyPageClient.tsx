@@ -44,6 +44,41 @@ const EDIT_TITLES: Record<EditType, string> = {
   career: "キャリアステップを追加",
 };
 
+type Identity = {
+  name: string;
+  age: string;
+  location: string;
+  tenure: string;
+  bio: string;
+};
+
+const INITIAL_IDENTITY: Identity = {
+  name: "YT さん",
+  age: "34",
+  location: "Singapore",
+  tenure: "3年目",
+  bio: "日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。",
+};
+
+const INITIAL_GOALS = ["🇺🇸 US", "🚀 Startup", "VP級", "Tech"];
+
+type CareerStep = (typeof CAREER)[number];
+type CareerForm = {
+  place: string;
+  sub: string;
+  years: string;
+  company: string;
+  role: string;
+};
+
+const BLANK_CAREER_FORM: CareerForm = {
+  place: "",
+  sub: "",
+  years: "",
+  company: "",
+  role: "",
+};
+
 export function MyPageClient({
   visibilitySettings,
 }: { visibilitySettings?: VisibilitySettings } = {}) {
@@ -51,6 +86,56 @@ export function MyPageClient({
   const [editType, setEditType] = useState<EditType | null>(null);
   const [premium, setPremium] = useState(false);
   const [signingOut, startSignOut] = useTransition();
+
+  // Profile state — single source of truth for what the cards display.
+  // Edit modals commit into here on save so the page actually reflects
+  // what was entered. Will be wired to Supabase profiles in a follow-up.
+  const [identity, setIdentity] = useState<Identity>(INITIAL_IDENTITY);
+  const [goals, setGoals] = useState<string[]>(INITIAL_GOALS);
+  const [career, setCareer] = useState<CareerStep[]>(CAREER);
+
+  // Per-edit form state, reset to the latest committed value whenever the
+  // matching modal is opened.
+  const [identityForm, setIdentityForm] = useState<Identity>(identity);
+  const [goalsForm, setGoalsForm] = useState<string>(goals.join(", "));
+  const [careerForm, setCareerForm] = useState<CareerForm>(BLANK_CAREER_FORM);
+
+  function openEdit(type: EditType) {
+    if (type === "identity") setIdentityForm(identity);
+    if (type === "goals") setGoalsForm(goals.join(", "));
+    if (type === "career") setCareerForm(BLANK_CAREER_FORM);
+    setEditType(type);
+  }
+
+  function saveEdit() {
+    if (editType === "identity") {
+      setIdentity(identityForm);
+    } else if (editType === "goals") {
+      const next = goalsForm
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setGoals(next);
+    } else if (editType === "career") {
+      const { place, sub, years, company, role: r } = careerForm;
+      if (place.trim() && company.trim()) {
+        // Demote any "current" flag from existing steps so only the new
+        // one is highlighted.
+        setCareer((prev) => [
+          ...prev.map((step) => ({ ...step, current: false })),
+          {
+            place: place.trim() || "—",
+            sub: sub.trim() || "—",
+            years: years.trim() || "—",
+            company: company.trim(),
+            role: r.trim() || "—",
+            current: true,
+          },
+        ]);
+      }
+    }
+    setEditType(null);
+  }
 
   useEffect(() => {
     setPremium(window.localStorage.getItem("xbh_premium") === "1");
@@ -84,10 +169,11 @@ export function MyPageClient({
                       </div>
                       <div>
                         <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
-                          YT さん
+                          {identity.name}
                         </h1>
                         <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
-                          34歳 · 在SG 3年目
+                          {identity.age}歳 · 在{identity.location}{" "}
+                          {identity.tenure}
                         </p>
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">
@@ -101,19 +187,15 @@ export function MyPageClient({
                     </div>
                     <button
                       type="button"
-                      onClick={() => setEditType("identity")}
+                      onClick={() => openEdit("identity")}
                       className="text-[11px] font-bold text-blue underline-offset-2 underline whitespace-nowrap"
                     >
                       編集
                     </button>
                   </div>
 
-                  <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4">
-                    &quot;日系大手から東南アジアのTech企業へ。
-                    <br />
-                    言葉と文化の壁を、3年で乗り越えた話なら
-                    <br />
-                    いつでもどうぞ。&quot;
+                  <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4 whitespace-pre-line">
+                    &quot;{identity.bio}&quot;
                   </p>
 
                   <div className="mt-5 pt-4 border-t border-dashed border-ink/25">
@@ -123,25 +205,27 @@ export function MyPageClient({
                       </p>
                       <button
                         type="button"
-                        onClick={() => setEditType("goals")}
+                        onClick={() => openEdit("goals")}
                         className="text-[10px] text-blue font-bold"
                       >
                         編集
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink">
-                        🇺🇸 US
-                      </span>
-                      <span className="text-[11px] px-2 py-0.5 bg-mustard border border-ink rounded-full font-bold text-ink">
-                        🚀 Startup
-                      </span>
-                      <span className="text-[11px] px-2 py-0.5 bg-jade border border-ink rounded-full font-bold text-ink">
-                        VP級
-                      </span>
-                      <span className="text-[11px] px-2 py-0.5 bg-cream border-[1.5px] border-ink rounded-full font-bold text-ink">
-                        Tech
-                      </span>
+                      {goals.length === 0 ? (
+                        <span className="text-[11px] text-ink-faint">
+                          まだ未設定 — 「編集」から追加できます
+                        </span>
+                      ) : (
+                        goals.map((g, i) => (
+                          <span
+                            key={`${g}-${i}`}
+                            className="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink"
+                          >
+                            {g}
+                          </span>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -351,7 +435,7 @@ export function MyPageClient({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setEditType("career")}
+                  onClick={() => openEdit("career")}
                   className="text-[11px] font-bold text-blue"
                 >
                   + ステップ追加
@@ -359,7 +443,7 @@ export function MyPageClient({
               </div>
 
               <div className="space-y-3">
-                {CAREER.map((step, i) => (
+                {career.map((step, i) => (
                   <div key={i} className="pass p-4 relative">
                     {step.current && (
                       <div className="absolute -top-2 -right-2 bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border-[1.5px] border-ink uppercase tracking-widest shadow-pop-sm">
@@ -540,7 +624,10 @@ export function MyPageClient({
                     id="f-name"
                     type="text"
                     className="field"
-                    defaultValue="YT さん"
+                    value={identityForm.name}
+                    onChange={(e) =>
+                      setIdentityForm((f) => ({ ...f, name: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -551,18 +638,27 @@ export function MyPageClient({
                     id="f-age"
                     type="number"
                     className="field"
-                    defaultValue={34}
+                    value={identityForm.age}
+                    onChange={(e) =>
+                      setIdentityForm((f) => ({ ...f, age: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
                   <label className="label" htmlFor="f-location">
-                    現在地
+                    現在地 (国・都市)
                   </label>
                   <input
                     id="f-location"
                     type="text"
                     className="field"
-                    defaultValue="Singapore"
+                    value={identityForm.location}
+                    onChange={(e) =>
+                      setIdentityForm((f) => ({
+                        ...f,
+                        location: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div>
@@ -573,7 +669,13 @@ export function MyPageClient({
                     id="f-tenure"
                     type="text"
                     className="field"
-                    defaultValue="3年目"
+                    value={identityForm.tenure}
+                    onChange={(e) =>
+                      setIdentityForm((f) => ({
+                        ...f,
+                        tenure: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div>
@@ -584,7 +686,10 @@ export function MyPageClient({
                     id="f-bio"
                     className="field"
                     rows={4}
-                    defaultValue="日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。"
+                    value={identityForm.bio}
+                    onChange={(e) =>
+                      setIdentityForm((f) => ({ ...f, bio: e.target.value }))
+                    }
                   />
                 </div>
               </>
@@ -598,8 +703,24 @@ export function MyPageClient({
                 <input
                   type="text"
                   className="field"
-                  defaultValue="🇺🇸 US, 🚀 Startup, VP級, Tech"
+                  value={goalsForm}
+                  onChange={(e) => setGoalsForm(e.target.value)}
+                  placeholder="🇺🇸 US, 🚀 Startup, VP級, Tech"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {goalsForm
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((g, i) => (
+                      <span
+                        key={`${g}-${i}`}
+                        className="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                </div>
               </>
             )}
 
@@ -611,6 +732,22 @@ export function MyPageClient({
                     type="text"
                     className="field"
                     placeholder="例: Singapore"
+                    value={careerForm.place}
+                    onChange={(e) =>
+                      setCareerForm((f) => ({ ...f, place: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="label">区分(駐在 / 現地 など、任意)</label>
+                  <input
+                    type="text"
+                    className="field"
+                    placeholder="例: 現地採用"
+                    value={careerForm.sub}
+                    onChange={(e) =>
+                      setCareerForm((f) => ({ ...f, sub: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -619,6 +756,10 @@ export function MyPageClient({
                     type="text"
                     className="field"
                     placeholder="例: Shopee"
+                    value={careerForm.company}
+                    onChange={(e) =>
+                      setCareerForm((f) => ({ ...f, company: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -626,30 +767,35 @@ export function MyPageClient({
                   <input
                     type="text"
                     className="field"
-                    placeholder="例: Senior Product Manager"
+                    placeholder="例: Senior Product Manager · 2年"
+                    value={careerForm.role}
+                    onChange={(e) =>
+                      setCareerForm((f) => ({ ...f, role: e.target.value }))
+                    }
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">開始年</label>
-                    <input
-                      type="number"
-                      className="field"
-                      placeholder="2022"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">終了年</label>
-                    <input type="text" className="field" placeholder="現在" />
-                  </div>
+                <div>
+                  <label className="label">期間</label>
+                  <input
+                    type="text"
+                    className="field"
+                    placeholder="例: 2022 - 現在"
+                    value={careerForm.years}
+                    onChange={(e) =>
+                      setCareerForm((f) => ({ ...f, years: e.target.value }))
+                    }
+                  />
                 </div>
+                <p className="text-[11px] text-ink-soft">
+                  追加されたステップは自動的に「現在」フラグが立ちます。
+                </p>
               </>
             )}
           </div>
 
           <button
             type="button"
-            onClick={() => setEditType(null)}
+            onClick={saveEdit}
             className="btn-primary w-full mb-4"
           >
             保存する

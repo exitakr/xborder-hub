@@ -4,26 +4,68 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Category = "career" | "life" | "visa" | "salary" | "family" | "other";
+type Country = "" | "sg" | "jp" | "hk" | "vn" | "th" | "us" | "other";
+type Industry = "" | "tech" | "finance" | "startup" | "consumer" | "manufacturing" | "other";
+type Role = "" | "pm" | "eng" | "bd" | "marketing" | "design" | "other";
+type Category =
+  | ""
+  | "career"
+  | "life"
+  | "visa"
+  | "salary"
+  | "family"
+  | "other";
 
-const CATEGORIES: { id: Category; label: string }[] = [
-  { id: "career", label: "💼 キャリア" },
-  { id: "life", label: "🏠 生活" },
-  { id: "visa", label: "🛂 ビザ" },
-  { id: "salary", label: "💰 給与" },
-  { id: "family", label: "👨‍👩‍👧 家族" },
-  { id: "other", label: "💬 その他" },
+const COUNTRIES: { v: Country; label: string }[] = [
+  { v: "sg", label: "🇸🇬 Singapore" },
+  { v: "jp", label: "🇯🇵 Japan" },
+  { v: "hk", label: "🇭🇰 Hong Kong" },
+  { v: "vn", label: "🇻🇳 Vietnam" },
+  { v: "th", label: "🇹🇭 Thailand" },
+  { v: "us", label: "🇺🇸 United States" },
+  { v: "other", label: "🌏 その他" },
+];
+
+const INDUSTRIES: { v: Industry; label: string }[] = [
+  { v: "tech", label: "💻 Tech" },
+  { v: "finance", label: "🏦 Finance" },
+  { v: "startup", label: "🚀 Startup" },
+  { v: "consumer", label: "🛍 Consumer" },
+  { v: "manufacturing", label: "🏭 Manufacturing" },
+  { v: "other", label: "🏢 その他" },
+];
+
+const ROLES: { v: Role; label: string }[] = [
+  { v: "pm", label: "📐 PM" },
+  { v: "eng", label: "⚙️ Engineer" },
+  { v: "bd", label: "💼 BD / Sales" },
+  { v: "marketing", label: "📣 Marketing" },
+  { v: "design", label: "🎨 Design" },
+  { v: "other", label: "👤 その他" },
+];
+
+const CATEGORIES: { v: Category; label: string }[] = [
+  { v: "career", label: "💼 キャリア" },
+  { v: "life", label: "🏠 生活" },
+  { v: "visa", label: "🛂 ビザ" },
+  { v: "salary", label: "💰 給与" },
+  { v: "family", label: "👨‍👩‍👧 家族" },
+  { v: "other", label: "💬 その他" },
 ];
 
 export function ThreadNewClient() {
   const router = useRouter();
-  const [category, setCategory] = useState<Category | null>(null);
+  const [country, setCountry] = useState<Country>("");
+  const [industry, setIndustry] = useState<Industry>("");
+  const [role, setRole] = useState<Role>("");
+  const [category, setCategory] = useState<Category>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const valid = useMemo(
-    () => Boolean(category) && title.trim().length >= 5 && body.trim().length >= 10,
+    () =>
+      Boolean(category) && title.trim().length >= 5 && body.trim().length >= 10,
     [category, title, body],
   );
 
@@ -89,27 +131,50 @@ export function ThreadNewClient() {
 
       <main className="container-app pt-5 pb-32 lg:pb-20">
         <div className="max-w-2xl mx-auto compose-shell">
-          {/* Category */}
-          <section className="mb-6">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-3">
-              カテゴリ <span className="text-blue">*</span>
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((c) => {
-                const active = category === c.id;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setCategory(c.id)}
-                    className={`px-3 py-2 border-[1.5px] border-ink rounded-full text-[12px] font-bold shadow-pop-sm transition-colors ${
-                      active ? "bg-ink text-cream" : "bg-cream text-ink"
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                );
-              })}
+          {/* Tagging: country / industry / role / category */}
+          <section className="mb-6 space-y-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-2">
+                🌏 国 <span className="font-normal">(任意)</span>
+              </p>
+              <ChipRow
+                options={COUNTRIES}
+                value={country}
+                onChange={(v) => setCountry(v as Country)}
+              />
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-2">
+                🏢 業界 <span className="font-normal">(任意)</span>
+              </p>
+              <ChipRow
+                options={INDUSTRIES}
+                value={industry}
+                onChange={(v) => setIndustry(v as Industry)}
+              />
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-2">
+                👤 職種 <span className="font-normal">(任意)</span>
+              </p>
+              <ChipRow
+                options={ROLES}
+                value={role}
+                onChange={(v) => setRole(v as Role)}
+              />
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-ink-faint font-bold mb-2">
+                💡 カテゴリ <span className="text-blue">*</span>
+              </p>
+              <ChipRow
+                options={CATEGORIES}
+                value={category}
+                onChange={(v) => setCategory(v as Category)}
+              />
             </div>
           </section>
 
@@ -153,21 +218,16 @@ export function ThreadNewClient() {
               maxLength={2000}
             />
             <div className="flex items-center justify-end mt-2">
-              <p className="text-[10px] text-ink-faint">
-                {body.length} / 2000
-              </p>
+              <p className="text-[10px] text-ink-faint">{body.length} / 2000</p>
             </div>
           </section>
 
-          {/* Tips */}
           <section className="mt-6">
             <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-4">
-              <p className="text-[12px] font-bold text-ink mb-2">
-                📌 投稿のヒント
-              </p>
+              <p className="text-[12px] font-bold text-ink mb-2">📌 投稿のヒント</p>
               <ul className="text-[11px] text-ink-soft space-y-1 pl-4 list-disc leading-relaxed">
                 <li>個人情報・会社の機密は書かないでください</li>
-                <li>具体的な状況・国・時期を書くと回答が集まりやすい</li>
+                <li>国・業界・職種を指定すると、同じ条件で探している人に見つけてもらいやすくなります</li>
                 <li>誹謗中傷・差別的な内容は禁止です</li>
                 <li>匿名で投稿されます(自分の名前は表示されません)</li>
               </ul>
@@ -205,5 +265,35 @@ export function ThreadNewClient() {
         </div>
       </div>
     </>
+  );
+}
+
+function ChipRow<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { v: T; label: string }[];
+  value: T | "";
+  onChange: (v: T | "") => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = value === o.v;
+        return (
+          <button
+            key={o.v}
+            type="button"
+            onClick={() => onChange(active ? ("" as T) : o.v)}
+            className={`px-2.5 py-1 border border-ink rounded-full text-[11px] font-bold transition-colors ${
+              active ? "bg-ink text-cream" : "bg-cream text-ink"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
