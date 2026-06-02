@@ -25,6 +25,10 @@ function formatCount(n: number) {
 
 export function HomeClient() {
   const [trendKey, setTrendKey] = useState<TrendKey>("industry");
+  const [highlightedFlow, setHighlightedFlow] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
   const trendItems = TRENDS[trendKey];
 
   return (
@@ -43,16 +47,30 @@ export function HomeClient() {
 
             {/* GLOBAL MAP */}
             <section className="rise" style={{ animationDelay: "0.04s" }}>
-              <div className="bg-paper border-[1.5px] border-ink rounded-2xl shadow-pop p-2 lg:p-3">
-                <GlobalMap />
+              <div className="bg-paper border border-ink/10 rounded-2xl shadow-pop p-2 lg:p-3">
+                <GlobalMap highlightedFlow={highlightedFlow} />
               </div>
+              {highlightedFlow && (
+                <p className="text-[11px] text-ink-soft font-bold mt-2 text-center">
+                  <span className="text-blue">{highlightedFlow.from}</span> →{" "}
+                  <span className="text-blue">{highlightedFlow.to}</span>{" "}
+                  をハイライト中{" "}
+                  <button
+                    type="button"
+                    onClick={() => setHighlightedFlow(null)}
+                    className="underline text-ink-faint ml-1"
+                  >
+                    解除
+                  </button>
+                </p>
+              )}
             </section>
 
-            {/* ANNUAL TOP FLOWS */}
+            {/* MOVE TREND (top annual flows) */}
             <section className="rise" style={{ animationDelay: "0.08s" }}>
               <div className="flex items-end justify-between mb-2">
                 <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink">
-                  今年のトレンド · TOP 移動
+                  移動トレンド
                 </h2>
                 <Link
                   href="/search"
@@ -62,32 +80,49 @@ export function HomeClient() {
                 </Link>
               </div>
               <div className="flex gap-2 overflow-x-auto hide-scroll pb-1">
-                {ANNUAL_TOP_FLOWS.map((flow) => (
-                  <div
-                    key={flow.label}
-                    className="flex-none bg-cream border-[1.5px] border-ink rounded-xl px-3 py-2 shadow-pop-sm flex items-baseline gap-2"
-                  >
-                    <span
-                      className="display font-bold text-[14px] lg:text-[15px]"
-                      style={{ color: flow.color }}
+                {ANNUAL_TOP_FLOWS.map((flow) => {
+                  const active =
+                    highlightedFlow?.from === flow.from &&
+                    highlightedFlow?.to === flow.to;
+                  return (
+                    <button
+                      key={flow.label}
+                      type="button"
+                      onClick={() =>
+                        setHighlightedFlow((cur) =>
+                          cur?.from === flow.from && cur?.to === flow.to
+                            ? null
+                            : { from: flow.from, to: flow.to },
+                        )
+                      }
+                      className={`flex-none border rounded-xl px-3 py-2 shadow-pop-sm flex items-baseline gap-2 transition-colors ${
+                        active
+                          ? "bg-ink text-cream border-ink"
+                          : "bg-cream text-ink border-ink/10 hover:border-ink"
+                      }`}
                     >
-                      {formatCount(flow.count)}
-                    </span>
-                    <span className="text-[11px] font-bold text-ink whitespace-nowrap">
-                      {flow.label}
-                    </span>
-                  </div>
-                ))}
+                      <span
+                        className={`display font-bold text-[14px] lg:text-[15px] ${active ? "text-mustard" : ""}`}
+                        style={active ? undefined : { color: flow.color }}
+                      >
+                        {formatCount(flow.count)}
+                      </span>
+                      <span className="text-[11px] font-bold whitespace-nowrap">
+                        {flow.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </section>
 
-            {/* ANNUAL TREND CATEGORIES */}
+            {/* TRENDING CAREER (annual topic categories) */}
             <section className="rise" style={{ animationDelay: "0.12s" }}>
               <div className="flex items-end justify-between mb-2 gap-2">
                 <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink">
-                  今年のトレンド · トピック
+                  トレンドキャリア
                 </h2>
-                <div className="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl shadow-pop-sm">
+                <div className="inline-flex gap-1 p-1 bg-paper border border-ink/10 rounded-xl shadow-pop-sm">
                   {TREND_TABS.map((tab) => (
                     <button
                       key={tab.id}
@@ -108,11 +143,20 @@ export function HomeClient() {
               <div className="flex gap-2 overflow-x-auto hide-scroll pb-1">
                 {trendItems.map((item) => {
                   const positive = item.change >= 0;
+                  // Map trend axis → /search query param. Country trend hits
+                  // the `to` filter (destination country), the others hit
+                  // their matching filter directly.
+                  const param =
+                    trendKey === "country"
+                      ? "country"
+                      : trendKey === "industry"
+                        ? "industry"
+                        : "role";
                   return (
                     <Link
                       key={item.name}
-                      href={`/search?${trendKey}=${encodeURIComponent(item.name)}`}
-                      className="flex-none bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm w-[140px]"
+                      href={`/search?${param}=${encodeURIComponent(item.name)}`}
+                      className="flex-none bg-cream border border-ink/10 rounded-2xl p-3 shadow-pop-sm w-[140px] hover:border-ink transition-colors"
                     >
                       <div className="text-xl">{item.flag}</div>
                       <p className="display font-bold text-[13px] text-ink mt-1 leading-tight">
@@ -258,17 +302,30 @@ export function HomeClient() {
                 今年の TOP 経路
               </p>
               <div className="space-y-1.5">
-                {ANNUAL_TOP_FLOWS.slice(0, 4).map((flow) => (
-                  <div
-                    key={flow.label}
-                    className="text-[12px] font-bold text-ink flex items-center justify-between"
-                  >
-                    <span>{flow.label}</span>
-                    <span className="text-jade-deep">
-                      {formatCount(flow.count)}
-                    </span>
-                  </div>
-                ))}
+                {ANNUAL_TOP_FLOWS.slice(0, 4).map((flow) => {
+                  const active =
+                    highlightedFlow?.from === flow.from &&
+                    highlightedFlow?.to === flow.to;
+                  return (
+                    <button
+                      key={flow.label}
+                      type="button"
+                      onClick={() =>
+                        setHighlightedFlow((cur) =>
+                          cur?.from === flow.from && cur?.to === flow.to
+                            ? null
+                            : { from: flow.from, to: flow.to },
+                        )
+                      }
+                      className={`w-full text-[12px] font-bold flex items-center justify-between hover:text-blue transition-colors ${active ? "text-blue" : "text-ink"}`}
+                    >
+                      <span>{flow.label}</span>
+                      <span className="text-jade-deep">
+                        {formatCount(flow.count)}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               <Link
                 href="/search"

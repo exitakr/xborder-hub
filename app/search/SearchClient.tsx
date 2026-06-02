@@ -81,12 +81,25 @@ type ApplyTarget = {
   fg: string;
 };
 
-export function SearchClient({ isLoggedIn = false }: { isLoggedIn?: boolean } = {}) {
+type InitialFilters = {
+  from?: string;
+  to?: string;
+  industry?: string;
+  role?: string;
+};
+
+export function SearchClient({
+  isLoggedIn = false,
+  initial,
+}: {
+  isLoggedIn?: boolean;
+  initial?: InitialFilters;
+} = {}) {
   const router = useRouter();
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [role, setRole] = useState("");
+  const [from, setFrom] = useState(initial?.from ?? "");
+  const [to, setTo] = useState(initial?.to ?? "");
+  const [industry, setIndustry] = useState(initial?.industry ?? "");
+  const [role, setRole] = useState(initial?.role ?? "");
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
   const [applyTarget, setApplyTarget] = useState<ApplyTarget | null>(null);

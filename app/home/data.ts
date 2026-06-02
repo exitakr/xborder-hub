@@ -67,15 +67,19 @@ export type AnnualTopFlow = {
   label: string;
   count: number;
   color: string;
+  /** City codes that map back into CITIES; used to highlight the
+   * matching flow on the GlobalMap when the row is tapped. */
+  from: string;
+  to: string;
 };
 
 export const ANNUAL_TOP_FLOWS: AnnualTopFlow[] = [
-  { label: "Tokyo → Singapore", count: 624, color: "#0055A4" },
-  { label: "Singapore → Bangkok", count: 416, color: "#1FA89E" },
-  { label: "Tokyo → San Francisco", count: 364, color: "#6B4F8E" },
-  { label: "Tokyo → New York", count: 260, color: "#FFC93C" },
-  { label: "Singapore → Tokyo", count: 260, color: "#0055A4" },
-  { label: "Tokyo → London", count: 208, color: "#1FA89E" },
+  { from: "TYO", to: "SIN", label: "Tokyo → Singapore",     count: 624, color: "#0055A4" },
+  { from: "SIN", to: "BKK", label: "Singapore → Bangkok",   count: 416, color: "#1FA89E" },
+  { from: "TYO", to: "SFO", label: "Tokyo → San Francisco", count: 364, color: "#6B4F8E" },
+  { from: "TYO", to: "NYC", label: "Tokyo → New York",      count: 260, color: "#FFC93C" },
+  { from: "SIN", to: "TYO", label: "Singapore → Tokyo",     count: 260, color: "#0055A4" },
+  { from: "TYO", to: "LON", label: "Tokyo → London",        count: 208, color: "#1FA89E" },
 ];
 
 export type TrendItem = {

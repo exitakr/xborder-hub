@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LABELS, type Thread } from "@/app/threads/data";
 
 type VoteState = "up" | "down" | null;
 
@@ -57,7 +58,11 @@ const COMMENTS = [
 
 export function ThreadClient({
   isLoggedIn = false,
-}: { isLoggedIn?: boolean } = {}) {
+  thread,
+}: {
+  isLoggedIn?: boolean;
+  thread: Thread;
+}) {
   const router = useRouter();
   const [postVote, setPostVote] = useState<VoteState>("up");
   const [commentVotes, setCommentVotes] = useState<Record<string, VoteState>>({
@@ -134,32 +139,44 @@ export function ThreadClient({
           <article className="bg-paper border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop">
             <div className="flex items-start justify-between mb-3 gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-sm border-[1.5px] border-ink">
-                  RN
+                <div
+                  className={`w-11 h-11 rounded-full ${thread.bg} ${thread.text} font-bold flex items-center justify-center text-sm border border-ink/15`}
+                >
+                  {thread.author}
                 </div>
                 <div>
-                  <p className="font-bold text-[13px] text-ink">RN さん</p>
-                  <p className="text-[11px] text-ink-faint">SIN · 2時間前</p>
+                  <p className="font-bold text-[13px] text-ink">
+                    {thread.author} さん
+                  </p>
+                  <p className="text-[11px] text-ink-faint">
+                    {thread.location} · {thread.posted}
+                  </p>
                 </div>
               </div>
               <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
-                💼 キャリア
+                {LABELS.categories[thread.category]}
               </span>
             </div>
 
             <h1 className="display font-bold text-[22px] lg:text-[26px] text-ink leading-tight mb-3">
-              SG現地Tech企業の面接、英語だけど日本語訛りでも大丈夫?
+              {thread.title}
             </h1>
 
-            <p className="text-[13px] lg:text-[14px] text-ink leading-relaxed">
-              来月Shopee/Grabの最終面接を控えています。
-              <br />
-              <br />
-              TOEIC900はあるけど発音はバキバキの日本語訛りで、ローカルやSEAの面接官に通じるか不安です。
-              <br />
-              <br />
-              英語でテクニカルな話はできますが、雑談やライトな会話で言葉に詰まることが多いです。実際に同じ状況を乗り越えた方、どんな対策をされましたか?
+            <p className="text-[13px] lg:text-[14px] text-ink leading-relaxed whitespace-pre-line">
+              {thread.body}
             </p>
+
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                {LABELS.countries[thread.country]}
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                {LABELS.industries[thread.industry]}
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                {LABELS.roles[thread.role]}
+              </span>
+            </div>
 
             <div className="flex items-center gap-3 mt-5 pt-4 border-t border-dashed border-ink/20">
               <button
@@ -169,7 +186,7 @@ export function ThreadClient({
                 }
                 className={`vote-btn ${postVote === "up" ? "voted-up" : ""}`}
               >
-                👍 23
+                👍 {thread.ups}
               </button>
               <button
                 type="button"
@@ -178,10 +195,10 @@ export function ThreadClient({
                 }
                 className={`vote-btn ${postVote === "down" ? "voted-down" : ""}`}
               >
-                👎 1
+                👎 {thread.downs}
               </button>
               <span className="text-[11px] text-ink-soft font-bold ml-auto">
-                💬 14件
+                💬 {thread.replies}件
               </span>
             </div>
           </article>
@@ -189,7 +206,7 @@ export function ThreadClient({
           {/* Comments header */}
           <div className="flex items-center justify-between mt-6 mb-4">
             <h2 className="display font-bold text-[16px] text-ink">
-              コメント (14件)
+              コメント ({thread.replies}件)
             </h2>
             <select className="text-[11px] font-bold text-ink-soft bg-transparent">
               <option>新着順</option>
