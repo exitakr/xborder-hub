@@ -4,8 +4,8 @@
   "description": "海外で働く前に、答え合わせができる場所。先に行った人が、道を残す。",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFF6E8",
-  "theme_color": "#FFF6E8",
+  "background_color": "#FAFAF7",
+  "theme_color": "#FAFAF7",
   "lang": "ja",
   "orientation": "portrait",
   "icons": [

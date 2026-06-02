@@ -5,18 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: "#FFF6E8",
-        paper: "#FBF0DD",
+        // Slightly warm white — keeps brand identity but reads as SaaS.
+        cream: "#FAFAF7",
+        // Secondary surface tint, used for chip backgrounds and side rails.
+        paper: "#F4F5F7",
+        // Text tones
         ink: {
           DEFAULT: "#0A1F3D",
-          soft: "#3A4658",
-          faint: "#7C8597",
+          soft: "#475569",
+          faint: "#94A3B8",
         },
+        // Accent palette stays — used sparingly now (links, key numbers).
         blue: {
           DEFAULT: "#0055A4",
           deep: "#003C7A",
           bright: "#2E7BE8",
-          soft: "#D6E4F5",
+          soft: "#E5EEF8",
         },
         jade: {
           DEFAULT: "#4ECDC4",
@@ -31,10 +35,12 @@ const config: Config = {
         serif: ["Instrument Serif", "serif"],
       },
       boxShadow: {
-        pop: "4px 4px 0 #0A1F3D",
-        "pop-sm": "2px 2px 0 #0A1F3D",
-        "pop-lg": "6px 6px 0 #0A1F3D",
-        "pop-blue": "4px 4px 0 #0055A4",
+        // Soft shadows replace the offset "pop" shadows — surfaces feel
+        // floating without the sticker look.
+        pop: "0 1px 2px rgba(10,31,61,0.06), 0 1px 3px rgba(10,31,61,0.04)",
+        "pop-sm": "0 1px 2px rgba(10,31,61,0.05)",
+        "pop-lg": "0 4px 14px rgba(10,31,61,0.08), 0 1px 3px rgba(10,31,61,0.04)",
+        "pop-blue": "0 6px 18px rgba(0,85,164,0.18)",
       },
     },
   },

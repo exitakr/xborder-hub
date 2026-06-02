@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 /*
- * Application-wide styles live in /public/styles.css and are loaded via a
- * <link> tag in app/layout.tsx so that both legacy HTML pages and new React
- * routes share the same design tokens, animations, and component classes.
+ * Application-wide tokens live in /public/styles.css (loaded by app/layout.tsx).
+ * This file only holds page-specific helpers small enough not to warrant
+ * a dedicated CSS module.
  *
- * Tailwind utilities defined in tailwind.config.ts are the primary mechanism
- * for new components. Page-specific styles that are too small to deserve
- * their own CSS module live below.
+ * v2 refresh: every "pop" offset shadow / 1.5px ink border has been
+ * replaced with hairline ink/10 borders and soft layered shadows to
+ * match the CORE / openmoney aesthetic the rest of the site adopts.
  */
 
 /* ===== Landing (/) ===== */
@@ -22,49 +22,48 @@
 .hero-blob {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.2;
-  filter: blur(40px);
+  opacity: 0.18;
+  filter: blur(60px);
 }
 .fear-card {
-  transition: transform 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .fear-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 #0a1f3d;
+  border-color: rgba(10, 31, 61, 0.18);
+  box-shadow: 0 4px 14px rgba(10, 31, 61, 0.06);
 }
 
-/* ===== Threads (/threads) ===== */
+/* ===== Threads (/threads) — floating action button ===== */
 .fab {
   position: fixed;
   right: 20px;
   bottom: 90px;
   z-index: 35;
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 999px;
   background: #0055a4;
-  color: #fff6e8;
-  border: 1.5px solid #0a1f3d;
-  box-shadow: 4px 4px 0 #0a1f3d;
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 16px rgba(0, 85, 164, 0.32), 0 1px 3px rgba(10, 31, 61, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
 }
 .fab:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 #0a1f3d;
+  background: #014ba0;
+  box-shadow: 0 10px 22px rgba(0, 85, 164, 0.38), 0 2px 4px rgba(10, 31, 61, 0.16);
 }
 .fab:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 #0a1f3d;
+  transform: translateY(1px);
 }
 @media (min-width: 1024px) {
   .fab {
     bottom: 32px;
     right: 32px;
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
   }
 }
 
@@ -95,7 +94,7 @@
   resize: none;
 }
 .compose-title::placeholder {
-  color: #7c8597;
+  color: #94a3b8;
   font-weight: 700;
 }
 .compose-body {
@@ -114,7 +113,7 @@
   flex: 1;
 }
 .compose-body::placeholder {
-  color: #7c8597;
+  color: #94a3b8;
 }
 
 /* ===== Chat (/chat) ===== */
@@ -147,9 +146,9 @@
   gap: 8px;
 }
 .chat-input-row {
-  border-top: 1.5px solid #0a1f3d;
-  padding: 14px 16px;
-  background: #fff6e8;
+  border-top: 1px solid rgba(10, 31, 61, 0.10);
+  padding: 12px 16px;
+  background: #ffffff;
   display: flex;
   gap: 10px;
   align-items: flex-end;
@@ -157,71 +156,80 @@
 .chat-input {
   flex: 1;
   padding: 10px 14px;
-  background: #fbf0dd;
-  border: 1.5px solid #0a1f3d;
-  border-radius: 18px;
+  background: #f4f5f7;
+  border: 1px solid rgba(10, 31, 61, 0.10);
+  border-radius: 14px;
   font-family: inherit;
   font-size: 13px;
   color: #0a1f3d;
   resize: none;
   max-height: 100px;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .chat-input:focus {
-  box-shadow: 2px 2px 0 #0055a4;
+  border-color: #0055a4;
+  box-shadow: 0 0 0 3px rgba(0, 85, 164, 0.15);
 }
 .chat-send {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   background: #0a1f3d;
-  color: #fff6e8;
-  border: 1.5px solid #0a1f3d;
+  color: #ffffff;
+  border: none;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 2px 2px 0 #0055a4;
+  box-shadow: 0 2px 6px rgba(10, 31, 61, 0.18);
   cursor: pointer;
+  transition: background 0.12s;
+}
+.chat-send:hover {
+  background: #142e55;
 }
 .day-divider {
   align-self: center;
-  background: #fbf0dd;
-  border: 1px solid rgba(10, 31, 61, 0.2);
-  border-radius: 999px;
-  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  padding: 2px 0;
   font-size: 10px;
   font-weight: 700;
-  color: #7c8597;
+  color: #94a3b8;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   margin: 8px 0;
 }
 
-/* ===== Search (/search) ===== */
+/* ===== Search (/search) — filter select ===== */
 .filter-select {
   appearance: none;
   -webkit-appearance: none;
-  background: #fff6e8;
-  border: 1.5px solid #0a1f3d;
-  border-radius: 14px;
-  padding: 12px 36px 12px 14px;
+  background: #ffffff;
+  border: 1px solid rgba(10, 31, 61, 0.10);
+  border-radius: 12px;
+  padding: 10px 32px 10px 12px;
   font-family: "Bricolage Grotesque", "Zen Kaku Gothic New", sans-serif;
   font-weight: 700;
   font-size: 13px;
   color: #0a1f3d;
   width: 100%;
   cursor: pointer;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230A1F3D' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 14px center;
-  transition: box-shadow 0.15s;
+  background-position: right 12px center;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .filter-select:focus,
 .filter-select:hover {
   outline: none;
-  box-shadow: 2px 2px 0 #0a1f3d;
+  border-color: #0a1f3d;
+  box-shadow: 0 0 0 3px rgba(10, 31, 61, 0.06);
 }
 .filter-select.filled {
   background-color: #0a1f3d;
-  color: #fff6e8;
+  color: #ffffff;
+  border-color: #0a1f3d;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FFC93C' stroke-width='2.5'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
 }
