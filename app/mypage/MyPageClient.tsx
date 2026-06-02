@@ -8,7 +8,7 @@ import { signOut } from "@/app/login/actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
 import { PrivacySettings } from "./PrivacySettings";
 
-type EditType = "identity" | "goals" | "career";
+type EditType = "identity" | "career";
 type CcTab = "sent" | "received";
 
 const CAREER = [
@@ -39,28 +39,158 @@ const CAREER = [
 ];
 
 const EDIT_TITLES: Record<EditType, string> = {
-  identity: "基本情報を編集",
-  goals: "次に目指すゴールを編集",
+  identity: "プロフィールを編集",
   career: "キャリアステップを追加",
 };
+
+// ───── Select options shared by the unified identity form ─────
+
+const COUNTRY_OPTS = [
+  { v: "", label: "—" },
+  { v: "Japan", label: "🇯🇵 Japan" },
+  { v: "Singapore", label: "🇸🇬 Singapore" },
+  { v: "Hong Kong", label: "🇭🇰 Hong Kong" },
+  { v: "Thailand", label: "🇹🇭 Thailand" },
+  { v: "Vietnam", label: "🇻🇳 Vietnam" },
+  { v: "Indonesia", label: "🇮🇩 Indonesia" },
+  { v: "Malaysia", label: "🇲🇾 Malaysia" },
+  { v: "United States", label: "🇺🇸 United States" },
+  { v: "United Kingdom", label: "🇬🇧 United Kingdom" },
+  { v: "Germany", label: "🇩🇪 Germany" },
+  { v: "Australia", label: "🇦🇺 Australia" },
+];
+const INDUSTRY_OPTS = [
+  { v: "", label: "—" },
+  { v: "Tech", label: "💻 Tech" },
+  { v: "Finance", label: "🏦 Finance" },
+  { v: "Startup", label: "🚀 Startup" },
+  { v: "Consumer", label: "🛍 Consumer" },
+  { v: "Manufacturing", label: "🏭 Manufacturing" },
+  { v: "Healthcare", label: "🏥 Healthcare" },
+  { v: "Education", label: "🎓 Education" },
+  { v: "Consulting", label: "📊 Consulting" },
+];
+const ROLE_OPTS = [
+  { v: "", label: "—" },
+  { v: "Product Manager", label: "📐 Product Manager" },
+  { v: "Engineer", label: "⚙️ Engineer" },
+  { v: "BD / Sales", label: "💼 BD / Sales" },
+  { v: "Marketing", label: "📣 Marketing" },
+  { v: "Designer", label: "🎨 Designer" },
+  { v: "Finance / Accounting", label: "📊 Finance / Accounting" },
+  { v: "HR / People", label: "👥 HR / People" },
+  { v: "Executive (VP+)", label: "🏛 Executive (VP+)" },
+  { v: "Founder / Entrepreneur", label: "🚀 Founder / Entrepreneur" },
+];
+const VISA_OPTS = [
+  { v: "", label: "—" },
+  { v: "EP_SG", label: "EP (Singapore)" },
+  { v: "S_Pass_SG", label: "S Pass (Singapore)" },
+  { v: "PR_SG", label: "PR (Singapore)" },
+  { v: "H1B", label: "H-1B (US)" },
+  { v: "O1", label: "O-1 (US)" },
+  { v: "L1", label: "L-1 (US)" },
+  { v: "Green_Card", label: "Green Card (US)" },
+  { v: "Tier2_UK", label: "Skilled Worker (UK)" },
+  { v: "WP", label: "就労ビザ (その他)" },
+  { v: "PR", label: "永住権 (その他)" },
+  { v: "Citizen", label: "市民権" },
+  { v: "none", label: "無し / 検討中" },
+];
+const JPY_SALARY_OPTS = [
+  { v: "", label: "—" },
+  { v: "lt_400", label: "〜400万円" },
+  { v: "400_600", label: "400〜600万円" },
+  { v: "600_800", label: "600〜800万円" },
+  { v: "800_1000", label: "800〜1,000万円" },
+  { v: "1000_1300", label: "1,000〜1,300万円" },
+  { v: "1300_1600", label: "1,300〜1,600万円" },
+  { v: "1600_2000", label: "1,600〜2,000万円" },
+  { v: "gte_2000", label: "2,000万円以上" },
+];
+const TECH_SKILLS = [
+  "SQL",
+  "Python",
+  "JavaScript",
+  "TypeScript",
+  "Java",
+  "Go",
+  "Tableau",
+  "Power BI",
+  "Gen AI",
+  "Prompt Engineering",
+  "Data Analytics",
+  "ML / DL",
+  "AWS",
+  "GCP",
+];
+const BUSINESS_SKILLS = [
+  "P&L Management",
+  "Regional Management",
+  "Team Management",
+  "Product Management",
+  "Brand Management",
+  "Consulting",
+  "Negotiation",
+  "Multicultural Team",
+  "Overseas Assignment",
+];
 
 type Identity = {
   name: string;
   age: string;
-  location: string;
+  country: string; // current country (select)
+  city: string;
   tenure: string;
   bio: string;
+  industry: string;
+  role: string;
+  visa: string;
+  salary: string; // current JPY range
+  techSkills: string[];
+  businessSkills: string[];
+  goalCountry: string;
+  goalIndustry: string;
+  goalRole: string;
+  goalSalary: string;
 };
 
 const INITIAL_IDENTITY: Identity = {
   name: "YT さん",
   age: "34",
-  location: "Singapore",
+  country: "Singapore",
+  city: "Singapore",
   tenure: "3年目",
   bio: "日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。",
+  industry: "Tech",
+  role: "Product Manager",
+  visa: "EP_SG",
+  salary: "1300_1600",
+  techSkills: ["SQL", "Gen AI", "Data Analytics"],
+  businessSkills: ["Product Management", "Multicultural Team"],
+  goalCountry: "United States",
+  goalIndustry: "Startup",
+  goalRole: "Executive (VP+)",
+  goalSalary: "gte_2000",
 };
 
-const INITIAL_GOALS = ["🇺🇸 US", "🚀 Startup", "VP級", "Tech"];
+function labelOf(opts: { v: string; label: string }[], v: string) {
+  return opts.find((o) => o.v === v)?.label ?? "";
+}
+
+function initials(name: string): string {
+  const cleaned = name.replace(/(さん|くん|さま|様)\s*$/, "").trim();
+  if (!cleaned) return "—";
+  const words = cleaned.split(/\s+/);
+  if (words.length >= 2 && /^[A-Za-z]/.test(words[0]!)) {
+    return (words[0]![0]! + (words[1]![0] ?? "")).toUpperCase();
+  }
+  if (/^[A-Za-z]+$/.test(cleaned)) {
+    return cleaned.substring(0, 2).toUpperCase();
+  }
+  // Japanese / mixed — take first 2 chars
+  return Array.from(cleaned).slice(0, 2).join("");
+}
 
 type CareerStep = (typeof CAREER)[number];
 type CareerForm = {
@@ -91,31 +221,32 @@ export function MyPageClient({
   // Edit modals commit into here on save so the page actually reflects
   // what was entered. Will be wired to Supabase profiles in a follow-up.
   const [identity, setIdentity] = useState<Identity>(INITIAL_IDENTITY);
-  const [goals, setGoals] = useState<string[]>(INITIAL_GOALS);
   const [career, setCareer] = useState<CareerStep[]>(CAREER);
 
   // Per-edit form state, reset to the latest committed value whenever the
   // matching modal is opened.
   const [identityForm, setIdentityForm] = useState<Identity>(identity);
-  const [goalsForm, setGoalsForm] = useState<string>(goals.join(", "));
   const [careerForm, setCareerForm] = useState<CareerForm>(BLANK_CAREER_FORM);
 
   function openEdit(type: EditType) {
     if (type === "identity") setIdentityForm(identity);
-    if (type === "goals") setGoalsForm(goals.join(", "));
     if (type === "career") setCareerForm(BLANK_CAREER_FORM);
     setEditType(type);
+  }
+
+  function toggleSkill(group: "techSkills" | "businessSkills", skill: string) {
+    setIdentityForm((f) => {
+      const current = f[group];
+      const next = current.includes(skill)
+        ? current.filter((s) => s !== skill)
+        : [...current, skill];
+      return { ...f, [group]: next };
+    });
   }
 
   function saveEdit() {
     if (editType === "identity") {
       setIdentity(identityForm);
-    } else if (editType === "goals") {
-      const next = goalsForm
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      setGoals(next);
     } else if (editType === "career") {
       const { place, sub, years, company, role: r } = careerForm;
       if (place.trim() && company.trim()) {
@@ -158,25 +289,23 @@ export function MyPageClient({
           <div className="app-grid-main space-y-8">
             {/* IDENTITY */}
             <section className="rise">
-              <div className="bg-paper border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop relative overflow-hidden">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-blue opacity-15" />
-                <div className="absolute -bottom-12 -left-6 w-24 h-24 rounded-full bg-mustard opacity-20" />
+              <div className="bg-paper border border-ink/10 rounded-3xl p-5 lg:p-7 shadow-pop relative overflow-hidden">
                 <div className="relative">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl bg-blue text-cream font-bold flex items-center justify-center text-2xl lg:text-3xl border-[1.5px] border-ink shadow-pop-sm display">
-                        YT
+                      <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl bg-blue text-cream font-bold flex items-center justify-center text-2xl lg:text-3xl border border-ink/15 shadow-pop-sm display">
+                        {initials(identity.name)}
                       </div>
                       <div>
                         <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
                           {identity.name}
                         </h1>
                         <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
-                          {identity.age}歳 · 在{identity.location}{" "}
+                          {identity.age}歳 · 在 {identity.city || identity.country}{" "}
                           {identity.tenure}
                         </p>
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade font-bold">
+                          <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade/40 font-bold">
                             ⚡ 相談可
                           </span>
                           <span className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
@@ -198,35 +327,80 @@ export function MyPageClient({
                     &quot;{identity.bio}&quot;
                   </p>
 
-                  <div className="mt-5 pt-4 border-t border-dashed border-ink/25">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[9px] uppercase tracking-wider text-ink-faint font-bold">
-                        🎯 次に目指す
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => openEdit("goals")}
-                        className="text-[10px] text-blue font-bold"
-                      >
-                        編集
-                      </button>
-                    </div>
+                  {/* Current professional snapshot */}
+                  <div className="mt-5 pt-4 border-t border-dashed border-ink/15">
+                    <p className="text-[9px] uppercase tracking-wider text-ink-faint mb-2 font-bold">
+                      💼 現在のポジション
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {goals.length === 0 ? (
-                        <span className="text-[11px] text-ink-faint">
-                          まだ未設定 — 「編集」から追加できます
-                        </span>
-                      ) : (
-                        goals.map((g, i) => (
-                          <span
-                            key={`${g}-${i}`}
-                            className="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink"
-                          >
-                            {g}
-                          </span>
-                        ))
+                      {identity.industry && (
+                        <Chip>{labelOf(INDUSTRY_OPTS, identity.industry)}</Chip>
+                      )}
+                      {identity.role && (
+                        <Chip>{labelOf(ROLE_OPTS, identity.role)}</Chip>
+                      )}
+                      {identity.visa && (
+                        <Chip>🛂 {labelOf(VISA_OPTS, identity.visa)}</Chip>
+                      )}
+                      {identity.salary && (
+                        <Chip>💴 {labelOf(JPY_SALARY_OPTS, identity.salary)}</Chip>
                       )}
                     </div>
+                  </div>
+
+                  {/* Skills */}
+                  {(identity.techSkills.length > 0 ||
+                    identity.businessSkills.length > 0) && (
+                    <div className="mt-4 pt-4 border-t border-dashed border-ink/15">
+                      <p className="text-[9px] uppercase tracking-wider text-ink-faint mb-2 font-bold">
+                        🧠 スキル
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[...identity.techSkills, ...identity.businessSkills].map(
+                          (s) => (
+                            <Chip key={s} muted>
+                              #{s}
+                            </Chip>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Goals (next career step) */}
+                  <div className="mt-4 pt-4 border-t border-dashed border-ink/15">
+                    <p className="text-[9px] uppercase tracking-wider text-ink-faint mb-2 font-bold">
+                      🎯 次に目指す
+                    </p>
+                    {identity.goalCountry ||
+                    identity.goalIndustry ||
+                    identity.goalRole ||
+                    identity.goalSalary ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {identity.goalCountry && (
+                          <Chip>
+                            {labelOf(COUNTRY_OPTS, identity.goalCountry)}
+                          </Chip>
+                        )}
+                        {identity.goalIndustry && (
+                          <Chip>
+                            {labelOf(INDUSTRY_OPTS, identity.goalIndustry)}
+                          </Chip>
+                        )}
+                        {identity.goalRole && (
+                          <Chip>{labelOf(ROLE_OPTS, identity.goalRole)}</Chip>
+                        )}
+                        {identity.goalSalary && (
+                          <Chip>
+                            💴 {labelOf(JPY_SALARY_OPTS, identity.goalSalary)}
+                          </Chip>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-ink-faint">
+                        まだ未設定 — 「編集」から追加できます
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -613,114 +787,213 @@ export function MyPageClient({
             </button>
           </div>
 
-          <div className="pb-6 space-y-4">
+          <div className="pb-6 space-y-5">
             {editType === "identity" && (
               <>
-                <div>
-                  <label className="label" htmlFor="f-name">
-                    表示名
-                  </label>
-                  <input
-                    id="f-name"
-                    type="text"
-                    className="field"
-                    value={identityForm.name}
-                    onChange={(e) =>
-                      setIdentityForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="f-age">
-                    年齢
-                  </label>
-                  <input
-                    id="f-age"
-                    type="number"
-                    className="field"
-                    value={identityForm.age}
-                    onChange={(e) =>
-                      setIdentityForm((f) => ({ ...f, age: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="f-location">
-                    現在地 (国・都市)
-                  </label>
-                  <input
-                    id="f-location"
-                    type="text"
-                    className="field"
-                    value={identityForm.location}
-                    onChange={(e) =>
-                      setIdentityForm((f) => ({
-                        ...f,
-                        location: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="f-tenure">
-                    滞在年数
-                  </label>
-                  <input
-                    id="f-tenure"
-                    type="text"
-                    className="field"
-                    value={identityForm.tenure}
-                    onChange={(e) =>
-                      setIdentityForm((f) => ({
-                        ...f,
-                        tenure: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="f-bio">
-                    自己紹介
-                  </label>
-                  <textarea
-                    id="f-bio"
-                    className="field"
-                    rows={4}
-                    value={identityForm.bio}
-                    onChange={(e) =>
-                      setIdentityForm((f) => ({ ...f, bio: e.target.value }))
-                    }
-                  />
-                </div>
-              </>
-            )}
+                {/* Section: 基本情報 */}
+                <FormSection title="基本情報">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="表示名">
+                      <input
+                        type="text"
+                        className="field"
+                        value={identityForm.name}
+                        onChange={(e) =>
+                          setIdentityForm((f) => ({
+                            ...f,
+                            name: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                    <Field label="年齢">
+                      <input
+                        type="number"
+                        className="field"
+                        value={identityForm.age}
+                        onChange={(e) =>
+                          setIdentityForm((f) => ({ ...f, age: e.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field label="現在の国">
+                      <Select
+                        value={identityForm.country}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, country: v }))
+                        }
+                        options={COUNTRY_OPTS}
+                      />
+                    </Field>
+                    <Field label="現在の都市">
+                      <input
+                        type="text"
+                        className="field"
+                        placeholder="例: Singapore"
+                        value={identityForm.city}
+                        onChange={(e) =>
+                          setIdentityForm((f) => ({ ...f, city: e.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field label="滞在年数">
+                      <input
+                        type="text"
+                        className="field"
+                        placeholder="例: 3年目"
+                        value={identityForm.tenure}
+                        onChange={(e) =>
+                          setIdentityForm((f) => ({
+                            ...f,
+                            tenure: e.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+                  <Field label="自己紹介">
+                    <textarea
+                      className="field"
+                      rows={4}
+                      value={identityForm.bio}
+                      onChange={(e) =>
+                        setIdentityForm((f) => ({ ...f, bio: e.target.value }))
+                      }
+                    />
+                  </Field>
+                </FormSection>
 
-            {editType === "goals" && (
-              <>
-                <p className="text-[12px] text-ink-soft">
-                  カンマ区切りで入力(例: 🇺🇸 US, Startup, VP級)
-                </p>
-                <input
-                  type="text"
-                  className="field"
-                  value={goalsForm}
-                  onChange={(e) => setGoalsForm(e.target.value)}
-                  placeholder="🇺🇸 US, 🚀 Startup, VP級, Tech"
-                />
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {goalsForm
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .map((g, i) => (
-                      <span
-                        key={`${g}-${i}`}
-                        className="text-[11px] px-2 py-0.5 bg-blue-soft border border-ink rounded-full font-bold text-ink"
-                      >
-                        {g}
-                      </span>
-                    ))}
-                </div>
+                {/* Section: 現在のポジション */}
+                <FormSection title="現在のポジション">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="業界">
+                      <Select
+                        value={identityForm.industry}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, industry: v }))
+                        }
+                        options={INDUSTRY_OPTS}
+                      />
+                    </Field>
+                    <Field label="職種">
+                      <Select
+                        value={identityForm.role}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, role: v }))
+                        }
+                        options={ROLE_OPTS}
+                      />
+                    </Field>
+                    <Field label="VISA">
+                      <Select
+                        value={identityForm.visa}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, visa: v }))
+                        }
+                        options={VISA_OPTS}
+                      />
+                    </Field>
+                    <Field label="現在の年収レンジ">
+                      <Select
+                        value={identityForm.salary}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, salary: v }))
+                        }
+                        options={JPY_SALARY_OPTS}
+                      />
+                    </Field>
+                  </div>
+                </FormSection>
+
+                {/* Section: スキル */}
+                <FormSection title="スキル">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-ink-faint font-bold mb-1.5">
+                    Tech / Data
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TECH_SKILLS.map((s) => {
+                      const active = identityForm.techSkills.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleSkill("techSkills", s)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                            active
+                              ? "bg-ink text-cream border-ink"
+                              : "bg-cream text-ink border-ink/15 hover:border-ink"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-ink-faint font-bold mt-3 mb-1.5">
+                    Business / 海外
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BUSINESS_SKILLS.map((s) => {
+                      const active = identityForm.businessSkills.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleSkill("businessSkills", s)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                            active
+                              ? "bg-ink text-cream border-ink"
+                              : "bg-cream text-ink border-ink/15 hover:border-ink"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FormSection>
+
+                {/* Section: 次に目指す (merged with identity) */}
+                <FormSection title="🎯 次に目指す">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="目指す国">
+                      <Select
+                        value={identityForm.goalCountry}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, goalCountry: v }))
+                        }
+                        options={COUNTRY_OPTS}
+                      />
+                    </Field>
+                    <Field label="目指す業界">
+                      <Select
+                        value={identityForm.goalIndustry}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, goalIndustry: v }))
+                        }
+                        options={INDUSTRY_OPTS}
+                      />
+                    </Field>
+                    <Field label="目指す職種">
+                      <Select
+                        value={identityForm.goalRole}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, goalRole: v }))
+                        }
+                        options={ROLE_OPTS}
+                      />
+                    </Field>
+                    <Field label="目指す年収レンジ">
+                      <Select
+                        value={identityForm.goalSalary}
+                        onChange={(v) =>
+                          setIdentityForm((f) => ({ ...f, goalSalary: v }))
+                        }
+                        options={JPY_SALARY_OPTS}
+                      />
+                    </Field>
+                  </div>
+                </FormSection>
               </>
             )}
 
@@ -805,5 +1078,83 @@ export function MyPageClient({
 
       <BottomNavMobile />
     </>
+  );
+}
+
+// ───── Small presentational helpers used only by the identity card ─────
+
+function Chip({
+  children,
+  muted,
+}: {
+  children: React.ReactNode;
+  muted?: boolean;
+}) {
+  return (
+    <span
+      className={`text-[11px] px-2 py-0.5 rounded-full border font-bold ${
+        muted
+          ? "bg-cream text-ink-soft border-ink/15"
+          : "bg-blue-soft text-blue-deep border-blue/30"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-ink-faint font-bold">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="label">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { v: string; label: string }[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`filter-select !py-2 !text-[13px] ${value ? "filled" : ""}`}
+    >
+      {options.map((o) => (
+        <option key={o.v} value={o.v}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }
