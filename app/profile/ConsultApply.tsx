@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-export function ConsultApply() {
+export function ConsultApply({
+  name = "YT さん",
+  initialsText = "YT",
+}: {
+  name?: string;
+  initialsText?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
@@ -79,12 +85,12 @@ export function ConsultApply() {
             </button>
           </div>
 
-          <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-3 mb-4 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0">
-              YT
+          <div className="bg-paper border border-ink/15 rounded-2xl p-3 mb-4 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-sm border border-ink/20 flex-shrink-0">
+              {initialsText}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-bold text-[14px] text-ink">YT さん</p>
+              <p className="font-bold text-[14px] text-ink">{name}</p>
               <p className="text-[11px] text-ink-soft">
                 Tokyo → Singapore · SGD 30/20分
               </p>
@@ -125,7 +131,7 @@ export function ConsultApply() {
             <div className="bg-paper border-[1.5px] border-ink rounded-xl p-3">
               <p className="text-[11px] font-bold text-ink mb-1">📌 申請の流れ</p>
               <ol className="text-[11px] text-ink-soft space-y-0.5 pl-4 list-decimal">
-                <li>YT さんが内容を確認</li>
+                <li>{name}が内容を確認</li>
                 <li>承認されたらトークルームが開きます</li>
                 <li>日時を決めて実施</li>
               </ol>

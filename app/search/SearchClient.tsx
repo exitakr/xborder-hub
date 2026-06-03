@@ -5,7 +5,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { SAMPLE_PEOPLE, type Person } from "./data";
+
+/** Build a Person entry from the logged-in user's profile so they appear
+ * at the top of search results alongside the sample population. */
+function profileToPerson(p: Profile): Person {
+  const path = p.career
+    .filter((s) => s.company.trim())
+    .map((s) => s.company.trim());
+  const fromCity = path.length > 1 ? p.career[0]?.country ?? "—" : "—";
+  return {
+    initials: initials(p.name, 3),
+    avatarBg: "#0055A4",
+    avatarText: "#FFF6E8",
+    name: p.name,
+    age: Number.parseInt(p.age, 10) || 30,
+    tenure: `在 ${p.city || p.country} ${p.tenure || ""}`.trim(),
+    from: p.career[0]?.country ?? "Japan",
+    fromCity: fromCity || "Tokyo",
+    to: p.country || "Singapore",
+    toCity: p.city || p.country || "Singapore",
+    industry: p.industry || "Tech",
+    role: p.role || "Product Manager",
+    companies: path.join(" → ") || "—",
+    bio:
+      p.ccAvailable && p.ccTopics
+        ? p.ccTopics
+        : p.bio || "プロフィール未設定",
+    rating: "4.9",
+    sessions: 23,
+    badge: p.ccAvailable ? "⚡ 相談可" : "🔒 受付停止",
+  };
+}
 
 /** Country (as stored on Person.to) → flag emoji shown on the result card. */
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -96,6 +128,7 @@ export function SearchClient({
   initial?: InitialFilters;
 } = {}) {
   const router = useRouter();
+  const [profile] = useProfile();
   const [from, setFrom] = useState(initial?.from ?? "");
   const [to, setTo] = useState(initial?.to ?? "");
   const [industry, setIndustry] = useState(initial?.industry ?? "");
@@ -107,16 +140,25 @@ export function SearchClient({
   const [date, setDate] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
 
+  // Inject the signed-in user's profile as the first entry so renames /
+  // skill / goal updates show up live; the old "YT" sample is dropped so
+  // we don't show the same identity twice.
+  const allPeople = useMemo<Person[]>(() => {
+    const me = profileToPerson(profile);
+    const rest = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT");
+    return [me, ...rest];
+  }, [profile]);
+
   const filtered = useMemo<Person[]>(
     () =>
-      SAMPLE_PEOPLE.filter((p) => {
+      allPeople.filter((p) => {
         if (from && p.from !== from) return false;
         if (to && p.to !== to) return false;
         if (industry && p.industry !== industry) return false;
         if (role && p.role !== role) return false;
         return true;
       }),
-    [from, to, industry, role],
+    [allPeople, from, to, industry, role],
   );
 
   function applyFilter<T>(setter: (v: T) => void, value: T) {
