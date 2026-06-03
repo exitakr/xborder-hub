@@ -7,40 +7,37 @@ import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
 import { PrivacySettings } from "./PrivacySettings";
+import {
+  COMPANY_SUGGESTIONS,
+  MONTH_OPTIONS,
+  YEAR_OPTIONS,
+  formatPeriod,
+  initials,
+  useProfile,
+  type CareerStep,
+  type Profile,
+} from "@/lib/profile/store";
 
-type EditType = "identity" | "career";
+type EditType = "identity" | "career" | "coffee_chat";
 type CcTab = "sent" | "received";
 
-const CAREER = [
-  {
-    place: "Tokyo",
-    sub: "日本",
-    years: "2014 - 2019",
-    company: "Sony",
-    role: "Product Manager · 5年",
-    current: false,
-  },
-  {
-    place: "Singapore",
-    sub: "駐在",
-    years: "2019 - 2022",
-    company: "Sony Asia Pacific",
-    role: "Regional PM · 3年",
-    current: false,
-  },
-  {
-    place: "Singapore",
-    sub: "現地",
-    years: "2022 - 現在",
-    company: "Shopee",
-    role: "Senior Product Manager · 2年",
-    current: true,
-  },
-];
+const BLANK_CAREER_STEP: CareerStep = {
+  id: "",
+  country: "",
+  company: "",
+  role: "",
+  startYear: "",
+  startMonth: "",
+  endYear: "",
+  endMonth: "",
+  achievements: "",
+  current: false,
+};
 
 const EDIT_TITLES: Record<EditType, string> = {
   identity: "プロフィールを編集",
-  career: "キャリアステップを追加",
+  career: "キャリアステップ",
+  coffee_chat: "Coffee Chat の受付設定",
 };
 
 // ───── Select options shared by the unified identity form ─────
@@ -136,101 +133,61 @@ const BUSINESS_SKILLS = [
   "Overseas Assignment",
 ];
 
-type Identity = {
-  name: string;
-  age: string;
-  country: string; // current country (select)
-  city: string;
-  tenure: string;
-  bio: string;
-  industry: string;
-  role: string;
-  visa: string;
-  salary: string; // current JPY range
-  techSkills: string[];
-  businessSkills: string[];
-  goalCountry: string;
-  goalIndustry: string;
-  goalRole: string;
-  goalSalary: string;
-};
-
-const INITIAL_IDENTITY: Identity = {
-  name: "YT さん",
-  age: "34",
-  country: "Singapore",
-  city: "Singapore",
-  tenure: "3年目",
-  bio: "日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。",
-  industry: "Tech",
-  role: "Product Manager",
-  visa: "EP_SG",
-  salary: "1300_1600",
-  techSkills: ["SQL", "Gen AI", "Data Analytics"],
-  businessSkills: ["Product Management", "Multicultural Team"],
-  goalCountry: "United States",
-  goalIndustry: "Startup",
-  goalRole: "Executive (VP+)",
-  goalSalary: "gte_2000",
-};
+// Identity slice = everything on Profile except the career history array.
+type Identity = Omit<Profile, "career">;
 
 function labelOf(opts: { v: string; label: string }[], v: string) {
   return opts.find((o) => o.v === v)?.label ?? "";
 }
-
-function initials(name: string): string {
-  const cleaned = name.replace(/(さん|くん|さま|様)\s*$/, "").trim();
-  if (!cleaned) return "—";
-  const words = cleaned.split(/\s+/);
-  if (words.length >= 2 && /^[A-Za-z]/.test(words[0]!)) {
-    return (words[0]![0]! + (words[1]![0] ?? "")).toUpperCase();
-  }
-  if (/^[A-Za-z]+$/.test(cleaned)) {
-    return cleaned.substring(0, 2).toUpperCase();
-  }
-  // Japanese / mixed — take first 2 chars
-  return Array.from(cleaned).slice(0, 2).join("");
-}
-
-type CareerStep = (typeof CAREER)[number];
-type CareerForm = {
-  place: string;
-  sub: string;
-  years: string;
-  company: string;
-  role: string;
-};
-
-const BLANK_CAREER_FORM: CareerForm = {
-  place: "",
-  sub: "",
-  years: "",
-  company: "",
-  role: "",
-};
 
 export function MyPageClient({
   visibilitySettings,
 }: { visibilitySettings?: VisibilitySettings } = {}) {
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [editType, setEditType] = useState<EditType | null>(null);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [premium, setPremium] = useState(false);
   const [signingOut, startSignOut] = useTransition();
 
-  // Profile state — single source of truth for what the cards display.
-  // Edit modals commit into here on save so the page actually reflects
-  // what was entered. Will be wired to Supabase profiles in a follow-up.
-  const [identity, setIdentity] = useState<Identity>(INITIAL_IDENTITY);
-  const [career, setCareer] = useState<CareerStep[]>(CAREER);
+  // Single source of truth — persisted to localStorage and shared across
+  // AppTopBar, /profile, and /search.
+  const [profile, setProfile] = useProfile();
+  const { career } = profile;
+  const identity: Identity = profile;
 
   // Per-edit form state, reset to the latest committed value whenever the
   // matching modal is opened.
   const [identityForm, setIdentityForm] = useState<Identity>(identity);
-  const [careerForm, setCareerForm] = useState<CareerForm>(BLANK_CAREER_FORM);
+  const [careerForm, setCareerForm] = useState<CareerStep>(BLANK_CAREER_STEP);
+  const [ccForm, setCcForm] = useState<{
+    available: boolean;
+    topics: string;
+  }>({
+    available: profile.ccAvailable,
+    topics: profile.ccTopics,
+  });
 
-  function openEdit(type: EditType) {
-    if (type === "identity") setIdentityForm(identity);
-    if (type === "career") setCareerForm(BLANK_CAREER_FORM);
+  function openEdit(type: EditType, stepId?: string) {
+    if (type === "identity") {
+      const { career: _ignore, ...rest } = profile;
+      setIdentityForm(rest);
+    } else if (type === "career") {
+      if (stepId) {
+        const step = profile.career.find((s) => s.id === stepId);
+        if (step) {
+          setCareerForm({ ...step });
+          setEditingStepId(stepId);
+        }
+      } else {
+        setCareerForm({ ...BLANK_CAREER_STEP });
+        setEditingStepId(null);
+      }
+    } else if (type === "coffee_chat") {
+      setCcForm({
+        available: profile.ccAvailable,
+        topics: profile.ccTopics,
+      });
+    }
     setEditType(type);
   }
 
@@ -244,28 +201,54 @@ export function MyPageClient({
     });
   }
 
+  function deleteCareerStep(id: string) {
+    if (!confirm("このステップを削除しますか?")) return;
+    setProfile((p) => ({ ...p, career: p.career.filter((s) => s.id !== id) }));
+  }
+
   function saveEdit() {
     if (editType === "identity") {
-      setIdentity(identityForm);
+      setProfile((p) => ({ ...p, ...identityForm }));
     } else if (editType === "career") {
-      const { place, sub, years, company, role: r } = careerForm;
-      if (place.trim() && company.trim()) {
-        // Demote any "current" flag from existing steps so only the new
-        // one is highlighted.
-        setCareer((prev) => [
-          ...prev.map((step) => ({ ...step, current: false })),
-          {
-            place: place.trim() || "—",
-            sub: sub.trim() || "—",
-            years: years.trim() || "—",
-            company: company.trim(),
-            role: r.trim() || "—",
-            current: true,
-          },
-        ]);
+      if (!careerForm.company.trim()) {
+        setEditType(null);
+        setEditingStepId(null);
+        return;
       }
+      if (editingStepId) {
+        // Update existing step (and re-apply "current" exclusivity if turned on)
+        setProfile((p) => ({
+          ...p,
+          career: p.career.map((s) => {
+            if (s.id === editingStepId) return { ...careerForm };
+            return careerForm.current ? { ...s, current: false } : s;
+          }),
+        }));
+      } else {
+        // Append new — give it an id and (if marked current) demote others.
+        const newStep: CareerStep = {
+          ...careerForm,
+          id: `c-${Date.now()}`,
+        };
+        setProfile((p) => ({
+          ...p,
+          career: [
+            ...p.career.map((s) =>
+              newStep.current ? { ...s, current: false } : s,
+            ),
+            newStep,
+          ],
+        }));
+      }
+    } else if (editType === "coffee_chat") {
+      setProfile((p) => ({
+        ...p,
+        ccAvailable: ccForm.available,
+        ccTopics: ccForm.topics.trim(),
+      }));
     }
     setEditType(null);
+    setEditingStepId(null);
   }
 
   useEffect(() => {
@@ -294,7 +277,7 @@ export function MyPageClient({
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-4">
                       <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl bg-blue text-cream font-bold flex items-center justify-center text-2xl lg:text-3xl border border-ink/15 shadow-pop-sm display">
-                        {initials(identity.name)}
+                        {initials(identity.name, 3)}
                       </div>
                       <div>
                         <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
@@ -596,17 +579,9 @@ export function MyPageClient({
             {/* CAREER */}
             <section className="rise" style={{ animationDelay: "0.16s" }}>
               <div className="flex items-end justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🌊</span>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">
-                      キャリアの川
-                    </p>
-                  </div>
-                  <h2 className="display font-bold text-[22px] lg:text-[24px] mt-1 leading-tight text-ink">
-                    歩んできた軌跡
-                  </h2>
-                </div>
+                <h2 className="display font-bold text-[22px] lg:text-[24px] leading-tight text-ink">
+                  歩んできた軌跡
+                </h2>
                 <button
                   type="button"
                   onClick={() => openEdit("career")}
@@ -617,42 +592,106 @@ export function MyPageClient({
               </div>
 
               <div className="space-y-3">
-                {career.map((step, i) => (
-                  <div key={i} className="pass p-4 relative">
-                    {step.current && (
-                      <div className="absolute -top-2 -right-2 bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border-[1.5px] border-ink uppercase tracking-widest shadow-pop-sm">
-                        現在
+                {career.length === 0 ? (
+                  <p className="text-[12px] text-ink-faint">
+                    まだステップがありません。「+ ステップ追加」から登録してください。
+                  </p>
+                ) : (
+                  career.map((step) => (
+                    <div key={step.id} className="pass p-4 relative">
+                      {step.current && (
+                        <div className="absolute -top-2 -right-2 bg-blue text-cream text-[8px] font-bold px-2 py-1 rounded border border-ink/20 uppercase tracking-widest shadow-pop-sm">
+                          現在
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`display font-bold text-[16px] ${step.current ? "text-blue" : "text-ink"}`}
+                          >
+                            {labelOf(COUNTRY_OPTS, step.country) ||
+                              step.country ||
+                              "—"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-ink-faint font-bold">
+                          {formatPeriod(step)}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`display font-bold text-[16px] ${step.current ? "text-blue" : "text-ink"}`}
+                      <p className="font-bold text-[14px] text-ink">
+                        {step.company || "—"}
+                      </p>
+                      <p className="text-[11px] text-ink-soft mt-0.5">
+                        {labelOf(ROLE_OPTS, step.role) || step.role || "—"}
+                      </p>
+                      {step.achievements && (
+                        <p className="text-[11px] text-ink leading-relaxed mt-2 border-t border-dashed border-ink/15 pt-2 whitespace-pre-line">
+                          {step.achievements}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => openEdit("career", step.id)}
+                          className="text-[10px] text-blue font-bold"
                         >
-                          {step.place}
-                        </span>
-                        <span className="text-[11px] text-ink-soft font-bold">
-                          {step.sub}
-                        </span>
+                          編集
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCareerStep(step.id)}
+                          className="text-[10px] text-plum font-bold"
+                        >
+                          削除
+                        </button>
                       </div>
-                      <span className="text-[10px] text-ink-faint font-bold">
-                        {step.years}
-                      </span>
                     </div>
-                    <p className="font-bold text-[14px] text-ink">
-                      {step.company}
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Coffee Chat 受付設定 */}
+            <section className="rise" style={{ animationDelay: "0.18s" }}>
+              <div className="flex items-end justify-between mb-3">
+                <h2 className="display font-bold text-[22px] lg:text-[24px] leading-tight text-ink">
+                  ☕ Coffee Chat
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => openEdit("coffee_chat")}
+                  className="text-[11px] font-bold text-blue"
+                >
+                  編集
+                </button>
+              </div>
+              <div className="bg-cream border border-ink/10 rounded-3xl p-4 lg:p-5 shadow-pop-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                      profile.ccAvailable
+                        ? "bg-jade/20 text-jade-deep border-jade/40"
+                        : "bg-paper text-ink-soft border-ink/15"
+                    }`}
+                  >
+                    {profile.ccAvailable ? "⚡ 相談受付中" : "🔒 現在は受付停止"}
+                  </span>
+                </div>
+                {profile.ccAvailable ? (
+                  profile.ccTopics ? (
+                    <p className="text-[13px] text-ink leading-relaxed whitespace-pre-line">
+                      {profile.ccTopics}
                     </p>
-                    <p className="text-[11px] text-ink-soft mt-0.5">
-                      {step.role}
+                  ) : (
+                    <p className="text-[12px] text-ink-faint">
+                      相談できるトピックを「編集」から登録してください。
                     </p>
-                    <button
-                      type="button"
-                      className="text-[10px] text-blue font-bold mt-2"
-                    >
-                      編集
-                    </button>
-                  </div>
-                ))}
+                  )
+                ) : (
+                  <p className="text-[12px] text-ink-faint">
+                    受付を有効にすると検索結果から「話を聞く」ボタンで申請が届きます。
+                  </p>
+                )}
               </div>
             </section>
 
@@ -998,71 +1037,159 @@ export function MyPageClient({
             )}
 
             {editType === "career" && (
-              <>
-                <div>
-                  <label className="label">国・都市</label>
-                  <input
-                    type="text"
-                    className="field"
-                    placeholder="例: Singapore"
-                    value={careerForm.place}
-                    onChange={(e) =>
-                      setCareerForm((f) => ({ ...f, place: e.target.value }))
-                    }
-                  />
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="国">
+                    <Select
+                      value={careerForm.country}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, country: v }))
+                      }
+                      options={COUNTRY_OPTS}
+                    />
+                  </Field>
+                  <Field label="職種">
+                    <Select
+                      value={careerForm.role}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, role: v }))
+                      }
+                      options={ROLE_OPTS}
+                    />
+                  </Field>
                 </div>
-                <div>
-                  <label className="label">区分(駐在 / 現地 など、任意)</label>
-                  <input
-                    type="text"
-                    className="field"
-                    placeholder="例: 現地採用"
-                    value={careerForm.sub}
-                    onChange={(e) =>
-                      setCareerForm((f) => ({ ...f, sub: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="label">会社</label>
+                <Field label="企業 (候補からも選択可)">
                   <input
                     type="text"
                     className="field"
                     placeholder="例: Shopee"
+                    list="career-company-suggestions"
                     value={careerForm.company}
                     onChange={(e) =>
                       setCareerForm((f) => ({ ...f, company: e.target.value }))
                     }
                   />
-                </div>
-                <div>
-                  <label className="label">役職</label>
-                  <input
-                    type="text"
+                  <datalist id="career-company-suggestions">
+                    {COMPANY_SUGGESTIONS.map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </Field>
+
+                <Field label="期間">
+                  <div className="grid grid-cols-5 items-center gap-1.5">
+                    <Select
+                      value={careerForm.startYear}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, startYear: v }))
+                      }
+                      options={[
+                        { v: "", label: "年" },
+                        ...YEAR_OPTIONS.map((y) => ({ v: y, label: y })),
+                      ]}
+                    />
+                    <Select
+                      value={careerForm.startMonth}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, startMonth: v }))
+                      }
+                      options={[
+                        { v: "", label: "月" },
+                        ...MONTH_OPTIONS.map((m) => ({ v: m, label: m })),
+                      ]}
+                    />
+                    <span className="text-center text-ink-faint font-bold">
+                      〜
+                    </span>
+                    <Select
+                      value={careerForm.endYear}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, endYear: v }))
+                      }
+                      options={[
+                        { v: "", label: "年" },
+                        ...YEAR_OPTIONS.map((y) => ({ v: y, label: y })),
+                      ]}
+                    />
+                    <Select
+                      value={careerForm.endMonth}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, endMonth: v }))
+                      }
+                      options={[
+                        { v: "", label: "月" },
+                        ...MONTH_OPTIONS.map((m) => ({ v: m, label: m })),
+                      ]}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 mt-2 text-[12px] text-ink-soft cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={careerForm.current}
+                      onChange={(e) =>
+                        setCareerForm((f) => ({
+                          ...f,
+                          current: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 accent-blue"
+                    />
+                    現在も在籍中(他のステップの「現在」フラグは自動解除)
+                  </label>
+                </Field>
+
+                <Field label="実績・担当業務">
+                  <textarea
                     className="field"
-                    placeholder="例: Senior Product Manager · 2年"
-                    value={careerForm.role}
+                    rows={4}
+                    placeholder="例: 映像機器のグローバル展開を担当。最後の1年でアジア市場の責任者へ。"
+                    value={careerForm.achievements}
                     onChange={(e) =>
-                      setCareerForm((f) => ({ ...f, role: e.target.value }))
+                      setCareerForm((f) => ({
+                        ...f,
+                        achievements: e.target.value,
+                      }))
                     }
                   />
-                </div>
-                <div>
-                  <label className="label">期間</label>
+                </Field>
+              </div>
+            )}
+
+            {editType === "coffee_chat" && (
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 p-3 bg-paper border border-ink/15 rounded-2xl cursor-pointer">
                   <input
-                    type="text"
-                    className="field"
-                    placeholder="例: 2022 - 現在"
-                    value={careerForm.years}
+                    type="checkbox"
+                    checked={ccForm.available}
                     onChange={(e) =>
-                      setCareerForm((f) => ({ ...f, years: e.target.value }))
+                      setCcForm((f) => ({ ...f, available: e.target.checked }))
+                    }
+                    className="mt-1 w-5 h-5 accent-blue"
+                  />
+                  <div>
+                    <p className="font-bold text-[13px] text-ink">
+                      Coffee Chat の申請を受け付ける
+                    </p>
+                    <p className="text-[11px] text-ink-soft mt-0.5 leading-relaxed">
+                      ON にすると、検索結果からあなたのプロフィールに「話を聞く」ボタンが表示されます。
+                    </p>
+                  </div>
+                </label>
+                <Field label="相談できる内容(自由記入)">
+                  <textarea
+                    className="field"
+                    rows={5}
+                    placeholder="例: 日系→現地Tech企業への転職、面接対策、給与交渉、EPビザ、Singapore生活など"
+                    value={ccForm.topics}
+                    onChange={(e) =>
+                      setCcForm((f) => ({ ...f, topics: e.target.value }))
                     }
                   />
-                </div>
-                <p className="text-[11px] text-ink-soft">
-                  追加されたステップは自動的に「現在」フラグが立ちます。
-                </p>
-              </>
+                  <p className="text-[10px] text-ink-faint mt-1">
+                    プロフィールページと検索結果に表示されます。
+                  </p>
+                </Field>
+              </div>
             )}
           </div>
 

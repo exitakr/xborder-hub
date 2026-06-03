@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
+import { initials, useProfile } from "@/lib/profile/store";
 
 type Tab = "home" | "search" | "threads";
 
@@ -12,6 +13,8 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 export function AppTopBar({ active }: { active?: Tab }) {
+  const [profile] = useProfile();
+  const monogram = initials(profile.name, 3);
   const [installEvent, setInstallEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
@@ -106,10 +109,11 @@ export function AppTopBar({ active }: { active?: Tab }) {
           </Link>
           <Link
             href="/mypage"
-            className="ml-1 w-9 h-9 rounded-full bg-mustard border-[1.5px] border-ink flex items-center justify-center text-[12px] font-bold shadow-pop-sm text-ink flex-shrink-0"
+            className="ml-1 w-10 h-10 rounded-full bg-mustard border border-ink/20 flex items-center justify-center text-[11px] font-bold shadow-pop-sm text-ink flex-shrink-0"
             aria-label="マイページ"
+            title={profile.name}
           >
-            YT
+            {monogram}
           </Link>
         </nav>
       </div>
