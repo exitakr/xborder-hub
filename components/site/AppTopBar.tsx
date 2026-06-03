@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
 import { initials, useProfile } from "@/lib/profile/store";
+import { useNotifications } from "@/lib/notifications/store";
 
 type Tab = "home" | "search" | "threads";
 
@@ -15,6 +16,7 @@ type BeforeInstallPromptEvent = Event & {
 export function AppTopBar({ active }: { active?: Tab }) {
   const [profile] = useProfile();
   const monogram = initials(profile.name, 3);
+  const { unread } = useNotifications();
   const [installEvent, setInstallEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
@@ -106,6 +108,29 @@ export function AppTopBar({ active }: { active?: Tab }) {
             className={`${navClass(active === "threads")} hidden lg:inline-block`}
           >
             スレッド
+          </Link>
+          <Link
+            href="/notifications"
+            aria-label="通知"
+            className="relative ml-1 w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
+            title="通知"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10 21a2 2 0 0 0 4 0" />
+            </svg>
+            {unread > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-blue text-cream text-[9px] font-bold flex items-center justify-center">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </Link>
           <Link
             href="/mypage"

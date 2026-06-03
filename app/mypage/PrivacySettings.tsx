@@ -36,11 +36,8 @@ const ROWS: {
     label: "VISA タイプを表示する",
     hint: "EP / S Pass / H1B などの種別だけが公開されます。発給日や個別情報は出ません。",
   },
-  {
-    key: "allow_coffee_chat",
-    label: "Coffee Chat の申請を受け付ける",
-    hint: "OFF にすると検索結果から「話を聞く」ボタンが消えます。",
-  },
+  // Coffee Chat 受付トグルは「☕ Coffee Chat」セクション側で管理するため、
+  // ここでは表示しない(重複防止)。
 ];
 
 export function PrivacySettings({

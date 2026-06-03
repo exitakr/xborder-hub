@@ -1,8 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { useNotifications } from "@/lib/notifications/store";
 
-type Tab = "home" | "search" | "threads" | "mypage";
+type Tab = "home" | "search" | "threads" | "notifications";
 
-const TABS: { id: Tab; href: string; label: string; icon: React.ReactNode }[] = [
+const TABS: {
+  id: Tab;
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
   {
     id: "home",
     href: "/home",
@@ -56,9 +64,9 @@ const TABS: { id: Tab; href: string; label: string; icon: React.ReactNode }[] = 
     ),
   },
   {
-    id: "mypage",
-    href: "/mypage",
-    label: "自分",
+    id: "notifications",
+    href: "/notifications",
+    label: "通知",
     icon: (
       <svg
         width="22"
@@ -68,19 +76,21 @@ const TABS: { id: Tab; href: string; label: string; icon: React.ReactNode }[] = 
         stroke="currentColor"
         strokeWidth="2"
       >
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" />
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+        <path d="M10 21a2 2 0 0 0 4 0" />
       </svg>
     ),
   },
 ];
 
 export function BottomNavMobile({ active }: { active?: Tab }) {
+  const { unread } = useNotifications();
   return (
-    <nav className="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t-[1.5px] border-ink/10 z-40">
+    <nav className="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t border-ink/10 z-40">
       <div className="container-app py-2 flex items-center justify-around">
         {TABS.map((tab) => {
           const isActive = active === tab.id;
+          const showBadge = tab.id === "notifications" && unread > 0;
           return (
             <Link
               key={tab.id}
@@ -89,7 +99,14 @@ export function BottomNavMobile({ active }: { active?: Tab }) {
                 isActive ? "text-ink" : "text-ink-soft"
               }`}
             >
-              {tab.icon}
+              <span className="relative inline-flex">
+                {tab.icon}
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-blue text-cream text-[9px] font-bold flex items-center justify-center">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </span>
               <span className="text-[9px] font-bold uppercase tracking-wider">
                 {tab.label}
               </span>

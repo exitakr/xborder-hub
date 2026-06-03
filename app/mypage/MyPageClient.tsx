@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
+import { useNotifications } from "@/lib/notifications/store";
 import { PrivacySettings } from "./PrivacySettings";
 import {
   COMPANY_SUGGESTIONS,
@@ -140,10 +142,41 @@ function labelOf(opts: { v: string; label: string }[], v: string) {
   return opts.find((o) => o.v === v)?.label ?? "";
 }
 
+type CcReceivedStatus = "pending" | "approved" | "rejected";
+type CcReceivedItem = {
+  id: string;
+  initials: string;
+  bg: string;
+  text: string;
+  name: string;
+  path: string;
+  topic: string;
+  status: CcReceivedStatus;
+};
+
+const INITIAL_CC_RECEIVED: CcReceivedItem[] = [
+  {
+    id: "rcv-1",
+    initials: "TM",
+    bg: "bg-plum",
+    text: "text-cream",
+    name: "TM さん",
+    path: "TYO → 検討中",
+    topic:
+      "SGに行く前に、PMとして英語環境でやっていけるか不安です。準備しておくべきことを教えてください。",
+    status: "pending",
+  },
+];
+
 export function MyPageClient({
   visibilitySettings,
 }: { visibilitySettings?: VisibilitySettings } = {}) {
+  const router = useRouter();
+  const { addNotification } = useNotifications();
   const [ccTab, setCcTab] = useState<CcTab>("sent");
+  const [ccReceived, setCcReceived] = useState<CcReceivedItem[]>(
+    INITIAL_CC_RECEIVED,
+  );
   const [editType, setEditType] = useState<EditType | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [premium, setPremium] = useState(false);
@@ -258,6 +291,32 @@ export function MyPageClient({
   function logout() {
     window.localStorage.removeItem("xbh_premium");
     startSignOut(() => signOut());
+  }
+
+  function approveCcRequest(id: string) {
+    const item = ccReceived.find((r) => r.id === id);
+    if (!item) return;
+    setCcReceived((rs) =>
+      rs.map((r) => (r.id === id ? { ...r, status: "approved" } : r)),
+    );
+    // Drop a notification into the in-app notification feed (also fires a
+    // browser push if permitted + the user opted in). In a multi-user
+    // build this would land on the applicant's account; today the demo
+    // shows it on the owner's feed so the UX is end-to-end observable.
+    addNotification({
+      kind: "chat_approved",
+      group: "Coffee Chat",
+      title: `${item.name} の申請を承認しました`,
+      body: `トークルームが開きました — ${item.topic.slice(0, 40)}…`,
+      href: `/chat?with=${encodeURIComponent(item.initials)}`,
+    });
+    router.push(`/chat?with=${encodeURIComponent(item.initials)}`);
+  }
+
+  function rejectCcRequest(id: string) {
+    setCcReceived((rs) =>
+      rs.map((r) => (r.id === id ? { ...r, status: "rejected" } : r)),
+    );
   }
 
   const editOpen = editType !== null;
@@ -500,10 +559,10 @@ export function MyPageClient({
                   </div>
 
                   {/* 完了 */}
-                  <div className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm opacity-90">
+                  <div className="bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm opacity-90">
                     <div className="flex items-start justify-between mb-2 gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-mustard text-ink font-bold flex items-center justify-center text-xs border border-ink/15 flex-shrink-0">
                           SK
                         </div>
                         <div className="min-w-0 flex-1">
@@ -523,12 +582,6 @@ export function MyPageClient({
                       <p className="text-[10px] text-ink-faint">
                         2026/04/22 実施 · SGD 50
                       </p>
-                      <button
-                        type="button"
-                        className="text-[11px] text-blue font-bold"
-                      >
-                        レビューする
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -536,42 +589,82 @@ export function MyPageClient({
 
               {ccTab === "received" && (
                 <div className="space-y-3">
-                  <div className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
-                    <div className="flex items-start justify-between mb-2 gap-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-plum text-cream font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">
-                          TM
+                  {ccReceived.length === 0 ? (
+                    <p className="text-[12px] text-ink-faint">
+                      まだ受信していません。
+                    </p>
+                  ) : (
+                    ccReceived.map((r) => (
+                      <div
+                        key={r.id}
+                        className="bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm"
+                      >
+                        <div className="flex items-start justify-between mb-2 gap-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div
+                              className={`w-10 h-10 rounded-full ${r.bg} ${r.text} font-bold flex items-center justify-center text-xs border border-ink/15 flex-shrink-0`}
+                            >
+                              {r.initials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-[13px] text-ink truncate">
+                                {r.name}
+                              </p>
+                              <p className="text-[10px] text-ink-soft">
+                                {r.path}
+                              </p>
+                            </div>
+                          </div>
+                          {r.status === "pending" && (
+                            <span className="status-badge status-pending">
+                              未対応
+                            </span>
+                          )}
+                          {r.status === "approved" && (
+                            <span className="status-badge status-approved">
+                              ✓ 承認済
+                            </span>
+                          )}
+                          {r.status === "rejected" && (
+                            <span className="status-badge status-rejected">
+                              却下
+                            </span>
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-[13px] text-ink truncate">
-                            TM さん
-                          </p>
-                          <p className="text-[10px] text-ink-soft">
-                            TYO → 検討中
-                          </p>
+                        <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+                          <span className="font-bold text-ink">相談内容:</span>{" "}
+                          {r.topic}
+                        </p>
+                        <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
+                          {r.status === "pending" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => rejectCcRequest(r.id)}
+                                className="px-3 py-1.5 bg-cream border border-ink/15 text-ink rounded-full font-bold text-[10px]"
+                              >
+                                却下
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => approveCcRequest(r.id)}
+                                className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[10px]"
+                              >
+                                ✓ 承認 → トークルームへ
+                              </button>
+                            </>
+                          ) : r.status === "approved" ? (
+                            <Link
+                              href={`/chat?with=${encodeURIComponent(r.initials)}`}
+                              className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
+                            >
+                              💬 トークルームを開く
+                            </Link>
+                          ) : null}
                         </div>
                       </div>
-                      <span className="status-badge status-pending">未対応</span>
-                    </div>
-                    <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
-                      <span className="font-bold text-ink">相談内容:</span>{" "}
-                      SGに行く前に、PMとして英語環境でやっていけるか不安です。準備しておくべきことを教えてください。
-                    </p>
-                    <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-cream border-[1.5px] border-ink text-ink rounded-full font-bold text-[10px]"
-                      >
-                        却下
-                      </button>
-                      <button
-                        type="button"
-                        className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[10px]"
-                      >
-                        ✓ 承認
-                      </button>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
               )}
             </section>
