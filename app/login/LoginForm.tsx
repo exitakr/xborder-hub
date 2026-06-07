@@ -176,6 +176,19 @@ export function LoginForm({
           </button>
         </form>
 
+        {/* Password reset entry — always visible when in sign-in mode */}
+        {mode === "signin" && (
+          <p className="text-[12px] text-ink-soft mt-4 text-center">
+            パスワードを忘れた?{" "}
+            <Link
+              href="/login/forgot"
+              className="text-blue font-bold underline underline-offset-2"
+            >
+              再設定する
+            </Link>
+          </p>
+        )}
+
         <p className="text-[11px] text-ink-faint mt-5 leading-relaxed">
           続行することで、X Border Hub の
           <span className="text-ink font-bold underline-offset-2">利用規約</span>
