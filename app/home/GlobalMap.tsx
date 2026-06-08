@@ -2,10 +2,11 @@
 
 import { useMemo, useRef, useState } from "react";
 import { CITIES, FLOWS, type City } from "./data";
+import { WORLD_COASTLINES } from "./world-coastlines";
 
 const VIEW_W = 720;
 const VIEW_H = 360;
-const MIN_W = VIEW_W / 5;   // max zoom-in
+const MIN_W = VIEW_W / 5; // max zoom-in
 const MAX_W = VIEW_W * 1.5; // max zoom-out
 
 /** Equirectangular projection from (lng, lat) to SVG coords. */
@@ -19,24 +20,33 @@ function project(lng: number, lat: number): [number, number] {
   return [x, y];
 }
 
-const TIER_RADIUS = { 1: 6, 2: 4.5, 3: 3.5 } as const;
-const TIER_COLOR = { 1: "#0055A4", 2: "#0A1F3D", 3: "#3A4658" } as const;
-const TIER_FONT = { 1: 12, 2: 10, 3: 9 } as const;
+/** Build an SVG path command string from a lng/lat polygon. */
+function polygonToPath(poly: [number, number][]): string {
+  let d = "";
+  for (let i = 0; i < poly.length; i++) {
+    const [lng, lat] = poly[i]!;
+    const [x, y] = project(lng, lat);
+    d += `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  return d + "Z";
+}
 
-const CONTINENTS: string[] = [
-  "M70 90 Q110 70 165 80 Q195 95 200 130 Q205 175 165 200 Q120 215 100 195 Q75 175 70 145 Z",
-  "M180 200 Q205 210 215 230 Q205 240 195 235 Q185 225 180 215 Z",
-  "M205 215 Q235 215 245 240 Q250 280 230 315 Q210 335 195 320 Q185 290 195 250 Z",
-  "M345 90 Q380 80 410 95 Q420 115 405 130 Q380 140 360 130 Q345 115 345 100 Z",
-  "M360 145 Q400 145 420 175 Q425 220 405 255 Q380 275 365 260 Q345 220 350 175 Z",
-  "M420 80 Q485 75 555 100 Q605 125 600 165 Q580 195 530 195 Q470 195 435 165 Q420 135 420 100 Z",
-  "M540 210 Q570 210 585 225 Q580 240 555 235 Q535 230 535 220 Z",
-  "M585 270 Q625 270 645 290 Q635 310 605 310 Q585 305 580 290 Z",
-];
+type Role = "hub" | "sender" | "receiver" | "quiet";
+const ROLE_COLOR: Record<Role, string> = {
+  hub: "#0055A4",
+  sender: "#E89943",
+  receiver: "#1FA89E",
+  quiet: "#94A3B8",
+};
+const ROLE_LABEL: Record<Role, string> = {
+  hub: "ハブ",
+  sender: "送り手",
+  receiver: "受け手",
+  quiet: "静か",
+};
 
 type Props = {
   className?: string;
-  /** When set, dims every other flow and emphasises just this one. */
   highlightedFlow?: { from: string; to: string } | null;
 };
 
@@ -73,6 +83,50 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
 
   const maxFlow = useMemo(
     () => FLOWS.reduce((m, f) => Math.max(m, f.count), 0),
+    [],
+  );
+
+  /** Activity = in + out flow count for the city. Drives bubble size. */
+  const activityByCity = useMemo(() => {
+    const m: Record<string, { in: number; out: number }> = {};
+    for (const c of CITIES) m[c.code] = { in: 0, out: 0 };
+    for (const f of FLOWS) {
+      if (m[f.from]) m[f.from]!.out += f.count;
+      if (m[f.to]) m[f.to]!.in += f.count;
+    }
+    return m;
+  }, []);
+
+  const maxActivity = useMemo(() => {
+    let m = 1;
+    for (const code in activityByCity) {
+      const a = activityByCity[code]!;
+      m = Math.max(m, a.in + a.out);
+    }
+    return m;
+  }, [activityByCity]);
+
+  function radiusFor(code: string): number {
+    const a = activityByCity[code];
+    if (!a) return 3.5;
+    const total = a.in + a.out;
+    // sqrt scale for proper area perception
+    return 4 + Math.sqrt(total / maxActivity) * 14;
+  }
+
+  function roleFor(code: string): Role {
+    const a = activityByCity[code];
+    if (!a) return "quiet";
+    const total = a.in + a.out;
+    if (total === 0) return "quiet";
+    const net = (a.in - a.out) / total;
+    if (Math.abs(net) < 0.2) return "hub";
+    return net > 0 ? "receiver" : "sender";
+  }
+
+  // Pre-compute coastline paths once.
+  const coastPaths = useMemo(
+    () => WORLD_COASTLINES.map(polygonToPath),
     [],
   );
 
@@ -121,11 +175,18 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
     const dx = (e.clientX - drag.current.x) * drag.current.scale;
     const dy = (e.clientY - drag.current.y) * drag.current.scale;
     if (Math.abs(dx) + Math.abs(dy) > 1) drag.current.moved = true;
-    setVp((v) => ({ ...v, x: drag.current!.vx - dx, y: drag.current!.vy - dy }));
+    setVp((v) => ({
+      ...v,
+      x: drag.current!.vx - dx,
+      y: drag.current!.vy - dy,
+    }));
   }
 
   function onPointerUp(e: React.PointerEvent<SVGSVGElement>) {
-    if (drag.current && (e.currentTarget as SVGElement).hasPointerCapture(e.pointerId)) {
+    if (
+      drag.current &&
+      (e.currentTarget as SVGElement).hasPointerCapture(e.pointerId)
+    ) {
       (e.currentTarget as SVGElement).releasePointerCapture(e.pointerId);
     }
     drag.current = null;
@@ -136,6 +197,18 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
     const factor = e.deltaY > 0 ? 0.85 : 1.18;
     const pt = screenToView(e.clientX, e.clientY);
     zoomBy(factor, pt.x, pt.y);
+  }
+
+  // Decide which city labels to draw — only big bubbles, plus the hovered
+  // / highlighted city so the user can always read what they touched.
+  function shouldLabel(code: string, r: number): boolean {
+    if (hovered === code) return true;
+    if (
+      highlightedFlow &&
+      (highlightedFlow.from === code || highlightedFlow.to === code)
+    )
+      return true;
+    return r >= 10;
   }
 
   return (
@@ -163,24 +236,39 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
           >
             <path d="M0 0 L10 5 L0 10 z" fill="#0055A4" />
           </marker>
+          <radialGradient id="bubble-halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
+            <stop offset="60%" stopColor="currentColor" stopOpacity="0.10" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
-        {/* Background grid */}
-        <g stroke="#0A1F3D" strokeWidth="0.4" opacity="0.06">
-          <line x1="0" y1={VIEW_H / 2} x2={VIEW_W} y2={VIEW_H / 2} />
-          <line x1={VIEW_W / 4} y1="0" x2={VIEW_W / 4} y2={VIEW_H} />
-          <line x1={VIEW_W / 2} y1="0" x2={VIEW_W / 2} y2={VIEW_H} />
-          <line x1={(VIEW_W * 3) / 4} y1="0" x2={(VIEW_W * 3) / 4} y2={VIEW_H} />
-        </g>
+        {/* Equator only — minimal reference line */}
+        <line
+          x1="0"
+          y1={VIEW_H / 2}
+          x2={VIEW_W}
+          y2={VIEW_H / 2}
+          stroke="#0A1F3D"
+          strokeWidth="0.3"
+          opacity="0.08"
+          strokeDasharray="2 4"
+        />
 
-        {/* Continents */}
-        <g fill="#0A1F3D" opacity="0.05">
-          {CONTINENTS.map((d, i) => (
+        {/* World coastlines */}
+        <g
+          fill="#0A1F3D"
+          fillOpacity="0.05"
+          stroke="#94A3B8"
+          strokeWidth="0.5"
+          strokeLinejoin="round"
+        >
+          {coastPaths.map((d, i) => (
             <path key={i} d={d} />
           ))}
         </g>
 
-        {/* Flows */}
+        {/* Flows — subtle network in the background */}
         <g>
           {FLOWS.map((flow, i) => {
             const a = lookup[flow.from];
@@ -191,7 +279,6 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
               highlightedFlow &&
               flow.from === highlightedFlow.from &&
               flow.to === highlightedFlow.to;
-            const isDimmedByHighlight = highlightedFlow && !isHighlighted;
             const intensity = flow.count / maxFlow;
 
             const hoverActive =
@@ -199,14 +286,14 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
 
             let opacity: number;
             if (highlightedFlow) {
-              opacity = isHighlighted ? 1 : 0.06;
+              opacity = isHighlighted ? 1 : 0.04;
             } else {
-              opacity = hoverActive ? 0.5 + intensity * 0.4 : 0.1;
+              opacity = hoverActive ? 0.18 + intensity * 0.35 : 0.06;
             }
 
-            const baseWidth = 0.9 + intensity * 2.5;
-            const strokeWidth = isHighlighted ? baseWidth * 1.5 : baseWidth;
-            const stroke = isHighlighted ? "#0055A4" : "#0A1F3D";
+            const baseWidth = 0.6 + intensity * 1.8;
+            const strokeWidth = isHighlighted ? baseWidth * 1.8 : baseWidth;
+            const stroke = isHighlighted ? "#0055A4" : "#475569";
 
             const dx = b.x - a.x;
             const dy = b.y - a.y;
@@ -232,61 +319,73 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
           })}
         </g>
 
-        {/* Cities */}
+        {/* City bubbles */}
         <g>
           {positioned.map((c) => {
-            const r = TIER_RADIUS[c.tier];
+            const r = radiusFor(c.code);
+            const role = roleFor(c.code);
             const isInHighlight =
               highlightedFlow &&
               (c.code === highlightedFlow.from ||
                 c.code === highlightedFlow.to);
-            const color = isInHighlight ? "#0055A4" : TIER_COLOR[c.tier];
             const isHover = hovered === c.code;
-            const cityOpacity =
-              highlightedFlow && !isInHighlight ? 0.35 : 1;
+            const color = isInHighlight ? "#0055A4" : ROLE_COLOR[role];
+            const dimmed = highlightedFlow && !isInHighlight;
+            const opacity = dimmed ? 0.3 : 1;
+            const drawR = r + (isHover || isInHighlight ? 1.5 : 0);
 
             return (
               <g
                 key={c.code}
                 onMouseEnter={() => setHovered(c.code)}
                 onMouseLeave={() => setHovered(null)}
-                opacity={cityOpacity}
-                style={{ cursor: "pointer" }}
+                opacity={opacity}
+                style={{ cursor: "pointer", color }}
               >
-                {(c.tier === 1 || isInHighlight) && (
+                {/* Soft halo */}
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={drawR + 6}
+                  fill="url(#bubble-halo)"
+                  pointerEvents="none"
+                />
+                {/* Body */}
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={drawR}
+                  fill={color}
+                  fillOpacity="0.85"
+                  stroke="#FFFFFF"
+                  strokeWidth="1"
+                  style={{ transition: "r 120ms" }}
+                />
+                {/* White inner dot for the largest bubbles */}
+                {drawR >= 10 && (
                   <circle
                     cx={c.x}
                     cy={c.y}
-                    r={r + (isInHighlight ? 9 : 6)}
-                    fill={color}
-                    opacity="0.14"
+                    r={Math.max(2, drawR - 6)}
+                    fill="#FFFFFF"
+                    opacity="0.55"
+                    pointerEvents="none"
                   />
                 )}
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={r + (isHover || isInHighlight ? 2 : 0)}
-                  fill={color}
-                  style={{ transition: "r 120ms" }}
-                />
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={Math.max(1.4, r - 2.4)}
-                  fill="#FFFFFF"
-                />
-                <text
-                  x={c.x}
-                  y={c.y - r - 4}
-                  fontFamily="Bricolage Grotesque, sans-serif"
-                  fontSize={TIER_FONT[c.tier]}
-                  fontWeight={800}
-                  fill={color}
-                  textAnchor="middle"
-                  pointerEvents="none"
-                >
-                  {c.code}
-                </text>
+                {shouldLabel(c.code, drawR) && (
+                  <text
+                    x={c.x}
+                    y={c.y - drawR - 4}
+                    fontFamily="Bricolage Grotesque, sans-serif"
+                    fontSize={drawR >= 12 ? 12 : 10}
+                    fontWeight={800}
+                    fill="#0A1F3D"
+                    textAnchor="middle"
+                    pointerEvents="none"
+                  >
+                    {c.code}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -321,6 +420,33 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
           ⟲
         </button>
       </div>
+
+      {/* Legend */}
+      <Legend />
+    </div>
+  );
+}
+
+function Legend() {
+  return (
+    <div className="absolute left-2 bottom-2 bg-white/90 backdrop-blur-sm border border-ink/10 rounded-lg shadow-pop-sm px-3 py-2 text-[10px] text-ink-soft">
+      <p className="font-bold text-ink uppercase tracking-wider text-[9px] mb-1.5">
+        都市の役割
+      </p>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 max-w-[260px]">
+        {(Object.keys(ROLE_COLOR) as Role[]).map((r) => (
+          <div key={r} className="flex items-center gap-1">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full"
+              style={{ background: ROLE_COLOR[r] }}
+            />
+            <span className="font-bold text-ink">{ROLE_LABEL[r]}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-ink-faint mt-1.5 text-[9px]">
+        ● 大きさ = 移動量(in + out)
+      </p>
     </div>
   );
 }
