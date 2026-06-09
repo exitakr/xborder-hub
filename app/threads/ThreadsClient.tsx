@@ -14,31 +14,30 @@ import {
   SORTS,
   THREADS,
   type Sort,
+  type Thread,
 } from "./data";
 
 
 export function ThreadsClient({
   isLoggedIn = false,
-}: { isLoggedIn?: boolean } = {}) {
+  dbThreads = [],
+}: { isLoggedIn?: boolean; dbThreads?: Thread[] } = {}) {
   const router = useRouter();
   const [country, setCountry] = useState<string>("");
   const [industry, setIndustry] = useState<string>("");
   const [role, setRole] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [sort, setSort] = useState<Sort>("new");
-  const [voted, setVoted] = useState<Record<number, "up" | "down" | null>>({
-    1: "up",
-    2: "up",
-    3: "up",
-    4: "up",
-    5: "up",
-    6: "up",
-    7: "up",
-  });
+  const [voted, setVoted] = useState<Record<string, "up" | "down" | null>>({});
   const [applyOpen, setApplyOpen] = useState(false);
 
+  // If Supabase returned threads, use them. Otherwise fall back to the
+  // bundled sample threads so the page still has content while the DB
+  // migration is unapplied or empty.
+  const source = dbThreads.length > 0 ? dbThreads : THREADS;
+
   const visible = useMemo(() => {
-    let list = THREADS.filter((t) => {
+    let list = source.filter((t) => {
       if (country && t.country !== country) return false;
       if (industry && t.industry !== industry) return false;
       if (role && t.role !== role) return false;
@@ -49,9 +48,9 @@ export function ThreadsClient({
       list = [...list].sort((a, b) => b.ups - a.ups);
     }
     return list;
-  }, [country, industry, role, category, sort]);
+  }, [country, industry, role, category, sort, source]);
 
-  function toggleVote(id: number, kind: "up" | "down") {
+  function toggleVote(id: string, kind: "up" | "down") {
     setVoted((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
   }
 
@@ -227,10 +226,21 @@ export function ThreadsClient({
                     </p>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Tag label={LABELS.countries[t.country]} />
-                      <Tag label={LABELS.industries[t.industry]} />
-                      <Tag label={LABELS.roles[t.role]} />
-                      <Tag label={LABELS.categories[t.category]} muted />
+                      {t.country && (
+                        <Tag label={LABELS.countries[t.country] ?? t.country} />
+                      )}
+                      {t.industry && (
+                        <Tag
+                          label={LABELS.industries[t.industry] ?? t.industry}
+                        />
+                      )}
+                      {t.role && (
+                        <Tag label={LABELS.roles[t.role] ?? t.role} />
+                      )}
+                      <Tag
+                        label={LABELS.categories[t.category] ?? t.category}
+                        muted
+                      />
                       <span className="text-[11px] text-ink-faint font-bold ml-auto">
                         👍 {t.ups}
                       </span>
