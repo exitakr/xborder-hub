@@ -86,3 +86,127 @@ export type CareerProfile = {
 
   updated_at: string;
 };
+
+/* ────────────────────────────────────────────────────────────────
+ * Tables added by supabase/migrations/0002_communities_threads.sql
+ * ──────────────────────────────────────────────────────────────── */
+
+export type CommunityKind = "country" | "industry" | "role";
+
+export type Community = {
+  id: string;
+  kind: CommunityKind;
+  slug: string;
+  label: string;
+  description: string | null;
+  members_count: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommunityRequestStatus = "pending" | "approved" | "rejected";
+
+export type CommunityRequest = {
+  id: string;
+  requester_id: string;
+  kind: CommunityKind;
+  name: string;
+  description: string | null;
+  status: CommunityRequestStatus;
+  reviewer_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export type ThreadCategory =
+  | "career"
+  | "life"
+  | "visa"
+  | "salary"
+  | "family"
+  | "other";
+
+export type Thread = {
+  id: string;
+  author_id: string;
+  community_id: string | null;
+  country: string | null;
+  industry: string | null;
+  role: string | null;
+  category: ThreadCategory;
+  title: string;
+  body: string;
+  ups_count: number;
+  downs_count: number;
+  replies_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Comment = {
+  id: string;
+  thread_id: string;
+  author_id: string;
+  parent_id: string | null;
+  body: string;
+  ups_count: number;
+  downs_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ReactionKind = "up" | "down";
+export type ReactionTarget = "thread" | "comment";
+
+export type Reaction = {
+  id: string;
+  user_id: string;
+  target_type: ReactionTarget;
+  target_id: string;
+  kind: ReactionKind;
+  created_at: string;
+};
+
+export type CoffeeChatStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled"
+  | "completed";
+
+export type CoffeeChatRequest = {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  message: string;
+  preferred_when: string | null;
+  status: CoffeeChatStatus;
+  responded_at: string | null;
+  chat_room_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NotificationKind =
+  | "thread_post"
+  | "thread_reply"
+  | "reaction"
+  | "system"
+  | "dm"
+  | "chat_request"
+  | "chat_approved"
+  | "new_job"
+  | "new_salary";
+
+export type AppNotificationRow = {
+  id: string;
+  user_id: string;
+  kind: NotificationKind;
+  group_label: string | null;
+  title: string;
+  body: string | null;
+  href: string | null;
+  read: boolean;
+  created_at: string;
+};
