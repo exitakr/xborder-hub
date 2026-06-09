@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { requestCommunityAction } from "@/lib/communities/actions";
 import {
   CATEGORIES,
   COUNTRIES,
@@ -30,6 +31,35 @@ export function ThreadsClient({
   const [sort, setSort] = useState<Sort>("new");
   const [voted, setVoted] = useState<Record<string, "up" | "down" | null>>({});
   const [applyOpen, setApplyOpen] = useState(false);
+  const [applyKind, setApplyKind] = useState("country");
+  const [applyName, setApplyName] = useState("");
+  const [applyDesc, setApplyDesc] = useState("");
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyPending, startApply] = useTransition();
+
+  function submitCommunityRequest(e: React.FormEvent) {
+    e.preventDefault();
+    setApplyError(null);
+    startApply(async () => {
+      const res = await requestCommunityAction({
+        kind: applyKind,
+        name: applyName,
+        description: applyDesc,
+      });
+      if (res.ok) {
+        setApplySuccess(true);
+        setApplyName("");
+        setApplyDesc("");
+        setTimeout(() => {
+          setApplyOpen(false);
+          setApplySuccess(false);
+        }, 1600);
+      } else {
+        setApplyError(res.error);
+      }
+    });
+  }
 
   // If Supabase returned threads, use them. Otherwise fall back to the
   // bundled sample threads so the page still has content while the DB
@@ -376,19 +406,14 @@ export function ThreadsClient({
             コミュニティは運営側で確認のうえ開設します。すでに似た名前のコミュニティがある場合は統合をご案内することがあります。
           </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert(
-                "申請を受け付けました。運営から数日以内にメールでご連絡します。",
-              );
-              setApplyOpen(false);
-            }}
-            className="space-y-3"
-          >
+          <form onSubmit={submitCommunityRequest} className="space-y-3">
             <div>
               <label className="label">種別</label>
-              <select className="filter-select">
+              <select
+                className="filter-select"
+                value={applyKind}
+                onChange={(e) => setApplyKind(e.target.value)}
+              >
                 <option value="country">🌏 国</option>
                 <option value="industry">🏢 業界</option>
                 <option value="role">👤 職種</option>
@@ -400,6 +425,8 @@ export function ThreadsClient({
                 type="text"
                 required
                 className="field"
+                value={applyName}
+                onChange={(e) => setApplyName(e.target.value)}
                 placeholder="例: 🇮🇳 India / 🎮 GameDev / 🔬 Researcher"
               />
             </div>
@@ -408,11 +435,25 @@ export function ThreadsClient({
               <textarea
                 className="field"
                 rows={3}
+                value={applyDesc}
+                onChange={(e) => setApplyDesc(e.target.value)}
                 placeholder="どんな人が集まるコミュニティか、ひとことで。"
               />
             </div>
-            <button type="submit" className="btn-primary w-full">
-              申請を送る
+            {applyError && (
+              <p className="text-[11px] font-bold text-red-600">{applyError}</p>
+            )}
+            {applySuccess && (
+              <p className="text-[11px] font-bold text-jade-deep">
+                ✓ 申請を受け付けました。運営から数日以内に連絡します。
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={applyPending}
+              className="btn-primary w-full disabled:opacity-50"
+            >
+              {applyPending ? "送信中…" : "申請を送る"}
             </button>
           </form>
         </div>
