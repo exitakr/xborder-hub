@@ -228,7 +228,7 @@ export function SearchClient({
 
             {/* Filters */}
             <section className="mb-6 rise" style={{ animationDelay: "0.06s" }}>
-              <div className="bg-paper border-[1.5px] border-ink rounded-3xl p-4 lg:p-5 shadow-pop">
+              <div className="bg-paper border border-ink rounded-3xl p-4 lg:p-5 shadow-pop">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className="label" htmlFor="filter-from">
@@ -321,7 +321,7 @@ export function SearchClient({
             {/* Results */}
             <section className="rise" style={{ animationDelay: "0.12s" }}>
               {filtered.length === 0 ? (
-                <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-8 text-center shadow-pop-sm">
+                <div className="bg-paper border border-ink rounded-2xl p-8 text-center shadow-pop-sm">
                   <p className="text-3xl mb-2">🔍</p>
                   <p className="display font-bold text-[16px] text-ink">
                     該当する人がまだいません
@@ -335,11 +335,11 @@ export function SearchClient({
                   {shown.map((p) => (
                     <article
                       key={p.initials + p.name}
-                      className="result-card bg-cream border-[1.5px] border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm"
+                      className="result-card bg-cream border border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm"
                     >
                       <div className="flex items-start gap-3 mb-3">
                         <div
-                          className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-paper flex items-center justify-center text-[28px] lg:text-[34px] border-[1.5px] border-ink shadow-pop-sm flex-shrink-0"
+                          className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-paper flex items-center justify-center text-[28px] lg:text-[34px] border border-ink shadow-pop-sm flex-shrink-0"
                           title={`現在: ${p.to}`}
                           aria-label={`現在の拠点: ${p.to}`}
                         >
@@ -367,7 +367,7 @@ export function SearchClient({
                       </div>
 
                       {/* Career move — large, prominent */}
-                      <div className="bg-paper border-[1.5px] border-ink rounded-xl p-3 lg:p-4 mb-3 shadow-pop-sm">
+                      <div className="bg-paper border border-ink rounded-xl p-3 lg:p-4 mb-3 shadow-pop-sm">
                         <p className="text-[10px] uppercase tracking-[0.22em] text-ink-faint font-bold mb-1.5">
                           career move
                         </p>
@@ -439,7 +439,7 @@ export function SearchClient({
                   <button
                     type="button"
                     onClick={() => setDisplayCount((c) => c + INCREMENT)}
-                    className="px-6 py-3 bg-cream border-[1.5px] border-ink rounded-full text-[13px] font-bold shadow-pop-sm text-ink"
+                    className="px-6 py-3 bg-cream border border-ink rounded-full text-[13px] font-bold shadow-pop-sm text-ink"
                   >
                     もっと見る
                   </button>
@@ -449,7 +449,7 @@ export function SearchClient({
 
             {/* Premium CTA */}
             <section className="mt-10 rise" style={{ animationDelay: "0.18s" }}>
-              <div className="bg-ink text-cream border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop-blue relative overflow-hidden">
+              <div className="bg-ink text-cream border border-ink rounded-3xl p-5 lg:p-7 shadow-pop-blue relative overflow-hidden">
                 <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-mustard opacity-20" />
                 <div className="relative">
                   <div className="inline-flex items-center gap-1.5 bg-mustard text-ink rounded-full px-2 py-1 mb-3">
@@ -530,7 +530,7 @@ export function SearchClient({
             <button
               type="button"
               onClick={closeApply}
-              className="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink"
+              className="w-8 h-8 rounded-full bg-paper border border-ink flex items-center justify-center text-ink"
               aria-label="閉じる"
             >
               <svg
@@ -546,9 +546,9 @@ export function SearchClient({
             </button>
           </div>
 
-          <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-3 mb-4 flex items-center gap-3">
+          <div className="bg-paper border border-ink rounded-2xl p-3 mb-4 flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-full font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0"
+              className="w-12 h-12 rounded-full font-bold flex items-center justify-center text-sm border border-ink flex-shrink-0"
               style={{
                 background: applyTarget?.bg ?? "#0055A4",
                 color: applyTarget?.fg ?? "#FFF6E8",
@@ -597,7 +597,7 @@ export function SearchClient({
               />
             </div>
 
-            <div className="bg-paper border-[1.5px] border-ink rounded-xl p-3">
+            <div className="bg-paper border border-ink rounded-xl p-3">
               <p className="text-[11px] font-bold text-ink mb-1">📌 申請の流れ</p>
               <ol className="text-[11px] text-ink-soft space-y-0.5 pl-4 list-decimal">
                 <li>相手が内容を確認</li>
@@ -629,7 +629,7 @@ export function SearchClient({
 
       {/* Toast */}
       <div
-        className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-jade-deep text-cream rounded-full px-5 py-3 shadow-pop-lg border-[1.5px] border-ink font-bold text-[13px] pointer-events-none transition-opacity duration-300"
+        className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 bg-jade-deep text-cream rounded-full px-5 py-3 shadow-pop-lg border border-ink font-bold text-[13px] pointer-events-none transition-opacity duration-300"
         style={{ opacity: toastVisible ? 1 : 0 }}
       >
         ✓ 申請を送りました

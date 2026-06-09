@@ -1,6 +1,5 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { LogoMark } from "@/components/site/LogoMark";
+import { LandingHeader } from "@/components/site/LandingHeader";
 import { SubscribeButton } from "./SubscribeButton";
 
 export const metadata: Metadata = {
@@ -48,31 +47,14 @@ const FAQS = [
 export default function PremiumPage() {
   return (
     <>
-      <header className="sticky top-0 z-40 bg-cream/85 backdrop-blur-md border-b border-ink/10">
-        <div className="container-app py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <LogoMark />
-            <div>
-              <div className="display font-bold text-[15px] leading-none tracking-tight text-ink">
-                X Border Hub
-              </div>
-              <div className="text-[9px] uppercase tracking-[0.22em] text-ink-faint mt-0.5">
-                Global Career Path
-              </div>
-            </div>
-          </Link>
-          <Link href="/mypage" className="text-[12px] font-bold text-ink-soft">
-            ← 戻る
-          </Link>
-        </div>
-      </header>
+      <LandingHeader />
 
       <main className="relative z-10 py-8 lg:py-16">
         <div className="container-app">
           <div className="max-w-3xl mx-auto">
             {/* Hero */}
             <section className="text-center mb-10 rise">
-              <div className="inline-flex items-center gap-2 bg-ink text-mustard rounded-full px-3 py-1.5 border-[1.5px] border-ink shadow-pop-sm mb-5">
+              <div className="inline-flex items-center gap-2 bg-ink text-mustard rounded-full px-3 py-1.5 border border-ink shadow-pop-sm mb-5">
                 <span>✦</span>
                 <span className="text-[10px] uppercase tracking-[0.22em] font-bold">
                   PREMIUM MEMBERSHIP
@@ -101,7 +83,7 @@ export default function PremiumPage() {
               style={{ animationDelay: "0.08s" }}
             >
               {/* Free */}
-              <div className="bg-cream border-[1.5px] border-ink rounded-3xl p-6 shadow-pop-sm">
+              <div className="bg-cream border border-ink rounded-3xl p-6 shadow-pop-sm">
                 <div className="text-[10px] uppercase tracking-[0.22em] text-ink-faint font-bold mb-2">
                   FREE
                 </div>
@@ -152,7 +134,7 @@ export default function PremiumPage() {
               </div>
 
               {/* Premium */}
-              <div className="bg-ink text-cream border-[1.5px] border-ink rounded-3xl p-6 shadow-pop-blue relative overflow-hidden">
+              <div className="bg-ink text-cream border border-ink rounded-3xl p-6 shadow-pop-blue relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-mustard opacity-25" />
                 <div className="absolute -bottom-12 -left-10 w-32 h-32 rounded-full bg-blue opacity-30" />
                 <div className="relative">
@@ -239,7 +221,7 @@ export default function PremiumPage() {
                 {UNLOCKS.map((u) => (
                   <div
                     key={u.title}
-                    className="bg-paper border-[1.5px] border-ink rounded-2xl p-5 shadow-pop-sm"
+                    className="bg-paper border border-ink rounded-2xl p-5 shadow-pop-sm"
                   >
                     <div className="text-2xl mb-2">{u.emoji}</div>
                     <p className="display font-bold text-[16px] text-ink">
@@ -262,7 +244,7 @@ export default function PremiumPage() {
                 {FAQS.map((faq) => (
                   <details
                     key={faq.q}
-                    className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
+                    className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
                   >
                     <summary className="flex items-start justify-between gap-3">
                       <span className="display font-bold text-[14px] text-ink leading-tight">

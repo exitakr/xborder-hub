@@ -50,20 +50,6 @@ export function HomeClient() {
               <div className="bg-paper border border-ink/10 rounded-2xl shadow-pop p-2 lg:p-3">
                 <GlobalMap highlightedFlow={highlightedFlow} />
               </div>
-              {highlightedFlow && (
-                <p className="text-[11px] text-ink-soft font-bold mt-2 text-center">
-                  <span className="text-blue">{highlightedFlow.from}</span> →{" "}
-                  <span className="text-blue">{highlightedFlow.to}</span>{" "}
-                  をハイライト中{" "}
-                  <button
-                    type="button"
-                    onClick={() => setHighlightedFlow(null)}
-                    className="underline text-ink-faint ml-1"
-                  >
-                    解除
-                  </button>
-                </p>
-              )}
             </section>
 
             {/* MOVE TREND (top annual flows) */}
@@ -198,7 +184,7 @@ export function HomeClient() {
                   <Link
                     key={t.id}
                     href={`/thread?id=${t.id}`}
-                    className="bg-cream border-[1.5px] border-ink rounded-2xl p-3 shadow-pop-sm hover:shadow-pop transition-shadow"
+                    className="bg-cream border border-ink rounded-2xl p-3 shadow-pop-sm hover:shadow-pop transition-shadow"
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
@@ -225,10 +211,10 @@ export function HomeClient() {
                 {RECENT_MOVES.map((m, i) => (
                   <li
                     key={i}
-                    className="flex items-center gap-3 bg-cream border-[1.5px] border-ink rounded-xl p-2.5 shadow-pop-sm"
+                    className="flex items-center gap-3 bg-cream border border-ink rounded-xl p-2.5 shadow-pop-sm"
                   >
                     <div
-                      className={`w-9 h-9 rounded-full ${m.bg} ${m.text} font-bold flex items-center justify-center text-[11px] border-[1.5px] border-ink flex-shrink-0`}
+                      className={`w-9 h-9 rounded-full ${m.bg} ${m.text} font-bold flex items-center justify-center text-[11px] border border-ink flex-shrink-0`}
                     >
                       {m.initials}
                     </div>
@@ -266,7 +252,7 @@ export function HomeClient() {
             >
               <Link
                 href="/mypage"
-                className="bg-ink text-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-blue relative overflow-hidden block"
+                className="bg-ink text-cream border border-ink rounded-2xl p-4 shadow-pop-blue relative overflow-hidden block"
               >
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-mustard opacity-20" />
                 <div className="relative">
@@ -280,7 +266,7 @@ export function HomeClient() {
               </Link>
               <Link
                 href="/search"
-                className="bg-paper text-ink border-[1.5px] border-ink rounded-2xl p-4 shadow-pop relative overflow-hidden block"
+                className="bg-paper text-ink border border-ink rounded-2xl p-4 shadow-pop relative overflow-hidden block"
               >
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-blue opacity-15" />
                 <div className="relative">

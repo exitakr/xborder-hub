@@ -38,13 +38,6 @@ const ROLE_COLOR: Record<Role, string> = {
   receiver: "#1FA89E",
   quiet: "#94A3B8",
 };
-const ROLE_LABEL: Record<Role, string> = {
-  hub: "ハブ",
-  sender: "送り手",
-  receiver: "受け手",
-  quiet: "静か",
-};
-
 type Props = {
   className?: string;
   highlightedFlow?: { from: string; to: string } | null;
@@ -420,33 +413,6 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
           ⟲
         </button>
       </div>
-
-      {/* Legend */}
-      <Legend />
-    </div>
-  );
-}
-
-function Legend() {
-  return (
-    <div className="absolute left-2 bottom-2 bg-white/90 backdrop-blur-sm border border-ink/10 rounded-lg shadow-pop-sm px-3 py-2 text-[10px] text-ink-soft">
-      <p className="font-bold text-ink uppercase tracking-wider text-[9px] mb-1.5">
-        都市の役割
-      </p>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 max-w-[260px]">
-        {(Object.keys(ROLE_COLOR) as Role[]).map((r) => (
-          <div key={r} className="flex items-center gap-1">
-            <span
-              className="inline-block w-2.5 h-2.5 rounded-full"
-              style={{ background: ROLE_COLOR[r] }}
-            />
-            <span className="font-bold text-ink">{ROLE_LABEL[r]}</span>
-          </div>
-        ))}
-      </div>
-      <p className="text-ink-faint mt-1.5 text-[9px]">
-        ● 大きさ = 移動量(in + out)
-      </p>
     </div>
   );
 }

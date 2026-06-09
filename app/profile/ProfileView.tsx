@@ -82,8 +82,31 @@ export function ProfileView() {
         trailing={
           <button
             type="button"
-            className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink"
-            aria-label="メニュー"
+            onClick={async () => {
+              const url =
+                typeof window !== "undefined" ? window.location.href : "";
+              const title = "X Border Hub — プロフィール";
+              if (
+                typeof navigator !== "undefined" &&
+                typeof navigator.share === "function"
+              ) {
+                try {
+                  await navigator.share({ title, url });
+                  return;
+                } catch {
+                  /* ignore — fall through to clipboard */
+                }
+              }
+              try {
+                await navigator.clipboard.writeText(url);
+                alert("プロフィールの URL をコピーしました");
+              } catch {
+                alert(url);
+              }
+            }}
+            className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink hover:border-ink transition-colors"
+            aria-label="共有"
+            title="プロフィールを共有"
           >
             <svg
               width="15"
@@ -93,9 +116,7 @@ export function ProfileView() {
               stroke="currentColor"
               strokeWidth="2.2"
             >
-              <circle cx="12" cy="12" r="1" />
-              <circle cx="12" cy="5" r="1" />
-              <circle cx="12" cy="19" r="1" />
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
             </svg>
           </button>
         }

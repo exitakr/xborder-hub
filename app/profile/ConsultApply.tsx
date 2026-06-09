@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 export function ConsultApply({
-  name = "YT さん",
-  initialsText = "YT",
+  name = "ユーザー",
+  initialsText = "—",
 }: {
   name?: string;
   initialsText?: string;
@@ -69,7 +69,7 @@ export function ConsultApply({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink"
+              className="w-8 h-8 rounded-full bg-paper border border-ink flex items-center justify-center text-ink"
               aria-label="閉じる"
             >
               <svg
@@ -128,7 +128,7 @@ export function ConsultApply({
               />
             </div>
 
-            <div className="bg-paper border-[1.5px] border-ink rounded-xl p-3">
+            <div className="bg-paper border border-ink rounded-xl p-3">
               <p className="text-[11px] font-bold text-ink mb-1">📌 申請の流れ</p>
               <ol className="text-[11px] text-ink-soft space-y-0.5 pl-4 list-decimal">
                 <li>{name}が内容を確認</li>
@@ -160,7 +160,7 @@ export function ConsultApply({
 
       {/* Toast */}
       <div
-        className="fixed bottom-32 lg:bottom-20 left-1/2 -translate-x-1/2 z-50 bg-jade-deep text-cream rounded-full px-5 py-3 shadow-pop-lg border-[1.5px] border-ink font-bold text-[13px] pointer-events-none transition-opacity duration-300"
+        className="fixed bottom-32 lg:bottom-20 left-1/2 -translate-x-1/2 z-50 bg-jade-deep text-cream rounded-full px-5 py-3 shadow-pop-lg border border-ink font-bold text-[13px] pointer-events-none transition-opacity duration-300"
         style={{ opacity: toastVisible ? 1 : 0 }}
       >
         ✓ 申請を送りました

@@ -95,7 +95,7 @@ export function ThreadClient({
         <div className="container-app py-3.5 flex items-center justify-between gap-3">
           <Link
             href="/threads"
-            className="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0"
+            className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0"
             aria-label="戻る"
           >
             <svg
@@ -116,8 +116,31 @@ export function ThreadClient({
           </div>
           <button
             type="button"
-            className="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0"
+            onClick={async () => {
+              const url =
+                typeof window !== "undefined" ? window.location.href : "";
+              const title = thread.title;
+              if (
+                typeof navigator !== "undefined" &&
+                typeof navigator.share === "function"
+              ) {
+                try {
+                  await navigator.share({ title, url });
+                  return;
+                } catch {
+                  /* ignore — fall through to clipboard */
+                }
+              }
+              try {
+                await navigator.clipboard.writeText(url);
+                alert("スレッドの URL をコピーしました");
+              } catch {
+                alert(url);
+              }
+            }}
+            className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
             aria-label="共有"
+            title="このスレッドを共有"
           >
             <svg
               width="15"
@@ -136,7 +159,7 @@ export function ThreadClient({
       <main className="container-app py-6 relative z-10 pb-32 lg:pb-24">
         <div className="max-w-2xl mx-auto">
           {/* Original post */}
-          <article className="bg-paper border-[1.5px] border-ink rounded-3xl p-5 lg:p-7 shadow-pop">
+          <article className="bg-paper border border-ink rounded-3xl p-5 lg:p-7 shadow-pop">
             <div className="flex items-start justify-between mb-3 gap-3">
               <div className="flex items-center gap-3">
                 <div
@@ -219,11 +242,11 @@ export function ThreadClient({
             {COMMENTS.map((c) => (
               <article
                 key={c.id}
-                className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
+                className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-9 h-9 rounded-full ${c.bg} ${c.text} font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0`}
+                    className={`w-9 h-9 rounded-full ${c.bg} ${c.text} font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0`}
                   >
                     {c.author}
                   </div>
@@ -274,7 +297,7 @@ export function ThreadClient({
 
           <button
             type="button"
-            className="mt-4 w-full py-3 bg-cream border-[1.5px] border-ink rounded-2xl text-[12px] font-bold shadow-pop-sm text-ink"
+            className="mt-4 w-full py-3 bg-cream border border-ink rounded-2xl text-[12px] font-bold shadow-pop-sm text-ink"
           >
             残り11件を見る
           </button>
@@ -298,14 +321,14 @@ export function ThreadClient({
             placeholder={
               isLoggedIn ? "コメントを書く..." : "コメントするにはログイン"
             }
-            className="flex-1 px-3 py-2 bg-paper border-[1.5px] border-ink rounded-2xl text-[13px] font-medium text-ink resize-none outline-none focus:shadow-pop-sm"
+            className="flex-1 px-3 py-2 bg-paper border border-ink rounded-2xl text-[13px] font-medium text-ink resize-none outline-none focus:shadow-pop-sm"
             style={{ maxHeight: 80 }}
           />
           <button
             type="button"
             onClick={submitComment}
             disabled={isLoggedIn && !comment.trim()}
-            className="w-11 h-11 bg-ink text-cream rounded-full border-[1.5px] border-ink shadow-pop-sm flex items-center justify-center flex-shrink-0 disabled:opacity-40"
+            className="w-11 h-11 bg-ink text-cream rounded-full border border-ink shadow-pop-sm flex items-center justify-center flex-shrink-0 disabled:opacity-40"
             aria-label="送信"
           >
             <svg

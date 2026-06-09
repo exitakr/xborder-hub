@@ -18,7 +18,7 @@ export function AppHeader({ backHref, title, subtitle, trailing }: Props) {
       <div className="container-app py-3.5 flex items-center justify-between">
         {backHref ? (
           <Link href={backHref} className="flex items-center gap-2 text-ink">
-            <span className="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center">
+            <span className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center">
               <svg
                 width="15"
                 height="15"

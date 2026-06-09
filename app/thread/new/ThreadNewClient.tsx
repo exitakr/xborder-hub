@@ -84,7 +84,7 @@ export function ThreadNewClient() {
 
   function submit() {
     if (!valid) return;
-    alert("投稿しました!(デモ版)\nスレッド一覧に戻ります");
+    alert("投稿しました。スレッド一覧に戻ります。");
     router.push("/threads");
   }
 
@@ -94,7 +94,7 @@ export function ThreadNewClient() {
         <div className="container-app py-2.5 flex items-center justify-between gap-3">
           <Link
             href="/threads"
-            className="w-9 h-9 rounded-full bg-cream border-[1.5px] border-ink/15 flex items-center justify-center text-ink flex-shrink-0"
+            className="w-9 h-9 rounded-full bg-cream border border-ink/15 flex items-center justify-center text-ink flex-shrink-0"
             aria-label="閉じる"
           >
             <svg
@@ -223,7 +223,7 @@ export function ThreadNewClient() {
           </section>
 
           <section className="mt-6">
-            <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-4">
+            <div className="bg-paper border border-ink rounded-2xl p-4">
               <p className="text-[12px] font-bold text-ink mb-2">📌 投稿のヒント</p>
               <ul className="text-[11px] text-ink-soft space-y-1 pl-4 list-disc leading-relaxed">
                 <li>個人情報・会社の機密は書かないでください</li>

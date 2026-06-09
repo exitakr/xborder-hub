@@ -464,7 +464,7 @@ export function MyPageClient({
                 </div>
               </div>
 
-              <div className="inline-flex gap-1 p-1 bg-paper border-[1.5px] border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
+              <div className="inline-flex gap-1 p-1 bg-paper border border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
                 {(
                   [
                     { id: "sent", label: "📤 申請した" },
@@ -489,10 +489,10 @@ export function MyPageClient({
               {ccTab === "sent" && (
                 <div className="space-y-3">
                   {/* 申請中 */}
-                  <div className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+                  <div className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm">
                     <div className="flex items-start justify-between mb-2 gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-blue text-cream font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0">
                           RN
                         </div>
                         <div className="min-w-0 flex-1">
@@ -524,10 +524,10 @@ export function MyPageClient({
                   </div>
 
                   {/* 承認済 */}
-                  <div className="bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm">
+                  <div className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm">
                     <div className="flex items-start justify-between mb-2 gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-xs border-[1.5px] border-ink flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0">
                           HK
                         </div>
                         <div className="min-w-0 flex-1">
@@ -798,7 +798,7 @@ export function MyPageClient({
               <div className="space-y-2">
                 <Link
                   href="/premium"
-                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
+                  className="w-full flex items-center justify-between bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">✦</span>
@@ -813,43 +813,26 @@ export function MyPageClient({
                   </div>
                   <span className="text-[11px] text-blue font-bold">登録 →</span>
                 </Link>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
+                <Link
+                  href="/notifications"
+                  className="w-full flex items-center justify-between bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm hover:border-ink transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🔔</span>
                     <div className="text-left">
                       <p className="font-bold text-[13px] text-ink">通知設定</p>
                       <p className="text-[11px] text-ink-soft">
-                        メール・プッシュ通知
+                        通知履歴・プッシュ通知の対象
                       </p>
                     </div>
                   </div>
                   <span className="text-[11px] text-ink-soft">›</span>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">🔒</span>
-                    <div className="text-left">
-                      <p className="font-bold text-[13px] text-ink">
-                        プライバシー
-                      </p>
-                      <p className="text-[11px] text-ink-soft">
-                        公開範囲・匿名設定
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-ink-soft">›</span>
-                </button>
+                </Link>
                 <button
                   type="button"
                   onClick={logout}
                   disabled={signingOut}
-                  className="w-full flex items-center justify-between bg-cream border-[1.5px] border-ink rounded-2xl p-4 shadow-pop-sm disabled:opacity-60"
+                  className="w-full flex items-center justify-between bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm disabled:opacity-60"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🚪</span>
@@ -903,7 +886,7 @@ export function MyPageClient({
             <button
               type="button"
               onClick={() => setEditType(null)}
-              className="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink"
+              className="w-8 h-8 rounded-full bg-paper border border-ink flex items-center justify-center text-ink"
               aria-label="閉じる"
             >
               <svg

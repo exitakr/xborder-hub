@@ -98,7 +98,7 @@ export function ThreadsClient({
 
             {/* Filter bar — 4 axes in a single dense row */}
             <section className="rise" style={{ animationDelay: "0.04s" }}>
-              <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-3 lg:p-4 shadow-pop-sm">
+              <div className="bg-paper border border-ink rounded-2xl p-3 lg:p-4 shadow-pop-sm">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                   <FilterSelect
                     label="国"
@@ -170,7 +170,7 @@ export function ThreadsClient({
             {/* Threads feed — flat, tight list */}
             <section className="space-y-2">
               {visible.length === 0 ? (
-                <div className="bg-paper border-[1.5px] border-ink rounded-2xl p-6 text-center shadow-pop-sm">
+                <div className="bg-paper border border-ink rounded-2xl p-6 text-center shadow-pop-sm">
                   <p className="text-2xl mb-1">🪺</p>
                   <p className="display font-bold text-[14px] text-ink">
                     該当するスレッドがありません
@@ -347,7 +347,7 @@ export function ThreadsClient({
               type="button"
               onClick={() => setApplyOpen(false)}
               aria-label="閉じる"
-              className="w-8 h-8 rounded-full bg-paper border-[1.5px] border-ink flex items-center justify-center text-ink"
+              className="w-8 h-8 rounded-full bg-paper border border-ink flex items-center justify-center text-ink"
             >
               <svg
                 width="14"
@@ -369,7 +369,9 @@ export function ThreadsClient({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              alert("申請を受け付けました(デモ)。運営から数日以内に連絡します。");
+              alert(
+                "申請を受け付けました。運営から数日以内にメールでご連絡します。",
+              );
               setApplyOpen(false);
             }}
             className="space-y-3"

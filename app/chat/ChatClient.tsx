@@ -2,6 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+/**
+ * Pretty-print the `?with=` query into a display name. The query carries
+ * the same short initials we attach to Coffee Chat申請 cards (e.g. "HK"),
+ * so we render "<INITIALS> さん" — when no param is present we fall back
+ * to the original HK demo so the page never reads as empty.
+ */
+function partnerNameFromParam(raw: string | null): {
+  display: string;
+  initials: string;
+} {
+  if (!raw) return { display: "HK さん", initials: "HK" };
+  const cleaned = raw.replace(/(さん|くん|さま|様)\s*$/, "").trim();
+  if (!cleaned) return { display: "HK さん", initials: "HK" };
+  const initials = cleaned.substring(0, 3).toUpperCase();
+  return { display: `${cleaned} さん`, initials };
+}
 
 type Message =
   | { kind: "day"; label: string }
@@ -43,6 +61,8 @@ const SEED: Message[] = [
 ];
 
 export function ChatClient() {
+  const searchParams = useSearchParams();
+  const partner = partnerNameFromParam(searchParams.get("with"));
   const [messages, setMessages] = useState<Message[]>(SEED);
   const [input, setInput] = useState("");
   const areaRef = useRef<HTMLDivElement>(null);
@@ -74,7 +94,7 @@ export function ChatClient() {
         <div className="container-app py-2.5 flex items-center justify-between gap-3">
           <Link
             href="/mypage"
-            className="w-9 h-9 rounded-full border-[1.5px] border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0"
+            className="w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink flex-shrink-0"
             aria-label="戻る"
           >
             <svg
@@ -89,15 +109,15 @@ export function ChatClient() {
             </svg>
           </Link>
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-sm border-[1.5px] border-ink flex-shrink-0">
-              HK
+            <div className="w-10 h-10 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-sm border border-ink/15 flex-shrink-0">
+              {partner.initials}
             </div>
             <div className="min-w-0">
               <div className="display font-bold text-[14px] tracking-tight text-ink truncate">
-                HK さん
+                {partner.display}
               </div>
               <div className="text-[10px] text-ink-soft truncate">
-                TYO→SIN→SGN · 起業家
+                Coffee Chat
               </div>
             </div>
           </div>
@@ -115,9 +135,6 @@ export function ChatClient() {
               <span>📅</span>
               <span>2026/05/18 14:00 · SGD 80 · 30min</span>
             </div>
-            <button type="button" className="text-blue font-bold">
-              詳細
-            </button>
           </div>
 
           {/* Chat area */}
@@ -129,8 +146,8 @@ export function ChatClient() {
                 </div>
               ) : m.from === "other" ? (
                 <div key={i} className="chat-row other">
-                  <div className="w-7 h-7 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[10px] border-[1.5px] border-ink flex-shrink-0">
-                    HK
+                  <div className="w-7 h-7 rounded-full bg-jade text-ink font-bold flex items-center justify-center text-[10px] border border-ink/15 flex-shrink-0">
+                    {partner.initials}
                   </div>
                   <div className="chat-bubble chat-other">{m.text}</div>
                 </div>

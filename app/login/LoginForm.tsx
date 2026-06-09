@@ -79,7 +79,7 @@ export function LoginForm({
         </div>
 
         {/* Mode tabs */}
-        <div className="inline-flex gap-1 p-1 bg-cream border-[1.5px] border-ink rounded-xl mb-5 shadow-pop-sm">
+        <div className="inline-flex gap-1 p-1 bg-cream border border-ink rounded-xl mb-5 shadow-pop-sm">
           <button
             type="button"
             onClick={() => setMode("signin")}
@@ -101,12 +101,12 @@ export function LoginForm({
         </div>
 
         {state.ok && state.message && (
-          <div className="mb-4 bg-jade/20 border-[1.5px] border-jade rounded-xl p-3 text-[12px] text-ink leading-relaxed">
+          <div className="mb-4 bg-jade/20 border border-jade rounded-xl p-3 text-[12px] text-ink leading-relaxed">
             ✓ {state.message}
           </div>
         )}
         {(state.error || initialError) && (
-          <div className="mb-4 bg-paper border-[1.5px] border-ink rounded-xl p-3 text-[12px] text-ink leading-relaxed">
+          <div className="mb-4 bg-paper border border-ink rounded-xl p-3 text-[12px] text-ink leading-relaxed">
             ⚠ {state.error ?? initialError}
           </div>
         )}
@@ -191,11 +191,19 @@ export function LoginForm({
 
         <p className="text-[11px] text-ink-faint mt-5 leading-relaxed">
           続行することで、X Border Hub の
-          <span className="text-ink font-bold underline-offset-2">利用規約</span>
+          <Link
+            href="/legal/terms"
+            className="text-ink font-bold underline underline-offset-2"
+          >
+            利用規約
+          </Link>
           と
-          <span className="text-ink font-bold underline-offset-2">
+          <Link
+            href="/legal/privacy"
+            className="text-ink font-bold underline underline-offset-2"
+          >
             プライバシーポリシー
-          </span>
+          </Link>
           に同意したものとみなされます。
         </p>
       </div>

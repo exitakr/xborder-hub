@@ -50,22 +50,28 @@ export function LandingFooter() {
             </p>
             <ul className="space-y-1.5">
               <li>
-                <Link href="/#how" className="font-semibold hover:text-ink">
-                  仕組み
+                <Link
+                  href="/legal/terms"
+                  className="font-semibold hover:text-ink"
+                >
+                  利用規約
                 </Link>
               </li>
               <li>
-                <span className="font-semibold text-ink-faint">利用規約</span>
-              </li>
-              <li>
-                <span className="font-semibold text-ink-faint">
+                <Link
+                  href="/legal/privacy"
+                  className="font-semibold hover:text-ink"
+                >
                   プライバシー
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="font-semibold text-ink-faint">
+                <Link
+                  href="/legal/contact"
+                  className="font-semibold hover:text-ink"
+                >
                   お問い合わせ
-                </span>
+                </Link>
               </li>
             </ul>
           </div>

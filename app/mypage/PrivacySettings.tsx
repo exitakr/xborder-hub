@@ -70,7 +70,7 @@ export function PrivacySettings({
         </p>
       </div>
 
-      <form action={action} className="bg-cream border-[1.5px] border-ink rounded-3xl p-4 lg:p-5 shadow-pop-sm space-y-3">
+      <form action={action} className="bg-cream border border-ink rounded-3xl p-4 lg:p-5 shadow-pop-sm space-y-3">
         {ROWS.map((row) => (
           <label
             key={row.key}
