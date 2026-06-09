@@ -8,6 +8,12 @@ import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
 import { useNotifications } from "@/lib/notifications/store";
+import {
+  approveCoffeeChatRequest,
+  cancelCoffeeChatRequest,
+  rejectCoffeeChatRequest,
+} from "@/lib/coffee-chat/actions";
+import type { DisplayCcRequest } from "@/lib/coffee-chat/queries";
 import { PrivacySettings } from "./PrivacySettings";
 import {
   COMPANY_SUGGESTIONS,
@@ -170,13 +176,38 @@ const INITIAL_CC_RECEIVED: CcReceivedItem[] = [
 
 export function MyPageClient({
   visibilitySettings,
-}: { visibilitySettings?: VisibilitySettings } = {}) {
+  dbCcSent = [],
+  dbCcReceived = [],
+}: {
+  visibilitySettings?: VisibilitySettings;
+  dbCcSent?: DisplayCcRequest[];
+  dbCcReceived?: DisplayCcRequest[];
+} = {}) {
   const router = useRouter();
   const { addNotification } = useNotifications();
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [ccReceived, setCcReceived] = useState<CcReceivedItem[]>(
     INITIAL_CC_RECEIVED,
   );
+  const [ccBusy, setCcBusy] = useState<string | null>(null);
+  const [ccError, setCcError] = useState<string | null>(null);
+
+  async function callCcAction(
+    id: string,
+    label: string,
+    fn: (id: string) => Promise<{ ok: boolean; error?: string }>,
+  ) {
+    setCcBusy(id);
+    setCcError(null);
+    const res = await fn(id);
+    setCcBusy(null);
+    if (!("ok" in res) || !res.ok) {
+      setCcError(("error" in res && res.error) || `${label}に失敗しました`);
+      return false;
+    }
+    router.refresh();
+    return true;
+  }
   const [editType, setEditType] = useState<EditType | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [premium, setPremium] = useState(false);
@@ -299,10 +330,10 @@ export function MyPageClient({
     setCcReceived((rs) =>
       rs.map((r) => (r.id === id ? { ...r, status: "approved" } : r)),
     );
-    // Drop a notification into the in-app notification feed (also fires a
-    // browser push if permitted + the user opted in). In a multi-user
-    // build this would land on the applicant's account; today the demo
-    // shows it on the owner's feed so the UX is end-to-end observable.
+    // Demo path: also drop a notification into the in-app notification feed
+    // (also fires a browser push if permitted + the user opted in).
+    // The DB-backed path emits a real notification row via the SQL trigger
+    // configured in 0002.
     addNotification({
       kind: "chat_approved",
       group: "Coffee Chat",
@@ -486,7 +517,97 @@ export function MyPageClient({
                 ))}
               </div>
 
-              {ccTab === "sent" && (
+              {ccTab === "sent" && dbCcSent.length > 0 && (
+                <div className="space-y-3">
+                  {ccError && (
+                    <p className="text-[11px] font-bold text-red-600">
+                      {ccError}
+                    </p>
+                  )}
+                  {dbCcSent.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
+                    >
+                      <div className="flex items-start justify-between mb-2 gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-full ${r.bg} ${r.text} font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0`}
+                          >
+                            {r.otherInitials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[13px] text-ink truncate">
+                              {r.otherName} さん
+                            </p>
+                            <p className="text-[10px] text-ink-soft">
+                              {r.postedRelative}
+                              {r.preferredWhen ? ` · 希望: ${r.preferredWhen}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`status-badge ${
+                            r.status === "pending"
+                              ? "status-pending"
+                              : r.status === "approved"
+                                ? "status-approved"
+                                : r.status === "rejected"
+                                  ? "status-rejected"
+                                  : r.status === "cancelled"
+                                    ? "status-rejected"
+                                    : "status-completed"
+                          }`}
+                        >
+                          {r.status === "pending"
+                            ? "申請中"
+                            : r.status === "approved"
+                              ? "✓ 承認"
+                              : r.status === "rejected"
+                                ? "却下"
+                                : r.status === "cancelled"
+                                  ? "取消"
+                                  : "✓ 完了"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+                        <span className="font-bold text-ink">相談内容:</span>{" "}
+                        {r.topic}
+                      </p>
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-ink/20">
+                        <p className="text-[10px] text-ink-faint">
+                          {new Date(r.createdAt).toLocaleDateString("ja-JP")}
+                        </p>
+                        {r.status === "pending" ? (
+                          <button
+                            type="button"
+                            disabled={ccBusy === r.id}
+                            onClick={() =>
+                              callCcAction(
+                                r.id,
+                                "取消",
+                                cancelCoffeeChatRequest,
+                              )
+                            }
+                            className="text-[11px] text-ink-soft font-bold disabled:opacity-50"
+                          >
+                            {ccBusy === r.id ? "..." : "取消"}
+                          </button>
+                        ) : r.status === "approved" ? (
+                          <Link
+                            href={`/chat?with=${encodeURIComponent(r.otherInitials)}`}
+                            className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
+                          >
+                            💬 トークルーム
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ccTab === "sent" && dbCcSent.length === 0 && (
                 <div className="space-y-3">
                   {/* 申請中 */}
                   <div className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm">
@@ -587,7 +708,112 @@ export function MyPageClient({
                 </div>
               )}
 
-              {ccTab === "received" && (
+              {ccTab === "received" && dbCcReceived.length > 0 && (
+                <div className="space-y-3">
+                  {ccError && (
+                    <p className="text-[11px] font-bold text-red-600">
+                      {ccError}
+                    </p>
+                  )}
+                  {dbCcReceived.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm"
+                    >
+                      <div className="flex items-start justify-between mb-2 gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-full ${r.bg} ${r.text} font-bold flex items-center justify-center text-xs border border-ink/15 flex-shrink-0`}
+                          >
+                            {r.otherInitials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[13px] text-ink truncate">
+                              {r.otherName} さん
+                            </p>
+                            <p className="text-[10px] text-ink-soft">
+                              {r.postedRelative}
+                            </p>
+                          </div>
+                        </div>
+                        {r.status === "pending" && (
+                          <span className="status-badge status-pending">
+                            未対応
+                          </span>
+                        )}
+                        {r.status === "approved" && (
+                          <span className="status-badge status-approved">
+                            ✓ 承認済
+                          </span>
+                        )}
+                        {r.status === "rejected" && (
+                          <span className="status-badge status-rejected">
+                            却下
+                          </span>
+                        )}
+                        {(r.status === "cancelled" ||
+                          r.status === "completed") && (
+                          <span className="status-badge status-completed">
+                            {r.status === "completed" ? "✓ 完了" : "取消"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+                        <span className="font-bold text-ink">相談内容:</span>{" "}
+                        {r.topic}
+                      </p>
+                      <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
+                        {r.status === "pending" ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={ccBusy === r.id}
+                              onClick={() =>
+                                callCcAction(
+                                  r.id,
+                                  "却下",
+                                  rejectCoffeeChatRequest,
+                                )
+                              }
+                              className="px-3 py-1.5 bg-cream border border-ink/15 text-ink rounded-full font-bold text-[10px] disabled:opacity-50"
+                            >
+                              却下
+                            </button>
+                            <button
+                              type="button"
+                              disabled={ccBusy === r.id}
+                              onClick={async () => {
+                                const ok = await callCcAction(
+                                  r.id,
+                                  "承認",
+                                  approveCoffeeChatRequest,
+                                );
+                                if (ok) {
+                                  router.push(
+                                    `/chat?with=${encodeURIComponent(r.otherInitials)}`,
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[10px] disabled:opacity-50"
+                            >
+                              ✓ 承認 → トークルームへ
+                            </button>
+                          </>
+                        ) : r.status === "approved" ? (
+                          <Link
+                            href={`/chat?with=${encodeURIComponent(r.otherInitials)}`}
+                            className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
+                          >
+                            💬 トークルームを開く
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ccTab === "received" && dbCcReceived.length === 0 && (
                 <div className="space-y-3">
                   {ccReceived.length === 0 ? (
                     <p className="text-[12px] text-ink-faint">

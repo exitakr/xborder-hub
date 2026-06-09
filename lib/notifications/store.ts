@@ -168,9 +168,32 @@ export function useNotifications() {
     writeNotifs([]);
   }, []);
 
+  /** Merge server-side notifications into the local store on mount. Existing
+   * local items (matched by id) are overwritten by the server copy; the rest
+   * are kept so locally-fired notifications still show up. */
+  const mergeServerNotifications = useCallback((incoming: AppNotification[]) => {
+    if (incoming.length === 0) return;
+    const current = readNotifs();
+    const byId = new Map<string, AppNotification>();
+    for (const n of current) byId.set(n.id, n);
+    for (const n of incoming) byId.set(n.id, n);
+    const next = Array.from(byId.values()).sort((a, b) =>
+      a.createdAt < b.createdAt ? 1 : -1,
+    );
+    writeNotifs(next);
+  }, []);
+
   const unread = list.filter((n) => !n.read).length;
 
-  return { list, unread, addNotification, markRead, markAllRead, clear };
+  return {
+    list,
+    unread,
+    addNotification,
+    markRead,
+    markAllRead,
+    clear,
+    mergeServerNotifications,
+  };
 }
 
 /* ──────────────── Push preferences ──────────────── */

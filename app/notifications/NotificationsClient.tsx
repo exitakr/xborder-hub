@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
@@ -16,6 +16,10 @@ import {
   type NotificationKind,
   type PushPrefs,
 } from "@/lib/notifications/store";
+import {
+  markAllNotificationsReadAction,
+  markNotificationReadAction,
+} from "@/lib/notifications/actions";
 
 type Filter =
   | "all"
@@ -45,10 +49,40 @@ const PREF_ROWS: { key: keyof PushPrefs; label: string; hint?: string }[] = [
   { key: "chat_approved", label: "Coffee Chat の承認 / 申請" },
 ];
 
-export function NotificationsClient() {
-  const { list, unread, markRead, markAllRead, clear } = useNotifications();
+export function NotificationsClient({
+  initialServerNotifs = [],
+}: {
+  initialServerNotifs?: AppNotification[];
+} = {}) {
+  const {
+    list,
+    unread,
+    markRead,
+    markAllRead,
+    clear,
+    mergeServerNotifications,
+  } = useNotifications();
   const [filter, setFilter] = useState<Filter>("all");
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialServerNotifs.length > 0) {
+      mergeServerNotifications(initialServerNotifs);
+    }
+    // Only run once on mount with the server snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleMarkRead(id: string) {
+    markRead(id);
+    // Fire-and-forget — DB row may not exist for locally-generated notifs.
+    void markNotificationReadAction(id);
+  }
+
+  function handleMarkAllRead() {
+    markAllRead();
+    void markAllNotificationsReadAction();
+  }
 
   const visible = useMemo<AppNotification[]>(() => {
     if (filter === "all") return list;
@@ -80,7 +114,7 @@ export function NotificationsClient() {
                 {unread > 0 && (
                   <button
                     type="button"
-                    onClick={markAllRead}
+                    onClick={handleMarkAllRead}
                     className="text-[11px] font-bold text-ink-soft underline underline-offset-2"
                   >
                     すべて既読
@@ -148,7 +182,7 @@ export function NotificationsClient() {
                     <li key={n.id}>
                       <Link
                         href={n.href ?? "#"}
-                        onClick={() => markRead(n.id)}
+                        onClick={() => handleMarkRead(n.id)}
                         className="block py-4 flex items-start gap-3 hover:bg-paper transition-colors px-2 -mx-2 rounded-xl"
                       >
                         <div className="w-9 h-9 rounded-lg bg-cream border border-ink/15 flex items-center justify-center text-base flex-shrink-0">

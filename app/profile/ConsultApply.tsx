@@ -1,27 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
 
 export function ConsultApply({
   name = "ユーザー",
   initialsText = "—",
+  targetUserId,
 }: {
   name?: string;
   initialsText?: string;
+  /** Owner of the profile being viewed. When omitted, the modal still
+   * collects input but persists nothing (preview / self-profile). */
+  targetUserId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [when, setWhen] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   function submit() {
-    if (!message.trim()) {
-      alert("話を聞きたい内容を入力してください");
+    const trimmed = message.trim();
+    if (!trimmed) {
+      setError("話を聞きたい内容を入力してください");
       return;
     }
-    setOpen(false);
-    setMessage("");
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2500);
+    setError(null);
+
+    if (!targetUserId) {
+      // Preview path (e.g. self-profile) — keep the existing UX so the user
+      // can still see what the flow looks like, without writing to the DB.
+      setOpen(false);
+      setMessage("");
+      setWhen("");
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 2500);
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await createCoffeeChatRequest({
+        toUserId: targetUserId,
+        message: trimmed,
+        preferredWhen: when,
+      });
+      if (res.ok) {
+        setOpen(false);
+        setMessage("");
+        setWhen("");
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2500);
+      } else {
+        setError(res.error);
+      }
+    });
   }
 
   return (
@@ -124,9 +158,15 @@ export function ConsultApply({
                 id="app-when"
                 type="text"
                 className="field"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
                 placeholder="例: 平日夜 / 週末午後"
               />
             </div>
+
+            {error && (
+              <p className="text-[11px] font-bold text-red-600">{error}</p>
+            )}
 
             <div className="bg-paper border border-ink rounded-xl p-3">
               <p className="text-[11px] font-bold text-ink mb-1">📌 申請の流れ</p>
@@ -141,9 +181,10 @@ export function ConsultApply({
           <button
             type="button"
             onClick={submit}
-            className="btn-primary w-full mb-4"
+            disabled={pending}
+            className="btn-primary w-full mb-4 disabled:opacity-50"
           >
-            申請を送る
+            {pending ? "送信中…" : "申請を送る"}
             <svg
               width="14"
               height="14"
