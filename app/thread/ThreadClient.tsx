@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LABELS, type Thread } from "@/app/threads/data";
-import { addCommentAction } from "./actions";
+import { addCommentAction, toggleReactionAction } from "./actions";
 import type { DisplayComment } from "@/lib/threads/queries";
 
 type VoteState = "up" | "down" | null;
@@ -61,16 +61,39 @@ export function ThreadClient({
   comments?: DisplayComment[];
 }) {
   const router = useRouter();
-  const [postVote, setPostVote] = useState<VoteState>("up");
+  const [postVote, setPostVote] = useState<VoteState>(null);
   const [commentVotes, setCommentVotes] = useState<Record<string, VoteState>>(
     {},
   );
   const [comment, setComment] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [commentSort, setCommentSort] = useState<"new" | "ups">("new");
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   const isPersisted = UUID_RE.test(thread.id);
-  const displayComments = comments.length > 0 ? comments : SAMPLE_COMMENTS;
+  const baseComments = comments.length > 0 ? comments : SAMPLE_COMMENTS;
+  const displayComments = useMemo(() => {
+    if (commentSort === "ups") {
+      return [...baseComments].sort((a, b) => b.ups - a.ups);
+    }
+    return baseComments;
+  }, [baseComments, commentSort]);
+
+  function togglePostVote(kind: "up" | "down") {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
+    setPostVote((v) => (v === kind ? null : kind));
+    if (isPersisted) {
+      void toggleReactionAction({
+        targetType: "thread",
+        targetId: thread.id,
+        kind,
+      });
+    }
+  }
 
   function toggleCommentVote(id: string, kind: "up" | "down") {
     if (!isLoggedIn) {
@@ -78,6 +101,22 @@ export function ThreadClient({
       return;
     }
     setCommentVotes((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
+    // Persist only for DB-backed comments (UUID ids).
+    if (UUID_RE.test(id)) {
+      void toggleReactionAction({
+        targetType: "comment",
+        targetId: id,
+        kind,
+      });
+    }
+  }
+
+  function focusReply() {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
+    commentInputRef.current?.focus();
   }
 
   function submitComment() {
@@ -226,21 +265,17 @@ export function ThreadClient({
             <div className="flex items-center gap-3 mt-5 pt-4 border-t border-dashed border-ink/20">
               <button
                 type="button"
-                onClick={() =>
-                  setPostVote((v) => (v === "up" ? null : "up"))
-                }
+                onClick={() => togglePostVote("up")}
                 className={`vote-btn ${postVote === "up" ? "voted-up" : ""}`}
               >
-                👍 {thread.ups}
+                👍 {thread.ups + (postVote === "up" ? 1 : 0)}
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setPostVote((v) => (v === "down" ? null : "down"))
-                }
+                onClick={() => togglePostVote("down")}
                 className={`vote-btn ${postVote === "down" ? "voted-down" : ""}`}
               >
-                👎 {thread.downs}
+                👎 {thread.downs + (postVote === "down" ? 1 : 0)}
               </button>
               <span className="text-[11px] text-ink-soft font-bold ml-auto">
                 💬 {thread.replies}件
@@ -251,11 +286,17 @@ export function ThreadClient({
           {/* Comments header */}
           <div className="flex items-center justify-between mt-6 mb-4">
             <h2 className="display font-bold text-[16px] text-ink">
-              コメント ({thread.replies}件)
+              コメント ({displayComments.length}件)
             </h2>
-            <select className="text-[11px] font-bold text-ink-soft bg-transparent">
-              <option>新着順</option>
-              <option>👍 順</option>
+            <select
+              value={commentSort}
+              onChange={(e) =>
+                setCommentSort(e.target.value as "new" | "ups")
+              }
+              className="text-[11px] font-bold text-ink-soft bg-transparent"
+            >
+              <option value="new">新着順</option>
+              <option value="ups">👍 順</option>
             </select>
           </div>
 
@@ -306,6 +347,7 @@ export function ThreadClient({
                       </button>
                       <button
                         type="button"
+                        onClick={focusReply}
                         className="text-[11px] text-ink-soft font-bold ml-auto"
                       >
                         返信
@@ -328,6 +370,7 @@ export function ThreadClient({
           )}
           <div className="flex items-end gap-2.5">
           <textarea
+            ref={commentInputRef}
             rows={1}
             value={comment}
             onChange={(e) => setComment(e.target.value)}

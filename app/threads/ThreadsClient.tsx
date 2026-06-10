@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { requestCommunityAction } from "@/lib/communities/actions";
+import { toggleReactionAction } from "@/app/thread/actions";
 import {
   CATEGORIES,
   COUNTRIES,
@@ -80,8 +81,14 @@ export function ThreadsClient({
     return list;
   }, [country, industry, role, category, sort, source]);
 
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   function toggleVote(id: string, kind: "up" | "down") {
     setVoted((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
+    if (UUID_RE.test(id)) {
+      void toggleReactionAction({ targetType: "thread", targetId: id, kind });
+    }
   }
 
   function requireLoginThen(action: () => void, returnTo = "/threads") {

@@ -54,3 +54,79 @@ export async function addCommentAction(input: {
     return { ok: false, error: "通信エラーが発生しました。" };
   }
 }
+
+/**
+ * Toggle a 👍/👎 on a thread or comment. Three-state: tapping the same
+ * kind removes it; tapping the other kind flips it. Counts are kept in
+ * sync by the tg_sync_reaction_counts trigger from migration 0002.
+ */
+export async function toggleReactionAction(input: {
+  targetType: "thread" | "comment";
+  targetId: string;
+  kind: "up" | "down";
+}): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "ログインが必要です。" };
+
+    const { data: existing, error: selErr } = await supabase
+      .from("reactions")
+      .select("id, kind")
+      .eq("user_id", user.id)
+      .eq("target_type", input.targetType)
+      .eq("target_id", input.targetId)
+      .maybeSingle();
+
+    if (selErr) {
+      if (SCHEMA_MISSING.test(selErr.message)) {
+        return {
+          ok: false,
+          error: "DB がまだ準備できていません。",
+        };
+      }
+      console.error("[thread] toggleReaction select", selErr);
+      return { ok: false, error: "リアクションに失敗しました。" };
+    }
+
+    if (existing && existing.kind === input.kind) {
+      // Same kind → remove (un-vote)
+      const { error } = await supabase
+        .from("reactions")
+        .delete()
+        .eq("id", existing.id);
+      if (error) {
+        console.error("[thread] toggleReaction delete", error);
+        return { ok: false, error: "リアクションに失敗しました。" };
+      }
+    } else if (existing) {
+      // Other kind → flip
+      const { error } = await supabase
+        .from("reactions")
+        .update({ kind: input.kind })
+        .eq("id", existing.id);
+      if (error) {
+        console.error("[thread] toggleReaction update", error);
+        return { ok: false, error: "リアクションに失敗しました。" };
+      }
+    } else {
+      const { error } = await supabase.from("reactions").insert({
+        user_id: user.id,
+        target_type: input.targetType,
+        target_id: input.targetId,
+        kind: input.kind,
+      });
+      if (error) {
+        console.error("[thread] toggleReaction insert", error);
+        return { ok: false, error: "リアクションに失敗しました。" };
+      }
+    }
+
+    return { ok: true };
+  } catch (err) {
+    console.error("[thread] toggleReaction (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
