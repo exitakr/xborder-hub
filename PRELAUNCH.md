@@ -11,6 +11,15 @@
     コミュニティ申請がすべて「DB がまだ準備できていません」のエラーで止まる
   - 実行後、`/threads`(空 → サンプル表示)・`/mypage`(空 → サンプル表示)
     が DB を読みに行くことを 1 度確認
+- [ ] `supabase/migrations/0003_chat_admin.sql` を SQL Editor で実行
+  - トークルーム(chat_rooms / chat_messages)、CC 承認時のルーム自動作成、
+    新着メッセージ通知、Realtime 配信、管理者ロールが入る
+- [ ] **管理者アカウントを設定** — SQL Editor で:
+  ```sql
+  update public.profiles set is_admin = true
+    where id = (select id from auth.users where email = 'exitakr@gmail.com');
+  ```
+  設定後、そのアカウントで `/admin` にアクセスできる(非管理者には 404)
 - [ ] Supabase Dashboard → Authentication → URL Configuration
   - Site URL: 本番ドメイン(例: `https://xborder-hub.vercel.app`)
   - Redirect URLs: `https://xborder-hub.vercel.app/auth/callback`,
@@ -51,8 +60,6 @@
 - [ ] **トランザクションメール (Resend / Postmark)** — Coffee Chat 承認・
   コミュニティ申請受領などはアプリ内通知のみ。メール送付は別 PR
 - [ ] **i18n (DeepL)** — 日本語専用。EN / VI などは別 PR
-- [ ] **リアルタイム配信** — 現在通知は `router.refresh()` 任せ。
-  Supabase Realtime を Notifications テーブルに subscribe する版は別 PR
 
 ## E. セキュリティ(Phase 5 にロードマップ済)
 

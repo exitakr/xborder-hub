@@ -109,10 +109,11 @@ export function AppTopBar({ active }: { active?: Tab }) {
           >
             スレッド
           </Link>
+          {/* Mobile gets the bell in BottomNavMobile — avoid the duplicate. */}
           <Link
             href="/notifications"
             aria-label="通知"
-            className="relative ml-1 w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
+            className="relative ml-1 w-9 h-9 rounded-full border border-ink/15 bg-cream hidden lg:flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
             title="通知"
           >
             <svg

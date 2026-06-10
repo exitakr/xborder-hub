@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 const SCHEMA_MISSING = /relation .* does not exist/i;
 
 export type CcActionResult =
-  | { ok: true; id?: string }
+  | { ok: true; id?: string; chatRoomId?: string | null }
   | { ok: false; error: string };
 
 function friendly(error: { message: string }, fallback: string): string {
@@ -71,13 +71,15 @@ async function updateStatus(
     } = await supabase.auth.getUser();
     if (!user) return { ok: false, error: "ログインが必要です。" };
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("coffee_chat_requests")
       .update({
         status: next,
         responded_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select("chat_room_id")
+      .single();
 
     if (error) {
       console.error("[cc] updateStatus", next, error);
@@ -85,7 +87,7 @@ async function updateStatus(
     }
 
     revalidatePath("/mypage");
-    return { ok: true, id };
+    return { ok: true, id, chatRoomId: data?.chat_room_id ?? null };
   } catch (err) {
     console.error("[cc] updateStatus (catch)", err);
     return { ok: false, error: "通信エラーが発生しました。" };

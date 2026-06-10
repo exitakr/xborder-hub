@@ -18,6 +18,7 @@ export type Profile = {
   industry: string | null;
   role: string | null;
   is_premium: boolean;
+  is_admin: boolean;
   visibility_settings: VisibilitySettings;
   created_at: string;
   updated_at: string;
@@ -198,6 +199,28 @@ export type NotificationKind =
   | "chat_approved"
   | "new_job"
   | "new_salary";
+
+/* ────────────────────────────────────────────────────────────────
+ * Tables added by supabase/migrations/0003_chat_admin.sql
+ * ──────────────────────────────────────────────────────────────── */
+
+export type ChatRoom = {
+  id: string;
+  cc_request_id: string | null;
+  user_a: string;
+  user_b: string;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  room_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
 
 export type AppNotificationRow = {
   id: string;

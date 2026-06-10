@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
+import { syncProfileBasics } from "./actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
 import { useNotifications } from "@/lib/notifications/store";
 import {
@@ -195,18 +196,20 @@ export function MyPageClient({
   async function callCcAction(
     id: string,
     label: string,
-    fn: (id: string) => Promise<{ ok: boolean; error?: string }>,
-  ) {
+    fn: (
+      id: string,
+    ) => Promise<{ ok: boolean; error?: string; chatRoomId?: string | null }>,
+  ): Promise<{ ok: boolean; chatRoomId?: string | null }> {
     setCcBusy(id);
     setCcError(null);
     const res = await fn(id);
     setCcBusy(null);
     if (!("ok" in res) || !res.ok) {
       setCcError(("error" in res && res.error) || `${label}に失敗しました`);
-      return false;
+      return { ok: false };
     }
     router.refresh();
-    return true;
+    return { ok: true, chatRoomId: res.chatRoomId ?? null };
   }
   const [editType, setEditType] = useState<EditType | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -273,6 +276,17 @@ export function MyPageClient({
   function saveEdit() {
     if (editType === "identity") {
       setProfile((p) => ({ ...p, ...identityForm }));
+      // Mirror to Supabase so threads / comments / Coffee Chat show the
+      // real display name. Best-effort: localStorage stays the UI source.
+      void syncProfileBasics({
+        displayName: identityForm.name,
+        age: identityForm.age,
+        bio: identityForm.bio,
+        country: identityForm.country,
+        city: identityForm.city,
+        industry: identityForm.industry,
+        role: identityForm.role,
+      });
     } else if (editType === "career") {
       if (!careerForm.company.trim()) {
         setEditType(null);
@@ -493,6 +507,12 @@ export function MyPageClient({
                     予約・申請
                   </h2>
                 </div>
+                <Link
+                  href="/chat"
+                  className="text-[11px] font-bold text-blue whitespace-nowrap"
+                >
+                  トークルーム一覧 →
+                </Link>
               </div>
 
               <div className="inline-flex gap-1 p-1 bg-paper border border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
@@ -595,7 +615,11 @@ export function MyPageClient({
                           </button>
                         ) : r.status === "approved" ? (
                           <Link
-                            href={`/chat?with=${encodeURIComponent(r.otherInitials)}`}
+                            href={
+                              r.chatRoomId
+                                ? `/chat?room=${r.chatRoomId}`
+                                : `/chat?with=${encodeURIComponent(r.otherInitials)}`
+                            }
                             className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
                           >
                             💬 トークルーム
@@ -783,14 +807,16 @@ export function MyPageClient({
                               type="button"
                               disabled={ccBusy === r.id}
                               onClick={async () => {
-                                const ok = await callCcAction(
+                                const res = await callCcAction(
                                   r.id,
                                   "承認",
                                   approveCoffeeChatRequest,
                                 );
-                                if (ok) {
+                                if (res.ok) {
                                   router.push(
-                                    `/chat?with=${encodeURIComponent(r.otherInitials)}`,
+                                    res.chatRoomId
+                                      ? `/chat?room=${res.chatRoomId}`
+                                      : `/chat?with=${encodeURIComponent(r.otherInitials)}`,
                                   );
                                 }
                               }}
@@ -801,7 +827,11 @@ export function MyPageClient({
                           </>
                         ) : r.status === "approved" ? (
                           <Link
-                            href={`/chat?with=${encodeURIComponent(r.otherInitials)}`}
+                            href={
+                              r.chatRoomId
+                                ? `/chat?room=${r.chatRoomId}`
+                                : `/chat?with=${encodeURIComponent(r.otherInitials)}`
+                            }
                             className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
                           >
                             💬 トークルームを開く

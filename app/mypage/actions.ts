@@ -57,3 +57,60 @@ export async function updateVisibilitySettings(
   revalidatePath("/mypage");
   return { ok: true };
 }
+
+/**
+ * Mirror the locally-edited identity card into the profiles table so other
+ * members see real display names on threads / comments / Coffee Chat.
+ * Fire-and-forget from the client: failures degrade to localStorage-only.
+ */
+export async function syncProfileBasics(input: {
+  displayName: string;
+  age?: string;
+  bio?: string;
+  country?: string;
+  city?: string;
+  industry?: string;
+  role?: string;
+  goalCountry?: string;
+}): Promise<UpdateState> {
+  const displayName = input.displayName
+    .replace(/(さん|くん|さま|様)\s*$/, "")
+    .trim();
+  if (!displayName) return { error: "表示名を入力してください" };
+  if (displayName.length > 60) return { error: "表示名は 60 文字以内です" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "ログインが必要です" };
+
+  const ageNum = input.age ? Number.parseInt(input.age, 10) : null;
+
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      display_name: displayName,
+      age: Number.isFinite(ageNum) ? ageNum : null,
+      bio: input.bio?.trim() || null,
+      to_country: input.country || null,
+      to_city: input.city || null,
+      industry: input.industry || null,
+      role: input.role || null,
+    },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    if (/relation .* does not exist/i.test(error.message)) {
+      return {
+        error:
+          "profiles テーブルが未作成です。supabase/migrations/0001_init.sql を実行してください。",
+      };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/mypage");
+  return { ok: true };
+}
