@@ -49,11 +49,10 @@
 
 ## D. 未実装の機能(β中は隠す / 動かなくても OK)
 
-- [ ] **他人のプロフィール表示** — 現在 `/profile` は自分専用なので、
-  Coffee Chat 申請の宛先(`targetUserId`)が無い。`/profile?id=<uuid>` で
-  他人を見られるページを作るまで、ConsultApply の「申請を送る」は
-  プレビュー(localStorage トースト)止まり。完了したら ProfileView から
-  `targetUserId={viewedProfileId}` を ConsultApply に渡す
+- [ ] **他人のプロフィール表示** — `/profile` は自分専用のまま。
+  ただし Coffee Chat 申請は `/search` の実会員カードから直接 DB に
+  保存されるようになったので、公開ブロッカーではない。
+  `/profile?id=<uuid>` の閲覧ページは将来の改善項目
 - [ ] **決済 (Stripe Checkout)** — `app/premium/SubscribeButton.tsx` は
   `localStorage('xbh_premium','1')` を立ててマイページに飛ぶだけ。
   本番では Stripe Checkout セッションを起動する
@@ -71,16 +70,19 @@
 
 ## F. 動作確認(あなたが手動で)
 
-実行: SQL を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003)を流したあとログイン → 下記をひと通り
 
 - [ ] `/threads` でスレッドが DB から表示される(空ならサンプル)
 - [ ] `/thread/new` で投稿 → `/thread?id=<uuid>` に遷移し本文が見える
-- [ ] `/thread?id=<uuid>` でコメント投稿 → ページに即時反映
+- [ ] `/thread?id=<uuid>` でコメント投稿 → ページに即時反映、👍/👎 が保存される
 - [ ] `/threads` の「+ コミュニティを申請」が成功メッセージを返す
-- [ ] 別アカウントから Coffee Chat 申請 → 自分の `/mypage` 受信タブに
-  出る(プロフィール表示ページが整ってから)
-- [ ] `/notifications` で DB 起源の通知が見える(0002 トリガが
-  thread_reply / chat_request を自動投入する)
+- [ ] 別アカウントで `/search` から自分に Coffee Chat 申請 →
+  自分の `/mypage` 受信タブに出る → 承認 → トークルームが開く
+- [ ] トークルームで送受信(2 ブラウザで Realtime 反映を確認)
+- [ ] `/notifications` で DB 起源の通知が見える(chat_request /
+  chat_approved / thread_reply / dm がトリガで自動投入される)
+- [ ] `/admin`(is_admin を立てたアカウント)でコミュニティ申請を承認
+  → コミュニティが開設される。非管理者アカウントでは 404
 - [ ] `/premium` の「無料トライアル開始」が β 用 stub であることを
   確認(本物の決済は通らない)
 
