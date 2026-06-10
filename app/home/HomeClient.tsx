@@ -11,6 +11,7 @@ import {
   TRENDING_THREADS,
   TRENDS,
   type TrendKey,
+  type TrendingThread,
 } from "./data";
 
 const TREND_TABS: { id: TrendKey; label: string }[] = [
@@ -23,13 +24,19 @@ function formatCount(n: number) {
   return new Intl.NumberFormat("ja-JP").format(n);
 }
 
-export function HomeClient() {
+export function HomeClient({
+  trendingThreads,
+}: { trendingThreads?: TrendingThread[] } = {}) {
   const [trendKey, setTrendKey] = useState<TrendKey>("industry");
   const [highlightedFlow, setHighlightedFlow] = useState<{
     from: string;
     to: string;
   } | null>(null);
   const trendItems = TRENDS[trendKey];
+  const trending =
+    trendingThreads && trendingThreads.length > 0
+      ? trendingThreads
+      : TRENDING_THREADS;
 
   return (
     <>
@@ -180,7 +187,7 @@ export function HomeClient() {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                {TRENDING_THREADS.map((t) => (
+                {trending.map((t) => (
                   <Link
                     key={t.id}
                     href={`/thread?id=${t.id}`}
