@@ -147,12 +147,12 @@ export function SearchClient({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applyPending, startApply] = useTransition();
 
-  // Real members first, then the signed-in user's own card, then the
-  // sample population (kept so the page never feels empty pre-launch).
+  // Real members first, then the signed-in user's own card (only when
+  // they've set a name), then the sample population (pre-launch filler).
   const allPeople = useMemo<Person[]>(() => {
-    const me = profileToPerson(profile);
+    const me = profile.name.trim() ? [profileToPerson(profile)] : [];
     const rest = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT");
-    return [...dbPeople, me, ...rest];
+    return [...dbPeople, ...me, ...rest];
   }, [profile, dbPeople]);
 
   const filtered = useMemo<Person[]>(

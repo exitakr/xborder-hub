@@ -20,6 +20,7 @@ export type Profile = {
   is_premium: boolean;
   is_admin: boolean;
   visibility_settings: VisibilitySettings;
+  onboarded_at: string | null;
   created_at: string;
   updated_at: string;
 };

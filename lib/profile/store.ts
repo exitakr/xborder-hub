@@ -39,69 +39,30 @@ export type Profile = {
   career: CareerStep[];
 };
 
-const KEY = "xbh.profile.v1";
+// v2: key bump evicts the old demo identity ("YT さん") that v1 shipped
+// as DEFAULT_PROFILE — real members start from a blank slate now.
+const KEY = "xbh.profile.v2";
 
 export const DEFAULT_PROFILE: Profile = {
-  name: "YT さん",
-  age: "34",
-  country: "Singapore",
-  city: "Singapore",
-  tenure: "3年目",
-  bio: "日系大手から東南アジアのTech企業へ。言葉と文化の壁を、3年で乗り越えた話なら、いつでもどうぞ。",
-  industry: "Tech",
-  role: "Product Manager",
-  visa: "EP_SG",
-  salary: "1300_1600",
-  techSkills: ["SQL", "Gen AI", "Data Analytics"],
-  businessSkills: ["Product Management", "Multicultural Team"],
-  goalCountry: "United States",
-  goalIndustry: "Startup",
-  goalRole: "Executive (VP+)",
-  goalSalary: "gte_2000",
+  name: "",
+  age: "",
+  country: "",
+  city: "",
+  tenure: "",
+  bio: "",
+  industry: "",
+  role: "",
+  visa: "",
+  salary: "",
+  techSkills: [],
+  businessSkills: [],
+  goalCountry: "",
+  goalIndustry: "",
+  goalRole: "",
+  goalSalary: "",
   ccAvailable: true,
-  ccTopics:
-    "日系→現地Tech転職、面接・給与交渉、EPビザ、Singapore生活、英語の壁の越え方",
-  career: [
-    {
-      id: "c-1",
-      country: "Japan",
-      company: "Sony",
-      role: "Product Manager",
-      startYear: "2014",
-      startMonth: "04",
-      endYear: "2019",
-      endMonth: "03",
-      achievements:
-        "映像機器のグローバル展開を担当。最後の1年でアジア市場の責任者へ。",
-      current: false,
-    },
-    {
-      id: "c-2",
-      country: "Singapore",
-      company: "Sony Asia Pacific",
-      role: "Product Manager",
-      startYear: "2019",
-      startMonth: "04",
-      endYear: "2022",
-      endMonth: "03",
-      achievements:
-        "日本本社からSGリージョナルへ駐在。多国籍チームでの仕事の難しさと面白さを学ぶ。",
-      current: false,
-    },
-    {
-      id: "c-3",
-      country: "Singapore",
-      company: "Shopee",
-      role: "Product Manager",
-      startYear: "2022",
-      startMonth: "04",
-      endYear: "",
-      endMonth: "",
-      achievements:
-        "日系から現地Techへ。給与は1.7倍に。文化適応とPM職としての成長を両立中。",
-      current: true,
-    },
-  ],
+  ccTopics: "",
+  career: [],
 };
 
 /* ──────────────── Store (localStorage + subscribers) ──────────────── */

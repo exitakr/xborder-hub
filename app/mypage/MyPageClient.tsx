@@ -17,6 +17,13 @@ import {
 import type { DisplayCcRequest } from "@/lib/coffee-chat/queries";
 import { PrivacySettings } from "./PrivacySettings";
 import {
+  COUNTRY_OPTS,
+  INDUSTRY_OPTS,
+  JPY_SALARY_OPTS,
+  ROLE_OPTS,
+  VISA_OPTS,
+} from "@/lib/profile/options";
+import {
   COMPANY_SUGGESTIONS,
   MONTH_OPTIONS,
   YEAR_OPTIONS,
@@ -49,71 +56,6 @@ const EDIT_TITLES: Record<EditType, string> = {
   coffee_chat: "Coffee Chat の受付設定",
 };
 
-// ───── Select options shared by the unified identity form ─────
-
-const COUNTRY_OPTS = [
-  { v: "", label: "—" },
-  { v: "Japan", label: "🇯🇵 Japan" },
-  { v: "Singapore", label: "🇸🇬 Singapore" },
-  { v: "Hong Kong", label: "🇭🇰 Hong Kong" },
-  { v: "Thailand", label: "🇹🇭 Thailand" },
-  { v: "Vietnam", label: "🇻🇳 Vietnam" },
-  { v: "Indonesia", label: "🇮🇩 Indonesia" },
-  { v: "Malaysia", label: "🇲🇾 Malaysia" },
-  { v: "United States", label: "🇺🇸 United States" },
-  { v: "United Kingdom", label: "🇬🇧 United Kingdom" },
-  { v: "Germany", label: "🇩🇪 Germany" },
-  { v: "Australia", label: "🇦🇺 Australia" },
-];
-const INDUSTRY_OPTS = [
-  { v: "", label: "—" },
-  { v: "Tech", label: "💻 Tech" },
-  { v: "Finance", label: "🏦 Finance" },
-  { v: "Startup", label: "🚀 Startup" },
-  { v: "Consumer", label: "🛍 Consumer" },
-  { v: "Manufacturing", label: "🏭 Manufacturing" },
-  { v: "Healthcare", label: "🏥 Healthcare" },
-  { v: "Education", label: "🎓 Education" },
-  { v: "Consulting", label: "📊 Consulting" },
-];
-const ROLE_OPTS = [
-  { v: "", label: "—" },
-  { v: "Product Manager", label: "📐 Product Manager" },
-  { v: "Engineer", label: "⚙️ Engineer" },
-  { v: "BD / Sales", label: "💼 BD / Sales" },
-  { v: "Marketing", label: "📣 Marketing" },
-  { v: "Designer", label: "🎨 Designer" },
-  { v: "Finance / Accounting", label: "📊 Finance / Accounting" },
-  { v: "HR / People", label: "👥 HR / People" },
-  { v: "Executive (VP+)", label: "🏛 Executive (VP+)" },
-  { v: "Founder / Entrepreneur", label: "🚀 Founder / Entrepreneur" },
-];
-const VISA_OPTS = [
-  { v: "", label: "—" },
-  { v: "EP_SG", label: "EP (Singapore)" },
-  { v: "S_Pass_SG", label: "S Pass (Singapore)" },
-  { v: "PR_SG", label: "PR (Singapore)" },
-  { v: "H1B", label: "H-1B (US)" },
-  { v: "O1", label: "O-1 (US)" },
-  { v: "L1", label: "L-1 (US)" },
-  { v: "Green_Card", label: "Green Card (US)" },
-  { v: "Tier2_UK", label: "Skilled Worker (UK)" },
-  { v: "WP", label: "就労ビザ (その他)" },
-  { v: "PR", label: "永住権 (その他)" },
-  { v: "Citizen", label: "市民権" },
-  { v: "none", label: "無し / 検討中" },
-];
-const JPY_SALARY_OPTS = [
-  { v: "", label: "—" },
-  { v: "lt_400", label: "〜400万円" },
-  { v: "400_600", label: "400〜600万円" },
-  { v: "600_800", label: "600〜800万円" },
-  { v: "800_1000", label: "800〜1,000万円" },
-  { v: "1000_1300", label: "1,000〜1,300万円" },
-  { v: "1300_1600", label: "1,300〜1,600万円" },
-  { v: "1600_2000", label: "1,600〜2,000万円" },
-  { v: "gte_2000", label: "2,000万円以上" },
-];
 const TECH_SKILLS = [
   "SQL",
   "Python",
@@ -385,19 +327,26 @@ export function MyPageClient({
                       </div>
                       <div>
                         <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
-                          {identity.name}
+                          {identity.name || "プロフィールを設定しましょう"}
                         </h1>
-                        <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
-                          {identity.age}歳 · 在 {identity.city || identity.country}{" "}
-                          {identity.tenure}
-                        </p>
+                        {identity.name ? (
+                          <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
+                            {identity.age ? `${identity.age}歳 · ` : ""}
+                            {(identity.city || identity.country) &&
+                              `在 ${identity.city || identity.country} `}
+                            {identity.tenure}
+                          </p>
+                        ) : (
+                          <p className="text-[12px] text-ink-soft mt-1">
+                            「編集」から名前と現在地を入力すると、検索やスレッドに表示されます。
+                          </p>
+                        )}
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade/40 font-bold">
-                            ⚡ 相談可
-                          </span>
-                          <span className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
-                            ⭐ 4.9 · 23件
-                          </span>
+                          {profile.ccAvailable && (
+                            <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade/40 font-bold">
+                              ⚡ 相談可
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -410,9 +359,11 @@ export function MyPageClient({
                     </button>
                   </div>
 
-                  <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4 whitespace-pre-line">
-                    &quot;{identity.bio}&quot;
-                  </p>
+                  {identity.bio && (
+                    <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4 whitespace-pre-line">
+                      &quot;{identity.bio}&quot;
+                    </p>
+                  )}
 
                   {/* Current professional snapshot */}
                   <div className="mt-5 pt-4 border-t border-dashed border-ink/15">
