@@ -9,11 +9,16 @@
 - [ ] `supabase/migrations/0002_communities_threads.sql` を SQL Editor で実行
   - これが未実行のうちは、`/threads` 投稿・コメント・Coffee Chat 申請・
     コミュニティ申請がすべて「DB がまだ準備できていません」のエラーで止まる
-  - 実行後、`/threads`(空 → サンプル表示)・`/mypage`(空 → サンプル表示)
-    が DB を読みに行くことを 1 度確認
+  - 実行後、`/threads`・`/mypage` が DB を読みに行くことを 1 度確認
+    (本番ビルドではサンプル非表示。dev では空のときサンプルが出る)
 - [ ] `supabase/migrations/0003_chat_admin.sql` を SQL Editor で実行
   - トークルーム(chat_rooms / chat_messages)、CC 承認時のルーム自動作成、
     新着メッセージ通知、Realtime 配信、管理者ロールが入る
+- [ ] `supabase/migrations/0004_onboarding_comp.sql` を SQL Editor で実行
+  - オンボーディング(profiles.onboarded_at — 既存ユーザーは自動で完了扱い)
+  - 年収 Give-to-Get(compensation_data の国/業界/職種列 +
+    SECURITY DEFINER RPC。user_id は読者に渡らない設計)
+  - 未実行のうちは /welcome 強制は発動せず、/salaries はロック表示のまま
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -31,13 +36,23 @@
 - [ ] Database → Roles → `service_role` の鍵を Vercel に保存していない
   (anon key だけが NEXT_PUBLIC_ で公開される。OK な状態を再確認)
 
-## B. Vercel
+## B. Vercel(環境変数 + 公開設定)
 
 - [x] `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY` 設定済
+- [ ] `NEXT_PUBLIC_SITE_URL` — 正規 URL(例: `https://xborder-hub.vercel.app`)。
+  metadata / sitemap / robots / OG がこれを使う
+- [ ] `NEXT_PUBLIC_POSTHOG_KEY`(任意・推奨)— posthog.com 無料枠で
+  プロジェクト作成 → Project API Key を設定。無ければ計測は自動 no-op。
+  リージョンが EU の場合は `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com` も
+- [ ] `NEXT_PUBLIC_SENTRY_DSN` + `SENTRY_DSN`(任意・推奨)— sentry.io 無料枠で
+  Next.js プロジェクト作成 → DSN を両方に設定。無ければ自動 no-op
+- [ ] `NEXT_PUBLIC_DEMO_CONTENT` — **本番では設定しない**(サンプルデータ非表示)。
+  ステージングで見せたい場合のみ `1`。切替はビルド時反映なので再デプロイ必須
 - [ ] Vercel の **Deployment Protection** が "Standard Protection / Vercel
   Authentication" のままだと一般ユーザが見られないので、公開時に
   `Disabled` か `Only Preview` に切替
-- [ ] カスタムドメインを設定する場合、上の Supabase 側 URL も合わせて更新
+- [ ] カスタムドメインを設定する場合、Supabase 側 URL と
+  `NEXT_PUBLIC_SITE_URL` も合わせて更新
 
 ## C. 法務(プレースホルダのまま)
 
@@ -68,10 +83,27 @@
   (Markdown injection 対策)は未対応
 - [ ] レートリミット(Upstash + Edge Middleware など)
 
-## F. 動作確認(あなたが手動で)
+## F. シードコンテンツ(公開前に必ず)
 
-実行: SQL(0001 → 0002 → 0003)を流したあとログイン → 下記をひと通り
+本番はサンプルデータ非表示なので、空に見えないよう運営アカウントで実コンテンツを投入:
 
+- [ ] `/thread/new` から実スレッドを 5〜10 件投稿
+  (カテゴリを散らす: 転職体験 / ビザ / 給与交渉 / 生活 / 家族)
+- [ ] 各スレッドに自然なコメントを 2〜3 件(サブアカウントがあれば理想)
+- [ ] `/salaries` に自分の年収データを 1 件投稿(最初の 1 行が無いと
+  ロック画面の件数が 0 のまま)
+- [ ] プロフィール(表示名・From/To・業界/職種)を設定し、検索に
+  実会員として表示されることを確認
+
+## G. 動作確認(あなたが手動で)
+
+実行: SQL(0001 → 0002 → 0003 → 0004)を流したあとログイン → 下記をひと通り
+
+- [ ] **新規登録** → `/welcome` ウィザード → 完了 → `/mypage` に実名表示。
+  既存アカウントは /welcome を経由しないこと、パスワード再設定リンクが
+  /reset-password に直行することも確認
+- [ ] **/salaries** — 未投稿だとロック画面 → 匿名投稿 → 全データ解放。
+  2 アカウント目で投稿し、互いのデータが見える(名前は見えない)こと
 - [ ] `/threads` でスレッドが DB から表示される(空ならサンプル)
 - [ ] `/thread/new` で投稿 → `/thread?id=<uuid>` に遷移し本文が見える
 - [ ] `/thread?id=<uuid>` でコメント投稿 → ページに即時反映、👍/👎 が保存される
