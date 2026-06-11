@@ -333,16 +333,19 @@ export function HomeClient({
               style={{ background: "#0A1F3D" }}
             >
               <p className="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-1">
-                ✦ Premium
+                💴 年収データ
               </p>
               <p className="display font-bold text-[14px] leading-tight text-cream">
-                給与の本当の数字を見る
+                あなたのデータを投稿して、みんなのリアルを見る
+              </p>
+              <p className="text-[10px] text-cream/70 mt-1 leading-relaxed">
+                匿名・レンジ値のみ。投稿すると全データが解放されます。
               </p>
               <Link
-                href="/premium"
+                href="/salaries"
                 className="mt-2 block text-center py-1.5 bg-mustard text-ink rounded-full font-bold text-[11px]"
               >
-                無料トライアル
+                年収データを見る →
               </Link>
             </div>
           </aside>

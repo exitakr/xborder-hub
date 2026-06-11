@@ -33,6 +33,12 @@ export type CompensationData = {
   id: string;
   user_id: string;
 
+  /* Snapshot of the job at reporting time (migration 0004) */
+  country: string | null;
+  city: string | null;
+  industry: string | null;
+  role: string | null;
+
   base_salary_range: string | null;
   bonus_range: string | null;
   has_equity: boolean | null;
@@ -200,6 +206,34 @@ export type NotificationKind =
   | "chat_approved"
   | "new_job"
   | "new_salary";
+
+/**
+ * Row shape returned by the fetch_comp_entries RPC (migration 0004).
+ * Deliberately excludes user_id — anonymity is enforced server-side.
+ */
+export type CompEntry = {
+  entry_id: string;
+  country: string | null;
+  city: string | null;
+  industry: string | null;
+  role: string | null;
+  base_salary_range: string | null;
+  bonus_range: string | null;
+  has_equity: boolean | null;
+  total_comp_range: string | null;
+  monthly_rent_range: string | null;
+  savings_rate_range: string | null;
+  life_satisfaction: number | null;
+  weekly_hours_range: string | null;
+  remote_frequency: string | null;
+  english_usage_rate: string | null;
+  wlb_satisfaction: number | null;
+  visa_type: string | null;
+  visa_difficulty: number | null;
+  has_pr: boolean | null;
+  overseas_satisfaction: number | null;
+  reported_month: string;
+};
 
 /* ────────────────────────────────────────────────────────────────
  * Tables added by supabase/migrations/0003_chat_admin.sql

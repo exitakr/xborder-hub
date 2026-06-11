@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useNotifications } from "@/lib/notifications/store";
 
-type Tab = "home" | "search" | "threads" | "notifications";
+type Tab = "home" | "search" | "threads" | "salaries" | "notifications";
 
 const TABS: {
   id: Tab;
@@ -60,6 +60,23 @@ const TABS: {
         strokeWidth="2"
       >
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    id: "salaries",
+    href: "/salaries",
+    label: "年収",
+    icon: (
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M6 3l6 7 6-7M12 10v11M7.5 13.5h9M7.5 17h9" />
       </svg>
     ),
   },

@@ -1,11 +1,12 @@
 import Link from "next/link";
 
-type Tab = "home" | "search" | "threads" | "mypage";
+type Tab = "home" | "search" | "threads" | "salaries" | "mypage";
 
 const ITEMS: { id: Tab; href: string; label: string }[] = [
   { id: "home", href: "/home", label: "🌏 ホーム" },
   { id: "search", href: "/search", label: "🔀 フロー検索" },
   { id: "threads", href: "/threads", label: "💬 スレッド" },
+  { id: "salaries", href: "/salaries", label: "💴 年収データ" },
   { id: "mypage", href: "/mypage", label: "👤 マイページ" },
 ];
 

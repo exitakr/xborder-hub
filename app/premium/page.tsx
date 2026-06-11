@@ -108,6 +108,7 @@ export default function PremiumPage() {
                     "フロー検索(基本)",
                     "Coffee Chat申請(月3件まで)",
                     "スレッド閲覧・投稿",
+                    "年収データ(投稿すると閲覧解放)",
                   ].map((item) => (
                     <li
                       key={item}
@@ -117,7 +118,7 @@ export default function PremiumPage() {
                       <span>{item}</span>
                     </li>
                   ))}
-                  {["給与レンジ詳細", "ボーナス・株式情報"].map((item) => (
+                  {["給与の集計・分布分析", "経路インサイト"].map((item) => (
                     <li
                       key={item}
                       className="flex items-start gap-2 text-[13px] text-ink-faint"
