@@ -7,6 +7,7 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
+import { track } from "@/lib/analytics/track";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
@@ -231,6 +232,7 @@ export function SearchClient({
         preferredWhen: date,
       });
       if (res.ok) {
+        track("cc_request");
         closeApply();
         setToastVisible(true);
         setTimeout(() => setToastVisible(false), 2500);

@@ -11,10 +11,6 @@ import {
 } from "@/lib/threads/queries";
 import { ThreadClient } from "./ThreadClient";
 
-export const metadata: Metadata = {
-  title: "スレッド詳細",
-};
-
 export const dynamic = "force-dynamic";
 
 const UUID_RE =
@@ -23,6 +19,24 @@ const UUID_RE =
 type Props = {
   searchParams: Promise<{ id?: string }>;
 };
+
+export async function generateMetadata({
+  searchParams,
+}: Props): Promise<Metadata> {
+  const { id } = await searchParams;
+  if (id && UUID_RE.test(id)) {
+    const row = await fetchThreadById(id);
+    if (row) {
+      const description = row.body.slice(0, 120);
+      return {
+        title: row.title,
+        description,
+        openGraph: { title: row.title, description },
+      };
+    }
+  }
+  return { title: "スレッド詳細" };
+}
 
 export default async function ThreadPage({ searchParams }: Props) {
   const user = await getCurrentUser();

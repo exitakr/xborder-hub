@@ -9,6 +9,7 @@ import {
   INDUSTRY_OPTS,
   ROLE_OPTS,
 } from "@/lib/profile/options";
+import { track } from "@/lib/analytics/track";
 import { completeOnboarding } from "./actions";
 
 const STEPS = ["お名前", "あなたの移動", "仕事"] as const;
@@ -48,6 +49,12 @@ export function WelcomeClient({ next }: { next?: string }) {
         setError(res.error);
         return;
       }
+      track("signup_completed", {
+        from_country: fromCountry,
+        to_country: toCountry,
+        industry,
+        role,
+      });
       // Seed the local store so AppTopBar / mypage hydrate instantly.
       setLocalProfile((p) => ({
         ...p,

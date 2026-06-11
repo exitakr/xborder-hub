@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/analytics/track";
 import { createThreadAction } from "./actions";
 
 type Country = "" | "sg" | "jp" | "hk" | "vn" | "th" | "us" | "other";
@@ -100,6 +101,7 @@ export function ThreadNewClient() {
         body: body.trim(),
       });
       if (res.ok) {
+        track("thread_post", { category, country: country || null });
         router.push(`/thread?id=${res.id}`);
       } else {
         setError(res.error);
