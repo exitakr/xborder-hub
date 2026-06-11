@@ -7,6 +7,7 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
 /** Build a Person entry from the logged-in user's profile so they appear
@@ -148,10 +149,13 @@ export function SearchClient({
   const [applyPending, startApply] = useTransition();
 
   // Real members first, then the signed-in user's own card (only when
-  // they've set a name), then the sample population (pre-launch filler).
+  // they've set a name). Sample personas pad the list only while demo
+  // content is enabled (dev / staging).
   const allPeople = useMemo<Person[]>(() => {
     const me = profile.name.trim() ? [profileToPerson(profile)] : [];
-    const rest = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT");
+    const rest = SHOW_DEMO_CONTENT
+      ? SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
+      : [];
     return [...dbPeople, ...me, ...rest];
   }, [profile, dbPeople]);
 

@@ -15,6 +15,7 @@ import {
   rejectCoffeeChatRequest,
 } from "@/lib/coffee-chat/actions";
 import type { DisplayCcRequest } from "@/lib/coffee-chat/queries";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { PrivacySettings } from "./PrivacySettings";
 import {
   COUNTRY_OPTS,
@@ -130,7 +131,7 @@ export function MyPageClient({
   const { addNotification } = useNotifications();
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [ccReceived, setCcReceived] = useState<CcReceivedItem[]>(
-    INITIAL_CC_RECEIVED,
+    SHOW_DEMO_CONTENT ? INITIAL_CC_RECEIVED : [],
   );
   const [ccBusy, setCcBusy] = useState<string | null>(null);
   const [ccError, setCcError] = useState<string | null>(null);
@@ -582,7 +583,17 @@ export function MyPageClient({
                 </div>
               )}
 
-              {ccTab === "sent" && dbCcSent.length === 0 && (
+              {ccTab === "sent" && dbCcSent.length === 0 && !SHOW_DEMO_CONTENT && (
+                <p className="text-[12px] text-ink-faint">
+                  まだ申請していません。気になる人を
+                  <Link href="/search" className="text-blue font-bold underline">
+                    キャリア検索
+                  </Link>
+                  で見つけて、Coffee Chat を申請してみましょう。
+                </p>
+              )}
+
+              {ccTab === "sent" && dbCcSent.length === 0 && SHOW_DEMO_CONTENT && (
                 <div className="space-y-3">
                   {/* 申請中 */}
                   <div className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm">

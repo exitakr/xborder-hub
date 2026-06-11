@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { GlobalMap } from "./GlobalMap";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   ANNUAL_TOP_FLOWS,
   RECENT_MOVES,
@@ -36,7 +37,9 @@ export function HomeClient({
   const trending =
     trendingThreads && trendingThreads.length > 0
       ? trendingThreads
-      : TRENDING_THREADS;
+      : SHOW_DEMO_CONTENT
+        ? TRENDING_THREADS
+        : [];
 
   return (
     <>
@@ -173,6 +176,7 @@ export function HomeClient({
             </section>
 
             {/* TRENDING THREADS */}
+            {trending.length > 0 && (
             <section className="rise" style={{ animationDelay: "0.16s" }}>
               <div className="flex items-end justify-between mb-2">
                 <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink">
@@ -208,8 +212,10 @@ export function HomeClient({
                 ))}
               </div>
             </section>
+            )}
 
-            {/* RECENT MOVES */}
+            {/* RECENT MOVES — sample feed, hidden until real move data exists */}
+            {SHOW_DEMO_CONTENT && (
             <section className="rise" style={{ animationDelay: "0.2s" }}>
               <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink mb-2">
                 新着の動き
@@ -251,6 +257,7 @@ export function HomeClient({
                 ))}
               </ul>
             </section>
+            )}
 
             {/* CTA */}
             <section

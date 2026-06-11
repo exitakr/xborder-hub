@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/guard";
 import { THREADS } from "@/app/threads/data";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   adaptCommentRow,
   adaptThreadRow,
@@ -39,6 +41,8 @@ export default async function ThreadPage({ searchParams }: Props) {
       );
     }
   }
+
+  if (!SHOW_DEMO_CONTENT) notFound();
 
   const thread = (id && THREADS.find((t) => t.id === id)) || THREADS[0]!;
   return <ThreadClient isLoggedIn={!!user} thread={thread} comments={[]} />;

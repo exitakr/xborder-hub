@@ -6,6 +6,7 @@ import {
   fetchChatRooms,
   partnerOf,
 } from "@/lib/chat/queries";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { ChatClient } from "./ChatClient";
 import { ChatRoomsList } from "./ChatRoomsList";
 
@@ -48,8 +49,8 @@ export default async function ChatPage({ searchParams }: Props) {
     }
   }
 
-  // Legacy demo path (?with=XX) — keep the walkthrough experience
-  if (withParam) {
+  // Legacy demo path (?with=XX) — walkthrough only while demo content is on
+  if (withParam && SHOW_DEMO_CONTENT) {
     return <ChatClient currentUserId={user.id} demoWith={withParam} />;
   }
 

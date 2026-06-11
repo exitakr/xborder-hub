@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { LABELS, type Thread } from "@/app/threads/data";
 import { addCommentAction, toggleReactionAction } from "./actions";
 import type { DisplayComment } from "@/lib/threads/queries";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 
 type VoteState = "up" | "down" | null;
 
@@ -72,7 +73,12 @@ export function ThreadClient({
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   const isPersisted = UUID_RE.test(thread.id);
-  const baseComments = comments.length > 0 ? comments : SAMPLE_COMMENTS;
+  const baseComments =
+    comments.length > 0
+      ? comments
+      : SHOW_DEMO_CONTENT && !isPersisted
+        ? SAMPLE_COMMENTS
+        : [];
   const displayComments = useMemo(() => {
     if (commentSort === "ups") {
       return [...baseComments].sort((a, b) => b.ups - a.ups);
@@ -302,6 +308,17 @@ export function ThreadClient({
 
           {/* Comments */}
           <div className="space-y-3">
+            {displayComments.length === 0 && (
+              <div className="bg-paper border border-ink/15 rounded-2xl p-6 text-center">
+                <p className="text-2xl mb-1">💬</p>
+                <p className="display font-bold text-[14px] text-ink">
+                  まだコメントがありません
+                </p>
+                <p className="text-[11px] text-ink-soft mt-1">
+                  最初のコメントを書いてみましょう。
+                </p>
+              </div>
+            )}
             {displayComments.map((c) => (
               <article
                 key={c.id}

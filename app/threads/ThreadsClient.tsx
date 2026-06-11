@@ -7,6 +7,7 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { requestCommunityAction } from "@/lib/communities/actions";
 import { toggleReactionAction } from "@/app/thread/actions";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   CATEGORIES,
   COUNTRIES,
@@ -62,10 +63,11 @@ export function ThreadsClient({
     });
   }
 
-  // If Supabase returned threads, use them. Otherwise fall back to the
-  // bundled sample threads so the page still has content while the DB
-  // migration is unapplied or empty.
-  const source = dbThreads.length > 0 ? dbThreads : THREADS;
+  // If Supabase returned threads, use them. Sample threads only pad the
+  // page while demo content is enabled (dev / staging) — production shows
+  // the real empty state instead.
+  const source =
+    dbThreads.length > 0 ? dbThreads : SHOW_DEMO_CONTENT ? THREADS : [];
 
   const visible = useMemo(() => {
     let list = source.filter((t) => {
