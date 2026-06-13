@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/guard";
+import { fetchMemberPeople } from "@/lib/people/queries";
 import { SearchClient } from "./SearchClient";
 
 export const metadata: Metadata = {
   title: "フロー検索",
 };
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   searchParams: Promise<{
@@ -17,11 +20,12 @@ type Props = {
 };
 
 export default async function SearchPage({ searchParams }: Props) {
-  const user = await getCurrentUser();
-  const sp = await searchParams;
+  const [user, sp] = await Promise.all([getCurrentUser(), searchParams]);
+  const members = await fetchMemberPeople(user?.id);
   return (
     <SearchClient
       isLoggedIn={!!user}
+      dbPeople={members}
       initial={{
         from: sp.from ?? "",
         // /home links use `country` for the destination filter; map it onto

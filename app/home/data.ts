@@ -182,7 +182,7 @@ export const RECENT_MOVES: RecentMove[] = [
 ];
 
 export type TrendingThread = {
-  id: number;
+  id: string;
   category: string;
   title: string;
   replies: number;
@@ -191,28 +191,28 @@ export type TrendingThread = {
 
 export const TRENDING_THREADS: TrendingThread[] = [
   {
-    id: 4,
+    id: "4",
     category: "💰 給与",
     title: "東京年収1,200万 vs SG SGD 11k、本当の手取り比較",
     replies: 67,
     ups: 156,
   },
   {
-    id: 3,
+    id: "3",
     category: "🛂 ビザ",
     title: "タイのSmart Visa、起業家枠の最新申請プロセス(2026年版)",
     replies: 42,
     ups: 89,
   },
   {
-    id: 5,
+    id: "5",
     category: "🏠 生活",
     title: "SGのコンドミニアム、家族で住むなら結局どのエリア?",
     replies: 31,
     ups: 72,
   },
   {
-    id: 2,
+    id: "2",
     category: "👨‍👩‍👧 家族",
     title: "ホーチミンの IS、月いくらかかってますか?",
     replies: 28,

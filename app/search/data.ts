@@ -1,4 +1,7 @@
 export type Person = {
+  /** Supabase auth user id — present only for real members; sample
+   * personas have no id, so Coffee Chat applies to them stay demo-only. */
+  userId?: string;
   initials: string;
   avatarBg: string;
   avatarText: string;

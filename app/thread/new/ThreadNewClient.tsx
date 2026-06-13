@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { track } from "@/lib/analytics/track";
+import { createThreadAction } from "./actions";
 
 type Country = "" | "sg" | "jp" | "hk" | "vn" | "th" | "us" | "other";
 type Industry = "" | "tech" | "finance" | "startup" | "consumer" | "manufacturing" | "other";
@@ -61,6 +63,8 @@ export function ThreadNewClient() {
   const [category, setCategory] = useState<Category>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const valid = useMemo(
@@ -83,9 +87,26 @@ export function ThreadNewClient() {
   }, [title]);
 
   function submit() {
-    if (!valid) return;
-    alert("投稿しました。スレッド一覧に戻ります。");
-    router.push("/threads");
+    if (!valid || pending) return;
+    setError(null);
+    startTransition(async () => {
+      const sanitize = (v: string) =>
+        v && v !== "other" ? v : null;
+      const res = await createThreadAction({
+        country: sanitize(country),
+        industry: sanitize(industry),
+        role: sanitize(role),
+        category: category as string,
+        title: title.trim(),
+        body: body.trim(),
+      });
+      if (res.ok) {
+        track("thread_post", { category, country: country || null });
+        router.push(`/thread?id=${res.id}`);
+      } else {
+        setError(res.error);
+      }
+    });
   }
 
   return (
@@ -119,12 +140,12 @@ export function ThreadNewClient() {
           <button
             type="button"
             onClick={submit}
-            disabled={!valid}
+            disabled={!valid || pending}
             className={`px-4 py-2 rounded-full font-bold text-[12px] flex-shrink-0 transition-all ${
-              valid ? "bg-blue text-cream" : "bg-ink/20 text-ink/40"
+              valid && !pending ? "bg-blue text-cream" : "bg-ink/20 text-ink/40"
             }`}
           >
-            投稿
+            {pending ? "投稿中…" : "投稿"}
           </button>
         </div>
       </header>
@@ -237,6 +258,11 @@ export function ThreadNewClient() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-cream border-t-[1.5px] border-ink">
+        {error && (
+          <div className="container-app pt-2">
+            <p className="text-[11px] font-bold text-red-600">{error}</p>
+          </div>
+        )}
         <div className="container-app py-3 flex items-center justify-between gap-3">
           <Link
             href="/threads"
@@ -247,10 +273,10 @@ export function ThreadNewClient() {
           <button
             type="button"
             onClick={submit}
-            disabled={!valid}
-            className={`flex-1 max-w-xs btn-primary ${valid ? "" : "opacity-40 cursor-not-allowed"}`}
+            disabled={!valid || pending}
+            className={`flex-1 max-w-xs btn-primary ${valid && !pending ? "" : "opacity-40 cursor-not-allowed"}`}
           >
-            投稿する
+            {pending ? "投稿中…" : "投稿する"}
             <svg
               width="14"
               height="14"

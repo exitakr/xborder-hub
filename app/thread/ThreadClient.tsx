@@ -1,40 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LABELS, type Thread } from "@/app/threads/data";
+import { addCommentAction, toggleReactionAction } from "./actions";
+import type { DisplayComment } from "@/lib/threads/queries";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 
 type VoteState = "up" | "down" | null;
 
-const COMMENTS = [
+const SAMPLE_COMMENTS: DisplayComment[] = [
   {
     id: "a",
-    author: "YT",
+    authorName: "YT",
+    initials: "YT",
     bg: "bg-jade",
     text: "text-ink",
     badge: "経験あり",
     posted: "1時間前",
-    body: (
-      <>
-        全く同じ状況で2年前にShopee入りました。結論、訛りは全く問題ないです。むしろ「Japanese English」は東南アジアで通じやすいので有利かも。
-        <br />
-        <br />
-        意識した点:
-        <br />
-        1. 結論ファースト(英語面接で迷ったらこれ)
-        <br />
-        2. 単語を選ぶより、シンプルな表現で繋ぐ
-        <br />
-        3. 詰まったら「Let me rephrase」で時間を稼ぐ
-      </>
-    ),
+    body: "全く同じ状況で2年前にShopee入りました。結論、訛りは全く問題ないです。むしろ「Japanese English」は東南アジアで通じやすいので有利かも。\n\n意識した点:\n1. 結論ファースト(英語面接で迷ったらこれ)\n2. 単語を選ぶより、シンプルな表現で繋ぐ\n3. 詰まったら「Let me rephrase」で時間を稼ぐ",
     ups: 18,
     downs: 0,
   },
   {
     id: "b",
-    author: "AK",
+    authorName: "AK",
+    initials: "AK",
     bg: "bg-plum",
     text: "text-cream",
     badge: null,
@@ -45,7 +37,8 @@ const COMMENTS = [
   },
   {
     id: "c",
-    author: "SK",
+    authorName: "SK",
+    initials: "SK",
     bg: "bg-mustard",
     text: "text-ink",
     badge: null,
@@ -54,23 +47,59 @@ const COMMENTS = [
     ups: 8,
     downs: 0,
   },
-] as const;
+];
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function ThreadClient({
   isLoggedIn = false,
   thread,
+  comments = [],
 }: {
   isLoggedIn?: boolean;
   thread: Thread;
+  comments?: DisplayComment[];
 }) {
   const router = useRouter();
-  const [postVote, setPostVote] = useState<VoteState>("up");
-  const [commentVotes, setCommentVotes] = useState<Record<string, VoteState>>({
-    a: "up",
-    b: "up",
-    c: "up",
-  });
+  const [postVote, setPostVote] = useState<VoteState>(null);
+  const [commentVotes, setCommentVotes] = useState<Record<string, VoteState>>(
+    {},
+  );
   const [comment, setComment] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [commentSort, setCommentSort] = useState<"new" | "ups">("new");
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const isPersisted = UUID_RE.test(thread.id);
+  const baseComments =
+    comments.length > 0
+      ? comments
+      : SHOW_DEMO_CONTENT && !isPersisted
+        ? SAMPLE_COMMENTS
+        : [];
+  const displayComments = useMemo(() => {
+    if (commentSort === "ups") {
+      return [...baseComments].sort((a, b) => b.ups - a.ups);
+    }
+    return baseComments;
+  }, [baseComments, commentSort]);
+
+  function togglePostVote(kind: "up" | "down") {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
+    setPostVote((v) => (v === kind ? null : kind));
+    if (isPersisted) {
+      void toggleReactionAction({
+        targetType: "thread",
+        targetId: thread.id,
+        kind,
+      });
+    }
+  }
 
   function toggleCommentVote(id: string, kind: "up" | "down") {
     if (!isLoggedIn) {
@@ -78,6 +107,22 @@ export function ThreadClient({
       return;
     }
     setCommentVotes((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
+    // Persist only for DB-backed comments (UUID ids).
+    if (UUID_RE.test(id)) {
+      void toggleReactionAction({
+        targetType: "comment",
+        targetId: id,
+        kind,
+      });
+    }
+  }
+
+  function focusReply() {
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/thread")}`);
+      return;
+    }
+    commentInputRef.current?.focus();
   }
 
   function submitComment() {
@@ -85,8 +130,24 @@ export function ThreadClient({
       router.push(`/login?next=${encodeURIComponent("/thread")}`);
       return;
     }
-    // TODO: persist via Supabase in Phase 4. Demo: just clear the input.
-    setComment("");
+    const body = comment.trim();
+    if (!body) return;
+    if (!isPersisted) {
+      setError(
+        "このスレッドはサンプル投稿のため、コメントを保存できません。",
+      );
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await addCommentAction({ threadId: thread.id, body });
+      if (res.ok) {
+        setComment("");
+        router.refresh();
+      } else {
+        setError(res.error);
+      }
+    });
   }
 
   return (
@@ -177,7 +238,7 @@ export function ThreadClient({
                 </div>
               </div>
               <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
-                {LABELS.categories[thread.category]}
+                {LABELS.categories[thread.category] ?? thread.category}
               </span>
             </div>
 
@@ -190,35 +251,37 @@ export function ThreadClient({
             </p>
 
             <div className="flex flex-wrap gap-1.5 mt-3">
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
-                {LABELS.countries[thread.country]}
-              </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
-                {LABELS.industries[thread.industry]}
-              </span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
-                {LABELS.roles[thread.role]}
-              </span>
+              {thread.country && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                  {LABELS.countries[thread.country] ?? thread.country}
+                </span>
+              )}
+              {thread.industry && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                  {LABELS.industries[thread.industry] ?? thread.industry}
+                </span>
+              )}
+              {thread.role && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-blue-soft text-blue-deep border-blue/30">
+                  {LABELS.roles[thread.role] ?? thread.role}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-3 mt-5 pt-4 border-t border-dashed border-ink/20">
               <button
                 type="button"
-                onClick={() =>
-                  setPostVote((v) => (v === "up" ? null : "up"))
-                }
+                onClick={() => togglePostVote("up")}
                 className={`vote-btn ${postVote === "up" ? "voted-up" : ""}`}
               >
-                👍 {thread.ups}
+                👍 {thread.ups + (postVote === "up" ? 1 : 0)}
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setPostVote((v) => (v === "down" ? null : "down"))
-                }
+                onClick={() => togglePostVote("down")}
                 className={`vote-btn ${postVote === "down" ? "voted-down" : ""}`}
               >
-                👎 {thread.downs}
+                👎 {thread.downs + (postVote === "down" ? 1 : 0)}
               </button>
               <span className="text-[11px] text-ink-soft font-bold ml-auto">
                 💬 {thread.replies}件
@@ -229,17 +292,34 @@ export function ThreadClient({
           {/* Comments header */}
           <div className="flex items-center justify-between mt-6 mb-4">
             <h2 className="display font-bold text-[16px] text-ink">
-              コメント ({thread.replies}件)
+              コメント ({displayComments.length}件)
             </h2>
-            <select className="text-[11px] font-bold text-ink-soft bg-transparent">
-              <option>新着順</option>
-              <option>👍 順</option>
+            <select
+              value={commentSort}
+              onChange={(e) =>
+                setCommentSort(e.target.value as "new" | "ups")
+              }
+              className="text-[11px] font-bold text-ink-soft bg-transparent"
+            >
+              <option value="new">新着順</option>
+              <option value="ups">👍 順</option>
             </select>
           </div>
 
           {/* Comments */}
           <div className="space-y-3">
-            {COMMENTS.map((c) => (
+            {displayComments.length === 0 && (
+              <div className="bg-paper border border-ink/15 rounded-2xl p-6 text-center">
+                <p className="text-2xl mb-1">💬</p>
+                <p className="display font-bold text-[14px] text-ink">
+                  まだコメントがありません
+                </p>
+                <p className="text-[11px] text-ink-soft mt-1">
+                  最初のコメントを書いてみましょう。
+                </p>
+              </div>
+            )}
+            {displayComments.map((c) => (
               <article
                 key={c.id}
                 className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
@@ -248,13 +328,13 @@ export function ThreadClient({
                   <div
                     className={`w-9 h-9 rounded-full ${c.bg} ${c.text} font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0`}
                   >
-                    {c.author}
+                    {c.initials}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-[12px] text-ink">
-                          {c.author} さん
+                          {c.authorName} さん
                         </p>
                         {c.badge && (
                           <span className="text-[9px] uppercase tracking-wider bg-mustard text-ink px-1.5 py-0.5 rounded font-bold">
@@ -264,7 +344,7 @@ export function ThreadClient({
                       </div>
                       <p className="text-[10px] text-ink-faint">{c.posted}</p>
                     </div>
-                    <p className="text-[13px] text-ink leading-relaxed">
+                    <p className="text-[13px] text-ink leading-relaxed whitespace-pre-line">
                       {c.body}
                     </p>
                     <div className="flex items-center gap-2 mt-3">
@@ -284,6 +364,7 @@ export function ThreadClient({
                       </button>
                       <button
                         type="button"
+                        onClick={focusReply}
                         className="text-[11px] text-ink-soft font-bold ml-auto"
                       >
                         返信
@@ -295,19 +376,18 @@ export function ThreadClient({
             ))}
           </div>
 
-          <button
-            type="button"
-            className="mt-4 w-full py-3 bg-cream border border-ink rounded-2xl text-[12px] font-bold shadow-pop-sm text-ink"
-          >
-            残り11件を見る
-          </button>
         </div>
       </main>
 
       {/* Comment input */}
       <div className="fixed bottom-0 left-0 right-0 bg-cream border-t-[1.5px] border-ink z-40">
-        <div className="container-app py-3 flex items-end gap-2.5">
+        <div className="container-app py-3 flex flex-col gap-1.5">
+          {error && (
+            <p className="text-[11px] font-bold text-red-600">{error}</p>
+          )}
+          <div className="flex items-end gap-2.5">
           <textarea
+            ref={commentInputRef}
             rows={1}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -327,7 +407,7 @@ export function ThreadClient({
           <button
             type="button"
             onClick={submitComment}
-            disabled={isLoggedIn && !comment.trim()}
+            disabled={(isLoggedIn && !comment.trim()) || pending}
             className="w-11 h-11 bg-ink text-cream rounded-full border border-ink shadow-pop-sm flex items-center justify-center flex-shrink-0 disabled:opacity-40"
             aria-label="送信"
           >
@@ -342,6 +422,7 @@ export function ThreadClient({
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" />
             </svg>
           </button>
+          </div>
         </div>
       </div>
     </>

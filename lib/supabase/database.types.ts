@@ -18,7 +18,9 @@ export type Profile = {
   industry: string | null;
   role: string | null;
   is_premium: boolean;
+  is_admin: boolean;
   visibility_settings: VisibilitySettings;
+  onboarded_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -30,6 +32,12 @@ export type ProfileUpdate = Partial<
 export type CompensationData = {
   id: string;
   user_id: string;
+
+  /* Snapshot of the job at reporting time (migration 0004) */
+  country: string | null;
+  city: string | null;
+  industry: string | null;
+  role: string | null;
 
   base_salary_range: string | null;
   bonus_range: string | null;
@@ -198,6 +206,56 @@ export type NotificationKind =
   | "chat_approved"
   | "new_job"
   | "new_salary";
+
+/**
+ * Row shape returned by the fetch_comp_entries RPC (migration 0004).
+ * Deliberately excludes user_id — anonymity is enforced server-side.
+ */
+export type CompEntry = {
+  entry_id: string;
+  country: string | null;
+  city: string | null;
+  industry: string | null;
+  role: string | null;
+  base_salary_range: string | null;
+  bonus_range: string | null;
+  has_equity: boolean | null;
+  total_comp_range: string | null;
+  monthly_rent_range: string | null;
+  savings_rate_range: string | null;
+  life_satisfaction: number | null;
+  weekly_hours_range: string | null;
+  remote_frequency: string | null;
+  english_usage_rate: string | null;
+  wlb_satisfaction: number | null;
+  visa_type: string | null;
+  visa_difficulty: number | null;
+  has_pr: boolean | null;
+  overseas_satisfaction: number | null;
+  reported_month: string;
+};
+
+/* ────────────────────────────────────────────────────────────────
+ * Tables added by supabase/migrations/0003_chat_admin.sql
+ * ──────────────────────────────────────────────────────────────── */
+
+export type ChatRoom = {
+  id: string;
+  cc_request_id: string | null;
+  user_a: string;
+  user_b: string;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  room_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
 
 export type AppNotificationRow = {
   id: string;

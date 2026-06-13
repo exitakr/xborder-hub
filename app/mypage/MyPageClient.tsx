@@ -6,9 +6,24 @@ import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
+import { syncProfileBasics } from "./actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
 import { useNotifications } from "@/lib/notifications/store";
+import {
+  approveCoffeeChatRequest,
+  cancelCoffeeChatRequest,
+  rejectCoffeeChatRequest,
+} from "@/lib/coffee-chat/actions";
+import type { DisplayCcRequest } from "@/lib/coffee-chat/queries";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { PrivacySettings } from "./PrivacySettings";
+import {
+  COUNTRY_OPTS,
+  INDUSTRY_OPTS,
+  JPY_SALARY_OPTS,
+  ROLE_OPTS,
+  VISA_OPTS,
+} from "@/lib/profile/options";
 import {
   COMPANY_SUGGESTIONS,
   MONTH_OPTIONS,
@@ -42,71 +57,6 @@ const EDIT_TITLES: Record<EditType, string> = {
   coffee_chat: "Coffee Chat の受付設定",
 };
 
-// ───── Select options shared by the unified identity form ─────
-
-const COUNTRY_OPTS = [
-  { v: "", label: "—" },
-  { v: "Japan", label: "🇯🇵 Japan" },
-  { v: "Singapore", label: "🇸🇬 Singapore" },
-  { v: "Hong Kong", label: "🇭🇰 Hong Kong" },
-  { v: "Thailand", label: "🇹🇭 Thailand" },
-  { v: "Vietnam", label: "🇻🇳 Vietnam" },
-  { v: "Indonesia", label: "🇮🇩 Indonesia" },
-  { v: "Malaysia", label: "🇲🇾 Malaysia" },
-  { v: "United States", label: "🇺🇸 United States" },
-  { v: "United Kingdom", label: "🇬🇧 United Kingdom" },
-  { v: "Germany", label: "🇩🇪 Germany" },
-  { v: "Australia", label: "🇦🇺 Australia" },
-];
-const INDUSTRY_OPTS = [
-  { v: "", label: "—" },
-  { v: "Tech", label: "💻 Tech" },
-  { v: "Finance", label: "🏦 Finance" },
-  { v: "Startup", label: "🚀 Startup" },
-  { v: "Consumer", label: "🛍 Consumer" },
-  { v: "Manufacturing", label: "🏭 Manufacturing" },
-  { v: "Healthcare", label: "🏥 Healthcare" },
-  { v: "Education", label: "🎓 Education" },
-  { v: "Consulting", label: "📊 Consulting" },
-];
-const ROLE_OPTS = [
-  { v: "", label: "—" },
-  { v: "Product Manager", label: "📐 Product Manager" },
-  { v: "Engineer", label: "⚙️ Engineer" },
-  { v: "BD / Sales", label: "💼 BD / Sales" },
-  { v: "Marketing", label: "📣 Marketing" },
-  { v: "Designer", label: "🎨 Designer" },
-  { v: "Finance / Accounting", label: "📊 Finance / Accounting" },
-  { v: "HR / People", label: "👥 HR / People" },
-  { v: "Executive (VP+)", label: "🏛 Executive (VP+)" },
-  { v: "Founder / Entrepreneur", label: "🚀 Founder / Entrepreneur" },
-];
-const VISA_OPTS = [
-  { v: "", label: "—" },
-  { v: "EP_SG", label: "EP (Singapore)" },
-  { v: "S_Pass_SG", label: "S Pass (Singapore)" },
-  { v: "PR_SG", label: "PR (Singapore)" },
-  { v: "H1B", label: "H-1B (US)" },
-  { v: "O1", label: "O-1 (US)" },
-  { v: "L1", label: "L-1 (US)" },
-  { v: "Green_Card", label: "Green Card (US)" },
-  { v: "Tier2_UK", label: "Skilled Worker (UK)" },
-  { v: "WP", label: "就労ビザ (その他)" },
-  { v: "PR", label: "永住権 (その他)" },
-  { v: "Citizen", label: "市民権" },
-  { v: "none", label: "無し / 検討中" },
-];
-const JPY_SALARY_OPTS = [
-  { v: "", label: "—" },
-  { v: "lt_400", label: "〜400万円" },
-  { v: "400_600", label: "400〜600万円" },
-  { v: "600_800", label: "600〜800万円" },
-  { v: "800_1000", label: "800〜1,000万円" },
-  { v: "1000_1300", label: "1,000〜1,300万円" },
-  { v: "1300_1600", label: "1,300〜1,600万円" },
-  { v: "1600_2000", label: "1,600〜2,000万円" },
-  { v: "gte_2000", label: "2,000万円以上" },
-];
 const TECH_SKILLS = [
   "SQL",
   "Python",
@@ -170,13 +120,40 @@ const INITIAL_CC_RECEIVED: CcReceivedItem[] = [
 
 export function MyPageClient({
   visibilitySettings,
-}: { visibilitySettings?: VisibilitySettings } = {}) {
+  dbCcSent = [],
+  dbCcReceived = [],
+}: {
+  visibilitySettings?: VisibilitySettings;
+  dbCcSent?: DisplayCcRequest[];
+  dbCcReceived?: DisplayCcRequest[];
+} = {}) {
   const router = useRouter();
   const { addNotification } = useNotifications();
   const [ccTab, setCcTab] = useState<CcTab>("sent");
   const [ccReceived, setCcReceived] = useState<CcReceivedItem[]>(
-    INITIAL_CC_RECEIVED,
+    SHOW_DEMO_CONTENT ? INITIAL_CC_RECEIVED : [],
   );
+  const [ccBusy, setCcBusy] = useState<string | null>(null);
+  const [ccError, setCcError] = useState<string | null>(null);
+
+  async function callCcAction(
+    id: string,
+    label: string,
+    fn: (
+      id: string,
+    ) => Promise<{ ok: boolean; error?: string; chatRoomId?: string | null }>,
+  ): Promise<{ ok: boolean; chatRoomId?: string | null }> {
+    setCcBusy(id);
+    setCcError(null);
+    const res = await fn(id);
+    setCcBusy(null);
+    if (!("ok" in res) || !res.ok) {
+      setCcError(("error" in res && res.error) || `${label}に失敗しました`);
+      return { ok: false };
+    }
+    router.refresh();
+    return { ok: true, chatRoomId: res.chatRoomId ?? null };
+  }
   const [editType, setEditType] = useState<EditType | null>(null);
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [premium, setPremium] = useState(false);
@@ -242,6 +219,17 @@ export function MyPageClient({
   function saveEdit() {
     if (editType === "identity") {
       setProfile((p) => ({ ...p, ...identityForm }));
+      // Mirror to Supabase so threads / comments / Coffee Chat show the
+      // real display name. Best-effort: localStorage stays the UI source.
+      void syncProfileBasics({
+        displayName: identityForm.name,
+        age: identityForm.age,
+        bio: identityForm.bio,
+        country: identityForm.country,
+        city: identityForm.city,
+        industry: identityForm.industry,
+        role: identityForm.role,
+      });
     } else if (editType === "career") {
       if (!careerForm.company.trim()) {
         setEditType(null);
@@ -299,10 +287,10 @@ export function MyPageClient({
     setCcReceived((rs) =>
       rs.map((r) => (r.id === id ? { ...r, status: "approved" } : r)),
     );
-    // Drop a notification into the in-app notification feed (also fires a
-    // browser push if permitted + the user opted in). In a multi-user
-    // build this would land on the applicant's account; today the demo
-    // shows it on the owner's feed so the UX is end-to-end observable.
+    // Demo path: also drop a notification into the in-app notification feed
+    // (also fires a browser push if permitted + the user opted in).
+    // The DB-backed path emits a real notification row via the SQL trigger
+    // configured in 0002.
     addNotification({
       kind: "chat_approved",
       group: "Coffee Chat",
@@ -340,19 +328,26 @@ export function MyPageClient({
                       </div>
                       <div>
                         <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
-                          {identity.name}
+                          {identity.name || "プロフィールを設定しましょう"}
                         </h1>
-                        <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
-                          {identity.age}歳 · 在 {identity.city || identity.country}{" "}
-                          {identity.tenure}
-                        </p>
+                        {identity.name ? (
+                          <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
+                            {identity.age ? `${identity.age}歳 · ` : ""}
+                            {(identity.city || identity.country) &&
+                              `在 ${identity.city || identity.country} `}
+                            {identity.tenure}
+                          </p>
+                        ) : (
+                          <p className="text-[12px] text-ink-soft mt-1">
+                            「編集」から名前と現在地を入力すると、検索やスレッドに表示されます。
+                          </p>
+                        )}
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade/40 font-bold">
-                            ⚡ 相談可
-                          </span>
-                          <span className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
-                            ⭐ 4.9 · 23件
-                          </span>
+                          {profile.ccAvailable && (
+                            <span className="text-[10px] uppercase tracking-wider bg-jade/20 text-jade-deep px-2 py-0.5 rounded-full border border-jade/40 font-bold">
+                              ⚡ 相談可
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -365,9 +360,11 @@ export function MyPageClient({
                     </button>
                   </div>
 
-                  <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4 whitespace-pre-line">
-                    &quot;{identity.bio}&quot;
-                  </p>
+                  {identity.bio && (
+                    <p className="serif-it text-[14px] lg:text-[16px] text-ink leading-relaxed mt-4 whitespace-pre-line">
+                      &quot;{identity.bio}&quot;
+                    </p>
+                  )}
 
                   {/* Current professional snapshot */}
                   <div className="mt-5 pt-4 border-t border-dashed border-ink/15">
@@ -462,6 +459,12 @@ export function MyPageClient({
                     予約・申請
                   </h2>
                 </div>
+                <Link
+                  href="/chat"
+                  className="text-[11px] font-bold text-blue whitespace-nowrap"
+                >
+                  トークルーム一覧 →
+                </Link>
               </div>
 
               <div className="inline-flex gap-1 p-1 bg-paper border border-ink rounded-xl mb-4 shadow-pop-sm flex-wrap">
@@ -486,7 +489,111 @@ export function MyPageClient({
                 ))}
               </div>
 
-              {ccTab === "sent" && (
+              {ccTab === "sent" && dbCcSent.length > 0 && (
+                <div className="space-y-3">
+                  {ccError && (
+                    <p className="text-[11px] font-bold text-red-600">
+                      {ccError}
+                    </p>
+                  )}
+                  {dbCcSent.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
+                    >
+                      <div className="flex items-start justify-between mb-2 gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-full ${r.bg} ${r.text} font-bold flex items-center justify-center text-xs border border-ink flex-shrink-0`}
+                          >
+                            {r.otherInitials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[13px] text-ink truncate">
+                              {r.otherName} さん
+                            </p>
+                            <p className="text-[10px] text-ink-soft">
+                              {r.postedRelative}
+                              {r.preferredWhen ? ` · 希望: ${r.preferredWhen}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`status-badge ${
+                            r.status === "pending"
+                              ? "status-pending"
+                              : r.status === "approved"
+                                ? "status-approved"
+                                : r.status === "rejected"
+                                  ? "status-rejected"
+                                  : r.status === "cancelled"
+                                    ? "status-rejected"
+                                    : "status-completed"
+                          }`}
+                        >
+                          {r.status === "pending"
+                            ? "申請中"
+                            : r.status === "approved"
+                              ? "✓ 承認"
+                              : r.status === "rejected"
+                                ? "却下"
+                                : r.status === "cancelled"
+                                  ? "取消"
+                                  : "✓ 完了"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+                        <span className="font-bold text-ink">相談内容:</span>{" "}
+                        {r.topic}
+                      </p>
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-ink/20">
+                        <p className="text-[10px] text-ink-faint">
+                          {new Date(r.createdAt).toLocaleDateString("ja-JP")}
+                        </p>
+                        {r.status === "pending" ? (
+                          <button
+                            type="button"
+                            disabled={ccBusy === r.id}
+                            onClick={() =>
+                              callCcAction(
+                                r.id,
+                                "取消",
+                                cancelCoffeeChatRequest,
+                              )
+                            }
+                            className="text-[11px] text-ink-soft font-bold disabled:opacity-50"
+                          >
+                            {ccBusy === r.id ? "..." : "取消"}
+                          </button>
+                        ) : r.status === "approved" ? (
+                          <Link
+                            href={
+                              r.chatRoomId
+                                ? `/chat?room=${r.chatRoomId}`
+                                : `/chat?with=${encodeURIComponent(r.otherInitials)}`
+                            }
+                            className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
+                          >
+                            💬 トークルーム
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ccTab === "sent" && dbCcSent.length === 0 && !SHOW_DEMO_CONTENT && (
+                <p className="text-[12px] text-ink-faint">
+                  まだ申請していません。気になる人を
+                  <Link href="/search" className="text-blue font-bold underline">
+                    キャリア検索
+                  </Link>
+                  で見つけて、Coffee Chat を申請してみましょう。
+                </p>
+              )}
+
+              {ccTab === "sent" && dbCcSent.length === 0 && SHOW_DEMO_CONTENT && (
                 <div className="space-y-3">
                   {/* 申請中 */}
                   <div className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm">
@@ -587,7 +694,118 @@ export function MyPageClient({
                 </div>
               )}
 
-              {ccTab === "received" && (
+              {ccTab === "received" && dbCcReceived.length > 0 && (
+                <div className="space-y-3">
+                  {ccError && (
+                    <p className="text-[11px] font-bold text-red-600">
+                      {ccError}
+                    </p>
+                  )}
+                  {dbCcReceived.map((r) => (
+                    <div
+                      key={r.id}
+                      className="bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm"
+                    >
+                      <div className="flex items-start justify-between mb-2 gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-full ${r.bg} ${r.text} font-bold flex items-center justify-center text-xs border border-ink/15 flex-shrink-0`}
+                          >
+                            {r.otherInitials}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[13px] text-ink truncate">
+                              {r.otherName} さん
+                            </p>
+                            <p className="text-[10px] text-ink-soft">
+                              {r.postedRelative}
+                            </p>
+                          </div>
+                        </div>
+                        {r.status === "pending" && (
+                          <span className="status-badge status-pending">
+                            未対応
+                          </span>
+                        )}
+                        {r.status === "approved" && (
+                          <span className="status-badge status-approved">
+                            ✓ 承認済
+                          </span>
+                        )}
+                        {r.status === "rejected" && (
+                          <span className="status-badge status-rejected">
+                            却下
+                          </span>
+                        )}
+                        {(r.status === "cancelled" ||
+                          r.status === "completed") && (
+                          <span className="status-badge status-completed">
+                            {r.status === "completed" ? "✓ 完了" : "取消"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/20 pt-2">
+                        <span className="font-bold text-ink">相談内容:</span>{" "}
+                        {r.topic}
+                      </p>
+                      <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
+                        {r.status === "pending" ? (
+                          <>
+                            <button
+                              type="button"
+                              disabled={ccBusy === r.id}
+                              onClick={() =>
+                                callCcAction(
+                                  r.id,
+                                  "却下",
+                                  rejectCoffeeChatRequest,
+                                )
+                              }
+                              className="px-3 py-1.5 bg-cream border border-ink/15 text-ink rounded-full font-bold text-[10px] disabled:opacity-50"
+                            >
+                              却下
+                            </button>
+                            <button
+                              type="button"
+                              disabled={ccBusy === r.id}
+                              onClick={async () => {
+                                const res = await callCcAction(
+                                  r.id,
+                                  "承認",
+                                  approveCoffeeChatRequest,
+                                );
+                                if (res.ok) {
+                                  router.push(
+                                    res.chatRoomId
+                                      ? `/chat?room=${res.chatRoomId}`
+                                      : `/chat?with=${encodeURIComponent(r.otherInitials)}`,
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[10px] disabled:opacity-50"
+                            >
+                              ✓ 承認 → トークルームへ
+                            </button>
+                          </>
+                        ) : r.status === "approved" ? (
+                          <Link
+                            href={
+                              r.chatRoomId
+                                ? `/chat?room=${r.chatRoomId}`
+                                : `/chat?with=${encodeURIComponent(r.otherInitials)}`
+                            }
+                            className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[10px]"
+                          >
+                            💬 トークルームを開く
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {ccTab === "received" && dbCcReceived.length === 0 && (
                 <div className="space-y-3">
                   {ccReceived.length === 0 ? (
                     <p className="text-[12px] text-ink-faint">

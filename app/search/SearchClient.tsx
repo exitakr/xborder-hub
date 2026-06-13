@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
+import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
+import { track } from "@/lib/analytics/track";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
 /** Build a Person entry from the logged-in user's profile so they appear
@@ -106,6 +109,8 @@ const PAGE_SIZE = 5;
 const INCREMENT = 10;
 
 type ApplyTarget = {
+  /** Present for real members → the apply persists to Supabase. */
+  userId?: string;
   initials: string;
   name: string;
   route: string;
@@ -123,9 +128,11 @@ type InitialFilters = {
 export function SearchClient({
   isLoggedIn = false,
   initial,
+  dbPeople = [],
 }: {
   isLoggedIn?: boolean;
   initial?: InitialFilters;
+  dbPeople?: Person[];
 } = {}) {
   const router = useRouter();
   const [profile] = useProfile();
@@ -139,15 +146,19 @@ export function SearchClient({
   const [message, setMessage] = useState("");
   const [date, setDate] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applyPending, startApply] = useTransition();
 
-  // Inject the signed-in user's profile as the first entry so renames /
-  // skill / goal updates show up live; the old "YT" sample is dropped so
-  // we don't show the same identity twice.
+  // Real members first, then the signed-in user's own card (only when
+  // they've set a name). Sample personas pad the list only while demo
+  // content is enabled (dev / staging).
   const allPeople = useMemo<Person[]>(() => {
-    const me = profileToPerson(profile);
-    const rest = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT");
-    return [me, ...rest];
-  }, [profile]);
+    const me = profile.name.trim() ? [profileToPerson(profile)] : [];
+    const rest = SHOW_DEMO_CONTENT
+      ? SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
+      : [];
+    return [...dbPeople, ...me, ...rest];
+  }, [profile, dbPeople]);
 
   const filtered = useMemo<Person[]>(
     () =>
@@ -180,6 +191,7 @@ export function SearchClient({
       return;
     }
     setApplyTarget({
+      userId: p.userId,
       initials: p.initials,
       name: p.name,
       route: `${p.fromCity}→${p.toCity}`,
@@ -188,20 +200,46 @@ export function SearchClient({
     });
     setMessage("");
     setDate("");
+    setApplyError(null);
   }
 
   function closeApply() {
     setApplyTarget(null);
+    setApplyError(null);
   }
 
   function submitApply() {
-    if (!message.trim()) {
-      alert("話を聞きたい内容を入力してください");
+    const trimmed = message.trim();
+    if (!trimmed) {
+      setApplyError("話を聞きたい内容を入力してください");
       return;
     }
-    closeApply();
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2500);
+
+    // Sample personas have no user id — keep the demo toast for them.
+    if (!applyTarget?.userId) {
+      closeApply();
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 2500);
+      return;
+    }
+
+    setApplyError(null);
+    const toUserId = applyTarget.userId;
+    startApply(async () => {
+      const res = await createCoffeeChatRequest({
+        toUserId,
+        message: trimmed,
+        preferredWhen: date,
+      });
+      if (res.ok) {
+        track("cc_request");
+        closeApply();
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2500);
+      } else {
+        setApplyError(res.error);
+      }
+    });
   }
 
   const shown = filtered.slice(0, displayCount);
@@ -607,12 +645,18 @@ export function SearchClient({
             </div>
           </div>
 
+          {applyError && (
+            <p className="text-[11px] font-bold text-red-600 mb-2">
+              {applyError}
+            </p>
+          )}
           <button
             type="button"
             onClick={submitApply}
-            className="btn-primary w-full mb-4"
+            disabled={applyPending}
+            className="btn-primary w-full mb-4 disabled:opacity-50"
           >
-            申請を送る
+            {applyPending ? "送信中…" : "申請を送る"}
             <svg
               width="14"
               height="14"

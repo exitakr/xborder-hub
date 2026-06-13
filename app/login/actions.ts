@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { needsOnboarding } from "@/lib/profile/onboarding";
 
 export type ActionState = {
   ok?: boolean;
@@ -34,6 +35,9 @@ export async function signInWithPassword(
   }
 
   const next = String(formData.get("next") ?? "/mypage");
+  if (await needsOnboarding()) {
+    redirect(`/welcome?next=${encodeURIComponent(safeNext(next))}`);
+  }
   redirect(safeNext(next));
 }
 
@@ -62,6 +66,9 @@ export async function signUpWithPassword(
   // session immediately and we can drop the user straight into the app.
   if (data.session) {
     const next = String(formData.get("next") ?? "/mypage");
+    if (await needsOnboarding()) {
+      redirect(`/welcome?next=${encodeURIComponent(safeNext(next))}`);
+    }
     redirect(safeNext(next));
   }
 

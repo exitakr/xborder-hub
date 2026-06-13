@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { requestCommunityAction } from "@/lib/communities/actions";
+import { toggleReactionAction } from "@/app/thread/actions";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   CATEGORIES,
   COUNTRIES,
@@ -14,31 +17,60 @@ import {
   SORTS,
   THREADS,
   type Sort,
+  type Thread,
 } from "./data";
 
 
 export function ThreadsClient({
   isLoggedIn = false,
-}: { isLoggedIn?: boolean } = {}) {
+  dbThreads = [],
+}: { isLoggedIn?: boolean; dbThreads?: Thread[] } = {}) {
   const router = useRouter();
   const [country, setCountry] = useState<string>("");
   const [industry, setIndustry] = useState<string>("");
   const [role, setRole] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [sort, setSort] = useState<Sort>("new");
-  const [voted, setVoted] = useState<Record<number, "up" | "down" | null>>({
-    1: "up",
-    2: "up",
-    3: "up",
-    4: "up",
-    5: "up",
-    6: "up",
-    7: "up",
-  });
+  const [voted, setVoted] = useState<Record<string, "up" | "down" | null>>({});
   const [applyOpen, setApplyOpen] = useState(false);
+  const [applyKind, setApplyKind] = useState("country");
+  const [applyName, setApplyName] = useState("");
+  const [applyDesc, setApplyDesc] = useState("");
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [applyPending, startApply] = useTransition();
+
+  function submitCommunityRequest(e: React.FormEvent) {
+    e.preventDefault();
+    setApplyError(null);
+    startApply(async () => {
+      const res = await requestCommunityAction({
+        kind: applyKind,
+        name: applyName,
+        description: applyDesc,
+      });
+      if (res.ok) {
+        setApplySuccess(true);
+        setApplyName("");
+        setApplyDesc("");
+        setTimeout(() => {
+          setApplyOpen(false);
+          setApplySuccess(false);
+        }, 1600);
+      } else {
+        setApplyError(res.error);
+      }
+    });
+  }
+
+  // If Supabase returned threads, use them. Sample threads only pad the
+  // page while demo content is enabled (dev / staging) — production shows
+  // the real empty state instead.
+  const source =
+    dbThreads.length > 0 ? dbThreads : SHOW_DEMO_CONTENT ? THREADS : [];
 
   const visible = useMemo(() => {
-    let list = THREADS.filter((t) => {
+    let list = source.filter((t) => {
       if (country && t.country !== country) return false;
       if (industry && t.industry !== industry) return false;
       if (role && t.role !== role) return false;
@@ -49,10 +81,16 @@ export function ThreadsClient({
       list = [...list].sort((a, b) => b.ups - a.ups);
     }
     return list;
-  }, [country, industry, role, category, sort]);
+  }, [country, industry, role, category, sort, source]);
 
-  function toggleVote(id: number, kind: "up" | "down") {
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  function toggleVote(id: string, kind: "up" | "down") {
     setVoted((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
+    if (UUID_RE.test(id)) {
+      void toggleReactionAction({ targetType: "thread", targetId: id, kind });
+    }
   }
 
   function requireLoginThen(action: () => void, returnTo = "/threads") {
@@ -227,10 +265,21 @@ export function ThreadsClient({
                     </p>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <Tag label={LABELS.countries[t.country]} />
-                      <Tag label={LABELS.industries[t.industry]} />
-                      <Tag label={LABELS.roles[t.role]} />
-                      <Tag label={LABELS.categories[t.category]} muted />
+                      {t.country && (
+                        <Tag label={LABELS.countries[t.country] ?? t.country} />
+                      )}
+                      {t.industry && (
+                        <Tag
+                          label={LABELS.industries[t.industry] ?? t.industry}
+                        />
+                      )}
+                      {t.role && (
+                        <Tag label={LABELS.roles[t.role] ?? t.role} />
+                      )}
+                      <Tag
+                        label={LABELS.categories[t.category] ?? t.category}
+                        muted
+                      />
                       <span className="text-[11px] text-ink-faint font-bold ml-auto">
                         👍 {t.ups}
                       </span>
@@ -366,19 +415,14 @@ export function ThreadsClient({
             コミュニティは運営側で確認のうえ開設します。すでに似た名前のコミュニティがある場合は統合をご案内することがあります。
           </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert(
-                "申請を受け付けました。運営から数日以内にメールでご連絡します。",
-              );
-              setApplyOpen(false);
-            }}
-            className="space-y-3"
-          >
+          <form onSubmit={submitCommunityRequest} className="space-y-3">
             <div>
               <label className="label">種別</label>
-              <select className="filter-select">
+              <select
+                className="filter-select"
+                value={applyKind}
+                onChange={(e) => setApplyKind(e.target.value)}
+              >
                 <option value="country">🌏 国</option>
                 <option value="industry">🏢 業界</option>
                 <option value="role">👤 職種</option>
@@ -390,6 +434,8 @@ export function ThreadsClient({
                 type="text"
                 required
                 className="field"
+                value={applyName}
+                onChange={(e) => setApplyName(e.target.value)}
                 placeholder="例: 🇮🇳 India / 🎮 GameDev / 🔬 Researcher"
               />
             </div>
@@ -398,11 +444,25 @@ export function ThreadsClient({
               <textarea
                 className="field"
                 rows={3}
+                value={applyDesc}
+                onChange={(e) => setApplyDesc(e.target.value)}
                 placeholder="どんな人が集まるコミュニティか、ひとことで。"
               />
             </div>
-            <button type="submit" className="btn-primary w-full">
-              申請を送る
+            {applyError && (
+              <p className="text-[11px] font-bold text-red-600">{applyError}</p>
+            )}
+            {applySuccess && (
+              <p className="text-[11px] font-bold text-jade-deep">
+                ✓ 申請を受け付けました。運営から数日以内に連絡します。
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={applyPending}
+              className="btn-primary w-full disabled:opacity-50"
+            >
+              {applyPending ? "送信中…" : "申請を送る"}
             </button>
           </form>
         </div>

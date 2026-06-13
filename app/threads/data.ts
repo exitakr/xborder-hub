@@ -46,7 +46,8 @@ export const SORTS: { id: Sort; label: string }[] = [
 ];
 
 export type Thread = {
-  id: number;
+  /** UUID from Supabase, or string-encoded sample id ("1"/"2"/…) */
+  id: string;
   author: string;
   bg: string;
   text: string;
@@ -65,7 +66,7 @@ export type Thread = {
 
 export const THREADS: Thread[] = [
   {
-    id: 1,
+    id: "1",
     author: "RN",
     bg: "bg-blue",
     text: "text-cream",
@@ -82,7 +83,7 @@ export const THREADS: Thread[] = [
     replies: 14,
   },
   {
-    id: 2,
+    id: "2",
     author: "HK",
     bg: "bg-mustard",
     text: "text-ink",
@@ -100,7 +101,7 @@ export const THREADS: Thread[] = [
     replies: 28,
   },
   {
-    id: 3,
+    id: "3",
     author: "MS",
     bg: "bg-jade",
     text: "text-ink",
@@ -117,7 +118,7 @@ export const THREADS: Thread[] = [
     replies: 42,
   },
   {
-    id: 4,
+    id: "4",
     author: "TM",
     bg: "bg-plum",
     text: "text-cream",
@@ -134,7 +135,7 @@ export const THREADS: Thread[] = [
     replies: 67,
   },
   {
-    id: 5,
+    id: "5",
     author: "SK",
     bg: "bg-blue-soft",
     text: "text-ink",
@@ -151,7 +152,7 @@ export const THREADS: Thread[] = [
     replies: 31,
   },
   {
-    id: 6,
+    id: "6",
     author: "AK",
     bg: "bg-ink",
     text: "text-cream",
@@ -168,7 +169,7 @@ export const THREADS: Thread[] = [
     replies: 22,
   },
   {
-    id: 7,
+    id: "7",
     author: "JN",
     bg: "bg-blue",
     text: "text-cream",

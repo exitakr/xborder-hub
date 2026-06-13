@@ -6,7 +6,7 @@ import { LogoMark } from "./LogoMark";
 import { initials, useProfile } from "@/lib/profile/store";
 import { useNotifications } from "@/lib/notifications/store";
 
-type Tab = "home" | "search" | "threads";
+type Tab = "home" | "search" | "threads" | "salaries";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -110,9 +110,16 @@ export function AppTopBar({ active }: { active?: Tab }) {
             スレッド
           </Link>
           <Link
+            href="/salaries"
+            className={`${navClass(active === "salaries")} hidden lg:inline-block`}
+          >
+            年収データ
+          </Link>
+          {/* Mobile gets the bell in BottomNavMobile — avoid the duplicate. */}
+          <Link
             href="/notifications"
             aria-label="通知"
-            className="relative ml-1 w-9 h-9 rounded-full border border-ink/15 bg-cream flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
+            className="relative ml-1 w-9 h-9 rounded-full border border-ink/15 bg-cream hidden lg:flex items-center justify-center text-ink hover:border-ink transition-colors flex-shrink-0"
             title="通知"
           >
             <svg

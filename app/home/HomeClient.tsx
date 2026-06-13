@@ -5,12 +5,14 @@ import Link from "next/link";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { GlobalMap } from "./GlobalMap";
+import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   ANNUAL_TOP_FLOWS,
   RECENT_MOVES,
   TRENDING_THREADS,
   TRENDS,
   type TrendKey,
+  type TrendingThread,
 } from "./data";
 
 const TREND_TABS: { id: TrendKey; label: string }[] = [
@@ -23,13 +25,21 @@ function formatCount(n: number) {
   return new Intl.NumberFormat("ja-JP").format(n);
 }
 
-export function HomeClient() {
+export function HomeClient({
+  trendingThreads,
+}: { trendingThreads?: TrendingThread[] } = {}) {
   const [trendKey, setTrendKey] = useState<TrendKey>("industry");
   const [highlightedFlow, setHighlightedFlow] = useState<{
     from: string;
     to: string;
   } | null>(null);
   const trendItems = TRENDS[trendKey];
+  const trending =
+    trendingThreads && trendingThreads.length > 0
+      ? trendingThreads
+      : SHOW_DEMO_CONTENT
+        ? TRENDING_THREADS
+        : [];
 
   return (
     <>
@@ -166,6 +176,7 @@ export function HomeClient() {
             </section>
 
             {/* TRENDING THREADS */}
+            {trending.length > 0 && (
             <section className="rise" style={{ animationDelay: "0.16s" }}>
               <div className="flex items-end justify-between mb-2">
                 <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink">
@@ -180,7 +191,7 @@ export function HomeClient() {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                {TRENDING_THREADS.map((t) => (
+                {trending.map((t) => (
                   <Link
                     key={t.id}
                     href={`/thread?id=${t.id}`}
@@ -201,8 +212,10 @@ export function HomeClient() {
                 ))}
               </div>
             </section>
+            )}
 
-            {/* RECENT MOVES */}
+            {/* RECENT MOVES — sample feed, hidden until real move data exists */}
+            {SHOW_DEMO_CONTENT && (
             <section className="rise" style={{ animationDelay: "0.2s" }}>
               <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink mb-2">
                 新着の動き
@@ -244,6 +257,7 @@ export function HomeClient() {
                 ))}
               </ul>
             </section>
+            )}
 
             {/* CTA */}
             <section
@@ -326,16 +340,19 @@ export function HomeClient() {
               style={{ background: "#0A1F3D" }}
             >
               <p className="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-1">
-                ✦ Premium
+                💴 年収データ
               </p>
               <p className="display font-bold text-[14px] leading-tight text-cream">
-                給与の本当の数字を見る
+                あなたのデータを投稿して、みんなのリアルを見る
+              </p>
+              <p className="text-[10px] text-cream/70 mt-1 leading-relaxed">
+                匿名・レンジ値のみ。投稿すると全データが解放されます。
               </p>
               <Link
-                href="/premium"
+                href="/salaries"
                 className="mt-2 block text-center py-1.5 bg-mustard text-ink rounded-full font-bold text-[11px]"
               >
-                無料トライアル
+                年収データを見る →
               </Link>
             </div>
           </aside>

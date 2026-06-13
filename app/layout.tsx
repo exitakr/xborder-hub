@@ -1,8 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { AnalyticsProvider } from "./providers/AnalyticsProvider";
 import "./globals.css";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://xborder-hub.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://xborder-hub.example.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "X Border Hub — 海外で働く前に、答え合わせができる場所",
     template: "%s — X Border Hub",
@@ -10,10 +14,6 @@ export const metadata: Metadata = {
   description:
     "先に行った人が、道を残す。次に何を積めば海外で勝てるのか — その答えを見つけるコミュニティ。",
   manifest: "/manifest.json",
-  icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: "/favicon.svg",
-  },
   openGraph: {
     type: "website",
     siteName: "X Border Hub",
@@ -57,7 +57,9 @@ export default function RootLayout({
         <link href={GOOGLE_FONTS} rel="stylesheet" />
         <link rel="stylesheet" href="/styles.css" />
       </head>
-      <body className="noise">{children}</body>
+      <body className="noise">
+        <AnalyticsProvider>{children}</AnalyticsProvider>
+      </body>
     </html>
   );
 }
