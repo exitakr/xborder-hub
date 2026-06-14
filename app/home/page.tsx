@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { loadTrendingThreads } from "@/lib/threads/trending";
+import { isCurrentUserAdmin } from "@/lib/admin/queries";
+import { fetchDismissedSampleKeys } from "@/lib/samples/queries";
 import { HomeClient } from "./HomeClient";
 
 export const metadata: Metadata = {
@@ -9,6 +11,16 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const trending = await loadTrendingThreads();
-  return <HomeClient trendingThreads={trending} />;
+  const [trending, isAdmin, dismissedKeys] = await Promise.all([
+    loadTrendingThreads(),
+    isCurrentUserAdmin(),
+    fetchDismissedSampleKeys(),
+  ]);
+  return (
+    <HomeClient
+      trendingThreads={trending}
+      isAdmin={isAdmin}
+      dismissedKeys={dismissedKeys}
+    />
+  );
 }

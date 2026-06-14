@@ -9,6 +9,12 @@ import {
   useProfile,
   type CareerStep,
 } from "@/lib/profile/store";
+import {
+  INDUSTRY_OPTS,
+  JPY_SALARY_OPTS,
+  ROLE_OPTS,
+  labelOf,
+} from "@/lib/profile/options";
 import { ConsultApply } from "./ConsultApply";
 
 const COUNTRY_LABEL: Record<string, string> = {
@@ -24,46 +30,19 @@ const COUNTRY_LABEL: Record<string, string> = {
   Germany: "🇩🇪 Germany",
   Australia: "🇦🇺 Australia",
 };
-const INDUSTRY_LABEL: Record<string, string> = {
-  Tech: "💻 Tech",
-  Finance: "🏦 Finance",
-  Startup: "🚀 Startup",
-  Consumer: "🛍 Consumer",
-  Manufacturing: "🏭 Manufacturing",
-  Healthcare: "🏥 Healthcare",
-  Education: "🎓 Education",
-  Consulting: "📊 Consulting",
-};
-const ROLE_LABEL: Record<string, string> = {
-  "Product Manager": "📐 Product Manager",
-  Engineer: "⚙️ Engineer",
-  "BD / Sales": "💼 BD / Sales",
-  Marketing: "📣 Marketing",
-  Designer: "🎨 Designer",
-  "Finance / Accounting": "📊 Finance / Accounting",
-  "HR / People": "👥 HR / People",
-  "Executive (VP+)": "🏛 Executive (VP+)",
-  "Founder / Entrepreneur": "🚀 Founder / Entrepreneur",
-};
-const SALARY_LABEL: Record<string, string> = {
-  lt_400: "〜400万円",
-  "400_600": "400〜600万円",
-  "600_800": "600〜800万円",
-  "800_1000": "800〜1,000万円",
-  "1000_1300": "1,000〜1,300万円",
-  "1300_1600": "1,300〜1,600万円",
-  "1600_2000": "1,600〜2,000万円",
-  gte_2000: "2,000万円以上",
-};
+
+function industryLabel(v: string) {
+  return v ? labelOf(INDUSTRY_OPTS, v) : "";
+}
+function roleLabel(v: string) {
+  return v ? labelOf(ROLE_OPTS, v) : "";
+}
+function salaryLabel(v: string) {
+  return v ? labelOf(JPY_SALARY_OPTS, v) : "";
+}
 
 function countryLabel(v: string) {
   return COUNTRY_LABEL[v] ?? v;
-}
-
-function shortCity(country: string, city: string) {
-  if (city) return city;
-  // strip the leading flag emoji from COUNTRY_LABEL when city is empty
-  return COUNTRY_LABEL[country]?.replace(/^[^\s]+\s*/, "") ?? country;
 }
 
 export function ProfileView() {
@@ -162,9 +141,6 @@ export function ProfileView() {
                           ⚡ 相談可
                         </span>
                       )}
-                      <span className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
-                        ⭐ 4.9 · 23件
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -183,11 +159,11 @@ export function ProfileView() {
                   <div className="flex flex-wrap gap-1.5">
                     {profile.industry && (
                       <Chip>
-                        {INDUSTRY_LABEL[profile.industry] ?? profile.industry}
+                        {industryLabel(profile.industry) || profile.industry}
                       </Chip>
                     )}
                     {profile.role && (
-                      <Chip>{ROLE_LABEL[profile.role] ?? profile.role}</Chip>
+                      <Chip>{roleLabel(profile.role) || profile.role}</Chip>
                     )}
                     {profile.visa && <Chip>🛂 {profile.visa}</Chip>}
                   </div>
@@ -208,19 +184,17 @@ export function ProfileView() {
                       )}
                       {profile.goalIndustry && (
                         <Chip>
-                          {INDUSTRY_LABEL[profile.goalIndustry] ??
+                          {industryLabel(profile.goalIndustry) ||
                             profile.goalIndustry}
                         </Chip>
                       )}
                       {profile.goalRole && (
                         <Chip>
-                          {ROLE_LABEL[profile.goalRole] ?? profile.goalRole}
+                          {roleLabel(profile.goalRole) || profile.goalRole}
                         </Chip>
                       )}
                       {profile.goalSalary && (
-                        <Chip>
-                          💴 {SALARY_LABEL[profile.goalSalary] ?? "—"}
-                        </Chip>
+                        <Chip>💴 {salaryLabel(profile.goalSalary) || "—"}</Chip>
                       )}
                     </div>
                   ) : (
@@ -267,16 +241,16 @@ export function ProfileView() {
                     <p className="font-bold text-[14px] text-ink">
                       {[
                         countryLabel(profile.goalCountry).replace(/^\S+\s/, ""),
-                        INDUSTRY_LABEL[profile.goalIndustry] ??
+                        industryLabel(profile.goalIndustry) ||
                           profile.goalIndustry,
-                        ROLE_LABEL[profile.goalRole] ?? profile.goalRole,
+                        roleLabel(profile.goalRole) || profile.goalRole,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                     {profile.goalSalary && (
                       <p className="text-[11px] text-ink-soft mt-1">
-                        目標年収: {SALARY_LABEL[profile.goalSalary]}
+                        目標年収: {salaryLabel(profile.goalSalary)}
                       </p>
                     )}
                   </div>
@@ -368,8 +342,15 @@ function RiverStep({ step }: { step: CareerStep }) {
         </div>
         <p className="font-bold text-[14px] text-ink">{step.company || "—"}</p>
         <p className="text-[11px] text-ink-soft mt-0.5">
-          {ROLE_LABEL[step.role] ?? step.role ?? "—"}
+          {[industryLabel(step.industry), roleLabel(step.role) || step.role]
+            .filter(Boolean)
+            .join(" · ") || "—"}
         </p>
+        {step.salary && (
+          <p className="text-[11px] text-ink-soft mt-0.5">
+            💴 {salaryLabel(step.salary)}
+          </p>
+        )}
         {step.achievements && (
           <p className="text-[11px] text-ink-soft mt-2 leading-relaxed border-t border-dashed border-ink/15 pt-2 whitespace-pre-line">
             {step.achievements}

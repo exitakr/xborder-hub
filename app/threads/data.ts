@@ -16,19 +16,19 @@ export const COUNTRIES = [
 ] as const;
 
 export const INDUSTRIES = [
-  { v: "tech", label: "💻 Tech" },
-  { v: "finance", label: "🏦 Finance" },
-  { v: "startup", label: "🚀 Startup" },
-  { v: "consumer", label: "🛍 Consumer" },
-  { v: "manufacturing", label: "🏭 Manufacturing" },
+  { v: "tech", label: "Tech" },
+  { v: "finance", label: "Finance" },
+  { v: "startup", label: "Startup" },
+  { v: "consumer", label: "Consumer" },
+  { v: "manufacturing", label: "Manufacturing" },
 ] as const;
 
 export const ROLES = [
-  { v: "pm", label: "📐 PM" },
-  { v: "eng", label: "⚙️ Engineer" },
-  { v: "bd", label: "💼 BD / Sales" },
-  { v: "marketing", label: "📣 Marketing" },
-  { v: "design", label: "🎨 Design" },
+  { v: "pm", label: "PM" },
+  { v: "eng", label: "Engineer" },
+  { v: "bd", label: "BD / Sales" },
+  { v: "marketing", label: "Marketing" },
+  { v: "design", label: "Design" },
 ] as const;
 
 export const CATEGORIES = [

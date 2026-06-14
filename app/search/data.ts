@@ -16,8 +16,9 @@ export type Person = {
   role: string;
   companies: string;
   bio: string;
-  rating: string;
-  sessions: number;
+  /** Legacy review metrics — no longer rendered (kept optional for samples). */
+  rating?: string;
+  sessions?: number;
   badge: string;
 };
 

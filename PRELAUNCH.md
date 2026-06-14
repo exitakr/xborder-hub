@@ -19,6 +19,12 @@
   - 年収 Give-to-Get(compensation_data の国/業界/職種列 +
     SECURITY DEFINER RPC。user_id は読者に渡らない設計)
   - 未実行のうちは /welcome 強制は発動せず、/salaries はロック表示のまま
+- [ ] `supabase/migrations/0005_admin_samples.sql` を SQL Editor で実行
+  - ホームの「トレンドキャリア」「注目のスレッド」やスレッド一覧のサンプルは
+    本番でも表示される。管理者(is_admin)だけが各カードの「×」で全ユーザーから
+    非表示にできる(dismissed_samples テーブルに記録)
+  - 未実行でもサンプルは表示される。ただし「×」削除は
+    「DB がまだ準備できていません」エラーになる(0005 実行で解消)
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true

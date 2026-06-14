@@ -15,13 +15,17 @@ import {
   rejectCoffeeChatRequest,
 } from "@/lib/coffee-chat/actions";
 import type { DisplayCcRequest } from "@/lib/coffee-chat/queries";
+import type { CompensationData } from "@/lib/supabase/database.types";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { PrivacySettings } from "./PrivacySettings";
 import {
   COUNTRY_OPTS,
+  ENGLISH_USAGE_OPTS,
   INDUSTRY_OPTS,
   JPY_SALARY_OPTS,
+  RENT_OPTS,
   ROLE_OPTS,
+  SAVINGS_RATE_OPTS,
   VISA_OPTS,
 } from "@/lib/profile/options";
 import {
@@ -42,7 +46,9 @@ const BLANK_CAREER_STEP: CareerStep = {
   id: "",
   country: "",
   company: "",
+  industry: "",
   role: "",
+  salary: "",
   startYear: "",
   startMonth: "",
   endYear: "",
@@ -122,10 +128,12 @@ export function MyPageClient({
   visibilitySettings,
   dbCcSent = [],
   dbCcReceived = [],
+  ownComp = null,
 }: {
   visibilitySettings?: VisibilitySettings;
   dbCcSent?: DisplayCcRequest[];
   dbCcReceived?: DisplayCcRequest[];
+  ownComp?: CompensationData | null;
 } = {}) {
   const router = useRouter();
   const { addNotification } = useNotifications();
@@ -443,6 +451,96 @@ export function MyPageClient({
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* SALARY DATA (mirrors what was submitted on /salaries) */}
+            <section className="rise" style={{ animationDelay: "0.06s" }}>
+              <div className="flex items-end justify-between mb-3">
+                <h2 className="display font-bold text-[22px] lg:text-[24px] leading-tight text-ink">
+                  💴 年収データ
+                </h2>
+                <Link
+                  href="/salaries"
+                  className="text-[11px] font-bold text-blue whitespace-nowrap"
+                >
+                  {ownComp ? "編集" : "投稿する"} →
+                </Link>
+              </div>
+              {ownComp ? (
+                <div className="bg-cream border border-ink rounded-3xl p-4 lg:p-5 shadow-pop-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-[13px] text-ink truncate">
+                        {labelOf(INDUSTRY_OPTS, ownComp.industry ?? "") ||
+                          ownComp.industry ||
+                          "—"}
+                        {" · "}
+                        {labelOf(ROLE_OPTS, ownComp.role ?? "") ||
+                          ownComp.role ||
+                          "—"}
+                      </p>
+                      <p className="text-[11px] text-ink-soft mt-0.5">
+                        {[ownComp.country, ownComp.city]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="display font-bold text-[20px] text-ink leading-none">
+                        {labelOf(JPY_SALARY_OPTS, ownComp.total_comp_range ?? "") ||
+                          "—"}
+                      </p>
+                      <p className="text-[9px] uppercase tracking-wider text-ink-faint font-bold mt-1">
+                        年収(総額)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {ownComp.base_salary_range && (
+                      <Chip>
+                        基本給 {labelOf(JPY_SALARY_OPTS, ownComp.base_salary_range)}
+                      </Chip>
+                    )}
+                    {ownComp.monthly_rent_range && (
+                      <Chip>
+                        🏠 家賃 {labelOf(RENT_OPTS, ownComp.monthly_rent_range)}
+                      </Chip>
+                    )}
+                    {ownComp.savings_rate_range && (
+                      <Chip>
+                        💰 貯蓄率{" "}
+                        {labelOf(SAVINGS_RATE_OPTS, ownComp.savings_rate_range)}
+                      </Chip>
+                    )}
+                    {ownComp.visa_type && (
+                      <Chip>🛂 {labelOf(VISA_OPTS, ownComp.visa_type)}</Chip>
+                    )}
+                    {ownComp.english_usage_rate && (
+                      <Chip>
+                        🗣 英語{" "}
+                        {labelOf(ENGLISH_USAGE_OPTS, ownComp.english_usage_rate)}
+                      </Chip>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-ink-faint mt-3 pt-2.5 border-t border-dashed border-ink/15">
+                    一覧では匿名のレンジ値として公開されます(名前とは紐付きません)。
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  href="/salaries"
+                  className="block bg-cream border border-dashed border-ink/30 rounded-3xl p-4 lg:p-5 text-center"
+                >
+                  <p className="text-[12px] text-ink-soft leading-relaxed">
+                    まだ年収データを投稿していません。
+                    <br />
+                    匿名で投稿すると、ここと一覧に反映され、みんなの実数が見られます。
+                  </p>
+                  <span className="mt-2 inline-block text-[11px] font-bold text-blue">
+                    年収データを投稿する →
+                  </span>
+                </Link>
+              )}
             </section>
 
             {/* COFFEE CHAT */}
@@ -933,8 +1031,18 @@ export function MyPageClient({
                         {step.company || "—"}
                       </p>
                       <p className="text-[11px] text-ink-soft mt-0.5">
-                        {labelOf(ROLE_OPTS, step.role) || step.role || "—"}
+                        {[
+                          labelOf(INDUSTRY_OPTS, step.industry),
+                          labelOf(ROLE_OPTS, step.role) || step.role,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
                       </p>
+                      {step.salary && (
+                        <p className="text-[11px] text-ink-soft mt-0.5">
+                          💴 {labelOf(JPY_SALARY_OPTS, step.salary)}
+                        </p>
+                      )}
                       {step.achievements && (
                         <p className="text-[11px] text-ink leading-relaxed mt-2 border-t border-dashed border-ink/15 pt-2 whitespace-pre-line">
                           {step.achievements}
@@ -1332,26 +1440,6 @@ export function MyPageClient({
 
             {editType === "career" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field label="国">
-                    <Select
-                      value={careerForm.country}
-                      onChange={(v) =>
-                        setCareerForm((f) => ({ ...f, country: v }))
-                      }
-                      options={COUNTRY_OPTS}
-                    />
-                  </Field>
-                  <Field label="職種">
-                    <Select
-                      value={careerForm.role}
-                      onChange={(v) =>
-                        setCareerForm((f) => ({ ...f, role: v }))
-                      }
-                      options={ROLE_OPTS}
-                    />
-                  </Field>
-                </div>
                 <Field label="企業 (候補からも選択可)">
                   <input
                     type="text"
@@ -1368,6 +1456,44 @@ export function MyPageClient({
                       <option key={c} value={c} />
                     ))}
                   </datalist>
+                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Field label="国">
+                    <Select
+                      value={careerForm.country}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, country: v }))
+                      }
+                      options={COUNTRY_OPTS}
+                    />
+                  </Field>
+                  <Field label="業界">
+                    <Select
+                      value={careerForm.industry}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, industry: v }))
+                      }
+                      options={INDUSTRY_OPTS}
+                    />
+                  </Field>
+                  <Field label="職種">
+                    <Select
+                      value={careerForm.role}
+                      onChange={(v) =>
+                        setCareerForm((f) => ({ ...f, role: v }))
+                      }
+                      options={ROLE_OPTS}
+                    />
+                  </Field>
+                </div>
+                <Field label="年収レンジ (任意)">
+                  <Select
+                    value={careerForm.salary}
+                    onChange={(v) =>
+                      setCareerForm((f) => ({ ...f, salary: v }))
+                    }
+                    options={JPY_SALARY_OPTS}
+                  />
                 </Field>
 
                 <Field label="期間">

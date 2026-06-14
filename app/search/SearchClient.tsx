@@ -9,6 +9,7 @@ import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
 import { track } from "@/lib/analytics/track";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
+import { INDUSTRY_OPTS, ROLE_OPTS } from "@/lib/profile/options";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
 /** Build a Person entry from the logged-in user's profile so they appear
@@ -18,6 +19,8 @@ function profileToPerson(p: Profile): Person {
     .filter((s) => s.company.trim())
     .map((s) => s.company.trim());
   const fromCity = path.length > 1 ? p.career[0]?.country ?? "—" : "—";
+  const firstStep = p.career[0];
+  const lastStep = p.career[p.career.length - 1];
   return {
     initials: initials(p.name, 3),
     avatarBg: "#0055A4",
@@ -25,19 +28,17 @@ function profileToPerson(p: Profile): Person {
     name: p.name,
     age: Number.parseInt(p.age, 10) || 30,
     tenure: `在 ${p.city || p.country} ${p.tenure || ""}`.trim(),
-    from: p.career[0]?.country ?? "Japan",
+    from: firstStep?.country || "Japan",
     fromCity: fromCity || "Tokyo",
-    to: p.country || "Singapore",
+    to: p.country || lastStep?.country || "Singapore",
     toCity: p.city || p.country || "Singapore",
-    industry: p.industry || "Tech",
-    role: p.role || "Product Manager",
+    industry: p.industry || lastStep?.industry || "Tech",
+    role: p.role || lastStep?.role || "",
     companies: path.join(" → ") || "—",
     bio:
       p.ccAvailable && p.ccTopics
         ? p.ccTopics
         : p.bio || "プロフィール未設定",
-    rating: "4.9",
-    sessions: 23,
     badge: p.ccAvailable ? "⚡ 相談可" : "🔒 受付停止",
   };
 }
@@ -84,25 +85,18 @@ const TO_OPTIONS = [
 
 const INDUSTRY_OPTIONS = [
   { value: "", label: "指定なし" },
-  { value: "Tech", label: "💻 Tech" },
-  { value: "Finance", label: "🏦 Finance" },
-  { value: "Startup", label: "🚀 Startup" },
-  { value: "Manufacturing", label: "🏭 Manufacturing" },
-  { value: "Consumer", label: "🛍 Consumer" },
-  { value: "Healthcare", label: "🏥 Healthcare" },
-  { value: "Education", label: "🎓 Education" },
+  ...INDUSTRY_OPTS.filter((o) => o.v).map((o) => ({
+    value: o.v,
+    label: o.label,
+  })),
 ];
 
 const ROLE_OPTIONS = [
   { value: "", label: "指定なし" },
-  { value: "Product Manager", label: "📐 Product Manager" },
-  { value: "Engineer", label: "⚙️ Engineer" },
-  { value: "BD / Sales", label: "💼 BD / Sales" },
-  { value: "Marketing", label: "📣 Marketing" },
-  { value: "Designer", label: "🎨 Designer" },
-  { value: "Finance / Accounting", label: "📊 Finance / Accounting" },
-  { value: "HR / People", label: "👥 HR / People" },
-  { value: "駐在帯同(無職)", label: "🏠 駐在帯同(無職)" },
+  ...ROLE_OPTS.filter((o) => o.v).map((o) => ({
+    value: o.v,
+    label: o.label,
+  })),
 ];
 
 const PAGE_SIZE = 5;
@@ -455,10 +449,7 @@ export function SearchClient({
                         {p.bio}
                       </p>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-ink/15">
-                        <span className="text-[10px] text-ink-faint font-bold">
-                          ⭐ {p.rating} · {p.sessions}件
-                        </span>
+                      <div className="flex items-center justify-end pt-3 border-t border-dashed border-ink/15">
                         <button
                           type="button"
                           onClick={() => openApply(p)}

@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { requestCommunityAction } from "@/lib/communities/actions";
+import { dismissSample } from "@/lib/samples/actions";
 import { toggleReactionAction } from "@/app/thread/actions";
-import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   CATEGORIES,
   COUNTRIES,
@@ -24,7 +25,14 @@ import {
 export function ThreadsClient({
   isLoggedIn = false,
   dbThreads = [],
-}: { isLoggedIn?: boolean; dbThreads?: Thread[] } = {}) {
+  isAdmin = false,
+  dismissedKeys = [],
+}: {
+  isLoggedIn?: boolean;
+  dbThreads?: Thread[];
+  isAdmin?: boolean;
+  dismissedKeys?: string[];
+} = {}) {
   const router = useRouter();
   const [country, setCountry] = useState<string>("");
   const [industry, setIndustry] = useState<string>("");
@@ -63,11 +71,23 @@ export function ThreadsClient({
     });
   }
 
-  // If Supabase returned threads, use them. Sample threads only pad the
-  // page while demo content is enabled (dev / staging) — production shows
-  // the real empty state instead.
-  const source =
-    dbThreads.length > 0 ? dbThreads : SHOW_DEMO_CONTENT ? THREADS : [];
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // Real DB threads when present; otherwise the seeded samples are shown to
+  // everyone. Admin-dismissed samples are filtered out for all users.
+  const dismissed = useMemo(() => new Set(dismissedKeys), [dismissedKeys]);
+  const source = (dbThreads.length > 0 ? dbThreads : THREADS).filter(
+    (t) => !dismissed.has(`thread:${t.id}`),
+  );
+
+  const [, startDismiss] = useTransition();
+  function hideSample(key: string) {
+    startDismiss(async () => {
+      await dismissSample(key);
+      router.refresh();
+    });
+  }
 
   const visible = useMemo(() => {
     let list = source.filter((t) => {
@@ -82,9 +102,6 @@ export function ThreadsClient({
     }
     return list;
   }, [country, industry, role, category, sort, source]);
-
-  const UUID_RE =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   function toggleVote(id: string, kind: "up" | "down") {
     setVoted((v) => ({ ...v, [id]: v[id] === kind ? null : kind }));
@@ -231,8 +248,13 @@ export function ThreadsClient({
                 </div>
               ) : (
                 visible.map((t) => (
+                  <div key={t.id} className="relative">
+                    {isAdmin && !UUID_RE.test(t.id) && (
+                      <DeleteSampleButton
+                        onClick={() => hideSample(`thread:${t.id}`)}
+                      />
+                    )}
                   <Link
-                    key={t.id}
                     href={`/thread?id=${t.id}`}
                     className="block bg-cream border border-ink/20 hover:border-ink rounded-xl p-3.5 transition-colors"
                   >
@@ -302,6 +324,7 @@ export function ThreadsClient({
                       </button>
                     </div>
                   </Link>
+                  </div>
                 ))
               )}
             </section>
