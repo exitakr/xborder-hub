@@ -7,8 +7,10 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
+import { dismissSample } from "@/lib/samples/actions";
+import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { track } from "@/lib/analytics/track";
-import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
+import { INDUSTRY_OPTS, ROLE_OPTS } from "@/lib/profile/options";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
 /** Build a Person entry from the logged-in user's profile so they appear
@@ -18,6 +20,8 @@ function profileToPerson(p: Profile): Person {
     .filter((s) => s.company.trim())
     .map((s) => s.company.trim());
   const fromCity = path.length > 1 ? p.career[0]?.country ?? "—" : "—";
+  const firstStep = p.career[0];
+  const lastStep = p.career[p.career.length - 1];
   return {
     initials: initials(p.name, 3),
     avatarBg: "#0055A4",
@@ -25,19 +29,17 @@ function profileToPerson(p: Profile): Person {
     name: p.name,
     age: Number.parseInt(p.age, 10) || 30,
     tenure: `在 ${p.city || p.country} ${p.tenure || ""}`.trim(),
-    from: p.career[0]?.country ?? "Japan",
+    from: firstStep?.country || "Japan",
     fromCity: fromCity || "Tokyo",
-    to: p.country || "Singapore",
+    to: p.country || lastStep?.country || "Singapore",
     toCity: p.city || p.country || "Singapore",
-    industry: p.industry || "Tech",
-    role: p.role || "Product Manager",
+    industry: p.industry || lastStep?.industry || "Tech",
+    role: p.role || lastStep?.role || "",
     companies: path.join(" → ") || "—",
     bio:
       p.ccAvailable && p.ccTopics
         ? p.ccTopics
         : p.bio || "プロフィール未設定",
-    rating: "4.9",
-    sessions: 23,
     badge: p.ccAvailable ? "⚡ 相談可" : "🔒 受付停止",
   };
 }
@@ -84,25 +86,18 @@ const TO_OPTIONS = [
 
 const INDUSTRY_OPTIONS = [
   { value: "", label: "指定なし" },
-  { value: "Tech", label: "💻 Tech" },
-  { value: "Finance", label: "🏦 Finance" },
-  { value: "Startup", label: "🚀 Startup" },
-  { value: "Manufacturing", label: "🏭 Manufacturing" },
-  { value: "Consumer", label: "🛍 Consumer" },
-  { value: "Healthcare", label: "🏥 Healthcare" },
-  { value: "Education", label: "🎓 Education" },
+  ...INDUSTRY_OPTS.filter((o) => o.v).map((o) => ({
+    value: o.v,
+    label: o.label,
+  })),
 ];
 
 const ROLE_OPTIONS = [
   { value: "", label: "指定なし" },
-  { value: "Product Manager", label: "📐 Product Manager" },
-  { value: "Engineer", label: "⚙️ Engineer" },
-  { value: "BD / Sales", label: "💼 BD / Sales" },
-  { value: "Marketing", label: "📣 Marketing" },
-  { value: "Designer", label: "🎨 Designer" },
-  { value: "Finance / Accounting", label: "📊 Finance / Accounting" },
-  { value: "HR / People", label: "👥 HR / People" },
-  { value: "駐在帯同(無職)", label: "🏠 駐在帯同(無職)" },
+  ...ROLE_OPTS.filter((o) => o.v).map((o) => ({
+    value: o.v,
+    label: o.label,
+  })),
 ];
 
 const PAGE_SIZE = 5;
@@ -129,10 +124,14 @@ export function SearchClient({
   isLoggedIn = false,
   initial,
   dbPeople = [],
+  isAdmin = false,
+  dismissedKeys = [],
 }: {
   isLoggedIn?: boolean;
   initial?: InitialFilters;
   dbPeople?: Person[];
+  isAdmin?: boolean;
+  dismissedKeys?: string[];
 } = {}) {
   const router = useRouter();
   const [profile] = useProfile();
@@ -149,16 +148,21 @@ export function SearchClient({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applyPending, startApply] = useTransition();
 
-  // Real members first, then the signed-in user's own card (only when
-  // they've set a name). Sample personas pad the list only while demo
-  // content is enabled (dev / staging).
+  const dismissed = useMemo(() => new Set(dismissedKeys), [dismissedKeys]);
+  function hideSample(key: string) {
+    void dismissSample(key).then(() => router.refresh());
+  }
+
+  // Real members first, then the signed-in user's own card, then seeded
+  // sample personas so the page never looks empty. Admins can × any
+  // sample to hide it for everyone (persisted in dismissed_samples).
   const allPeople = useMemo<Person[]>(() => {
     const me = profile.name.trim() ? [profileToPerson(profile)] : [];
-    const rest = SHOW_DEMO_CONTENT
-      ? SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
-      : [];
-    return [...dbPeople, ...me, ...rest];
-  }, [profile, dbPeople]);
+    const samples = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
+      .map((p): Person => ({ ...p, _sampleKey: `person:${p.initials}` }))
+      .filter((p) => !dismissed.has(p._sampleKey!));
+    return [...dbPeople, ...me, ...samples];
+  }, [profile, dbPeople, dismissed]);
 
   const filtered = useMemo<Person[]>(
     () =>
@@ -373,8 +377,13 @@ export function SearchClient({
                   {shown.map((p) => (
                     <article
                       key={p.initials + p.name}
-                      className="result-card bg-cream border border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm"
+                      className="result-card bg-cream border border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm relative"
                     >
+                      {isAdmin && p._sampleKey && (
+                        <DeleteSampleButton
+                          onClick={() => hideSample(p._sampleKey!)}
+                        />
+                      )}
                       <div className="flex items-start gap-3 mb-3">
                         <div
                           className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-paper flex items-center justify-center text-[28px] lg:text-[34px] border border-ink shadow-pop-sm flex-shrink-0"
@@ -455,10 +464,7 @@ export function SearchClient({
                         {p.bio}
                       </p>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-ink/15">
-                        <span className="text-[10px] text-ink-faint font-bold">
-                          ⭐ {p.rating} · {p.sessions}件
-                        </span>
+                      <div className="flex items-center justify-end pt-3 border-t border-dashed border-ink/15">
                         <button
                           type="button"
                           onClick={() => openApply(p)}

@@ -7,6 +7,31 @@ import {
   type VisibilitySettings,
 } from "@/lib/anonymity/rules";
 
+/** Mark the user as onboarded without collecting any profile data. */
+export async function skipOnboarding(): Promise<OnboardingResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "ログインが必要です" };
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, onboarded_at: new Date().toISOString() }, { onConflict: "id" });
+
+    if (error) {
+      console.error("[welcome] skipOnboarding", error);
+      return { ok: false, error: "スキップに失敗しました。" };
+    }
+    revalidatePath("/mypage");
+    return { ok: true };
+  } catch (err) {
+    console.error("[welcome] skipOnboarding (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
 export type OnboardingResult = { ok: true } | { ok: false; error: string };
 
 export async function completeOnboarding(input: {

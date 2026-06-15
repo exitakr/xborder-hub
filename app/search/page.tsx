@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/guard";
 import { fetchMemberPeople } from "@/lib/people/queries";
+import { isCurrentUserAdmin } from "@/lib/admin/queries";
+import { fetchDismissedSampleKeys } from "@/lib/samples/queries";
 import { SearchClient } from "./SearchClient";
 
 export const metadata: Metadata = {
@@ -21,11 +23,17 @@ type Props = {
 
 export default async function SearchPage({ searchParams }: Props) {
   const [user, sp] = await Promise.all([getCurrentUser(), searchParams]);
-  const members = await fetchMemberPeople(user?.id);
+  const [members, isAdmin, dismissedKeys] = await Promise.all([
+    fetchMemberPeople(user?.id),
+    isCurrentUserAdmin(),
+    fetchDismissedSampleKeys(),
+  ]);
   return (
     <SearchClient
       isLoggedIn={!!user}
       dbPeople={members}
+      isAdmin={isAdmin}
+      dismissedKeys={dismissedKeys}
       initial={{
         from: sp.from ?? "",
         // /home links use `country` for the destination filter; map it onto

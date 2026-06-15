@@ -84,8 +84,6 @@ export async function fetchMemberPeople(
           role: row.role ?? "—",
           companies: "—",
           bio: row.bio?.trim() || "プロフィール準備中",
-          rating: "—",
-          sessions: 0,
           badge: ccOk ? "⚡ 相談可" : "🔒 受付停止",
         };
       });

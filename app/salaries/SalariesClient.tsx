@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
@@ -37,6 +38,14 @@ const COUNTRY_FLAGS: Record<string, string> = {
   Australia: "🇦🇺",
 };
 
+const BONUS_LABELS: Record<string, string> = {
+  none: "なし",
+  lt_1m: "〜1ヶ月分",
+  "1_3m": "1〜3ヶ月分",
+  "3_6m": "3〜6ヶ月分",
+  gte_6m: "6ヶ月分以上",
+};
+
 type Filters = { country: string; industry: string; role: string };
 
 export function SalariesClient({
@@ -63,6 +72,14 @@ export function SalariesClient({
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  // Premium reveals the actual salary figures; non-members see masked ranges.
+  // Beta gate mirrors the localStorage flag used on /mypage and /premium.
+  const [premium, setPremium] = useState(false);
+  const [selected, setSelected] = useState<CompEntry | null>(null);
+
+  useEffect(() => {
+    setPremium(window.localStorage.getItem("xbh_premium") === "1");
+  }, []);
 
   function setFilter(key: keyof Filters, value: string) {
     const next = { ...filters, [key]: value };
@@ -181,6 +198,31 @@ export function SalariesClient({
           {/* Unlocked: filters + entries */}
           {unlocked && !showForm && (
             <>
+              {!premium && (
+                <section className="bg-ink text-cream border border-ink rounded-2xl p-4 shadow-pop-blue relative overflow-hidden">
+                  <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-mustard opacity-20" />
+                  <div className="relative flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.22em] text-mustard font-bold">
+                        ✦ premium
+                      </p>
+                      <p className="display font-bold text-[15px] leading-tight mt-0.5">
+                        年収の数字はプレミアム会員のみ表示
+                      </p>
+                      <p className="text-[11px] opacity-80 mt-1 leading-relaxed">
+                        家賃・ビザ・満足度は誰でも閲覧可。実額レンジの解除はこちら。
+                      </p>
+                    </div>
+                    <Link
+                      href="/premium"
+                      className="bg-mustard text-ink rounded-full px-4 py-2 font-bold text-[12px] whitespace-nowrap"
+                    >
+                      数字を見る →
+                    </Link>
+                  </div>
+                </section>
+              )}
+
               <section className="bg-paper border border-ink rounded-2xl p-3 lg:p-4 shadow-pop-sm">
                 <div className="grid grid-cols-3 gap-2">
                   <FilterSelect
@@ -219,7 +261,14 @@ export function SalariesClient({
                     </p>
                   </div>
                 ) : (
-                  entries.map((e) => <EntryCard key={e.entry_id} entry={e} />)
+                  entries.map((e) => (
+                    <EntryCard
+                      key={e.entry_id}
+                      entry={e}
+                      premium={premium}
+                      onOpen={() => setSelected(e)}
+                    />
+                  ))
                 )}
               </section>
             </>
@@ -227,8 +276,39 @@ export function SalariesClient({
         </div>
       </main>
 
+      {/* Entry detail */}
+      <div
+        className={`modal-overlay ${selected ? "open" : ""}`}
+        onClick={() => setSelected(null)}
+      />
+      <div className={`modal-sheet ${selected ? "open" : ""}`}>
+        {selected && (
+          <EntryDetail
+            entry={selected}
+            premium={premium}
+            onClose={() => setSelected(null)}
+          />
+        )}
+      </div>
+
       <BottomNavMobile active="salaries" />
     </>
+  );
+}
+
+/** Masked range — shows the real label only to premium members. */
+function Amount({ label, premium }: { label: string; premium: boolean }) {
+  if (premium) return <>{label}</>;
+  return (
+    <span className="inline-flex items-center gap-1 align-middle">
+      <span
+        className="blur-[5px] select-none text-ink-soft"
+        aria-hidden
+      >
+        {label}
+      </span>
+      <span className="text-[10px]">🔒</span>
+    </span>
   );
 }
 
@@ -255,10 +335,22 @@ const PLACEHOLDER_CARDS = [
   },
 ];
 
-function EntryCard({ entry }: { entry: CompEntry }) {
+function EntryCard({
+  entry,
+  premium,
+  onOpen,
+}: {
+  entry: CompEntry;
+  premium: boolean;
+  onOpen: () => void;
+}) {
   const flag = entry.country ? (COUNTRY_FLAGS[entry.country] ?? "🌏") : "🌏";
   return (
-    <article className="bg-cream border border-ink/20 hover:border-ink rounded-2xl p-4 transition-colors">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full text-left bg-cream border border-ink/20 hover:border-ink rounded-2xl p-4 transition-colors"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-bold text-[13px] text-ink truncate">
@@ -272,7 +364,10 @@ function EntryCard({ entry }: { entry: CompEntry }) {
         </div>
         <div className="text-right flex-shrink-0">
           <p className="display font-bold text-[20px] text-ink leading-none">
-            {labelOf(JPY_SALARY_OPTS, entry.total_comp_range)}
+            <Amount
+              label={labelOf(JPY_SALARY_OPTS, entry.total_comp_range)}
+              premium={premium}
+            />
           </p>
           <p className="text-[9px] uppercase tracking-wider text-ink-faint font-bold mt-1">
             年収(総額)
@@ -281,9 +376,12 @@ function EntryCard({ entry }: { entry: CompEntry }) {
       </div>
 
       <div className="flex flex-wrap gap-1.5 mt-3">
-        {entry.base_salary_range && (
-          <Chip label={`基本給 ${labelOf(JPY_SALARY_OPTS, entry.base_salary_range)}`} />
-        )}
+        {entry.base_salary_range &&
+          (premium ? (
+            <Chip label={`基本給 ${labelOf(JPY_SALARY_OPTS, entry.base_salary_range)}`} />
+          ) : (
+            <Chip label="基本給 🔒" />
+          ))}
         {entry.has_equity && <Chip label="📈 株式あり" accent />}
         {entry.monthly_rent_range && (
           <Chip label={`🏠 家賃 ${labelOf(RENT_OPTS, entry.monthly_rent_range)}`} />
@@ -297,19 +395,6 @@ function EntryCard({ entry }: { entry: CompEntry }) {
           <Chip label={`🛂 ${labelOf(VISA_OPTS, entry.visa_type)}`} />
         )}
         {entry.has_pr && <Chip label="永住権あり" accent />}
-        {entry.weekly_hours_range && (
-          <Chip
-            label={`⏱ ${labelOf(WEEKLY_HOURS_OPTS, entry.weekly_hours_range)}`}
-          />
-        )}
-        {entry.remote_frequency && (
-          <Chip label={labelOf(REMOTE_FREQ_OPTS, entry.remote_frequency)} />
-        )}
-        {entry.english_usage_rate && (
-          <Chip
-            label={`🗣 英語 ${labelOf(ENGLISH_USAGE_OPTS, entry.english_usage_rate)}`}
-          />
-        )}
       </div>
 
       <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-dashed border-ink/15">
@@ -319,18 +404,204 @@ function EntryCard({ entry }: { entry: CompEntry }) {
         {entry.life_satisfaction != null && (
           <Meter label="生活満足度" value={entry.life_satisfaction} max={10} />
         )}
-        {entry.overseas_satisfaction != null && (
-          <Meter
-            label="移住満足度"
-            value={entry.overseas_satisfaction}
-            max={10}
-          />
-        )}
-        <span className="text-[10px] text-ink-faint ml-auto whitespace-nowrap">
-          {entry.reported_month}
+        <span className="text-[10px] text-blue font-bold ml-auto whitespace-nowrap">
+          詳細 →
         </span>
       </div>
-    </article>
+    </button>
+  );
+}
+
+function EntryDetail({
+  entry,
+  premium,
+  onClose,
+}: {
+  entry: CompEntry;
+  premium: boolean;
+  onClose: () => void;
+}) {
+  const flag = entry.country ? (COUNTRY_FLAGS[entry.country] ?? "🌏") : "🌏";
+  return (
+    <div className="px-5 pt-2">
+      <div className="w-10 h-1 bg-ink/20 rounded-full mx-auto mb-4" />
+      <div className="flex items-start justify-between mb-4 gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-faint font-bold">
+            年収データ詳細
+          </p>
+          <h3 className="display font-bold text-[18px] text-ink mt-1 leading-tight">
+            {flag} {entry.country ?? "—"}
+            {entry.city ? ` · ${entry.city}` : ""}
+          </h3>
+          <p className="text-[12px] text-ink-soft mt-0.5">
+            {labelOf(INDUSTRY_OPTS, entry.industry)} ·{" "}
+            {labelOf(ROLE_OPTS, entry.role)} · {entry.reported_month}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-8 h-8 rounded-full bg-paper border border-ink flex items-center justify-center text-ink flex-shrink-0"
+          aria-label="閉じる"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="pb-6 space-y-4">
+        {/* 報酬 (premium-gated numbers) */}
+        <div className="bg-cream border border-ink rounded-2xl p-4">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-ink-faint font-bold mb-2">
+            💴 報酬
+          </p>
+          <div className="space-y-1.5">
+            <DetailRow
+              label="年収(総額)"
+              value={
+                <Amount
+                  label={labelOf(JPY_SALARY_OPTS, entry.total_comp_range)}
+                  premium={premium}
+                />
+              }
+              strong
+            />
+            {entry.base_salary_range && (
+              <DetailRow
+                label="基本給"
+                value={
+                  <Amount
+                    label={labelOf(JPY_SALARY_OPTS, entry.base_salary_range)}
+                    premium={premium}
+                  />
+                }
+              />
+            )}
+            {entry.bonus_range && (
+              <DetailRow
+                label="ボーナス"
+                value={
+                  <Amount label={BONUS_LABELS[entry.bonus_range] ?? entry.bonus_range} premium={premium} />
+                }
+              />
+            )}
+            {entry.has_equity != null && (
+              <DetailRow
+                label="株式報酬"
+                value={entry.has_equity ? "あり" : "なし"}
+              />
+            )}
+          </div>
+          {!premium && (
+            <Link
+              href="/premium"
+              className="mt-3 block text-center bg-mustard text-ink rounded-full px-4 py-2 font-bold text-[12px]"
+            >
+              ✦ プレミアムで数字を見る →
+            </Link>
+          )}
+        </div>
+
+        {/* 生活 */}
+        <div className="bg-cream border border-ink/15 rounded-2xl p-4">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-ink-faint font-bold mb-2">
+            🏠 生活・働き方
+          </p>
+          <div className="space-y-1.5">
+            {entry.monthly_rent_range && (
+              <DetailRow
+                label="家賃 / 月"
+                value={labelOf(RENT_OPTS, entry.monthly_rent_range)}
+              />
+            )}
+            {entry.savings_rate_range && (
+              <DetailRow
+                label="貯蓄率"
+                value={labelOf(SAVINGS_RATE_OPTS, entry.savings_rate_range)}
+              />
+            )}
+            {entry.weekly_hours_range && (
+              <DetailRow
+                label="週あたり労働時間"
+                value={labelOf(WEEKLY_HOURS_OPTS, entry.weekly_hours_range)}
+              />
+            )}
+            {entry.remote_frequency && (
+              <DetailRow
+                label="リモート頻度"
+                value={labelOf(REMOTE_FREQ_OPTS, entry.remote_frequency)}
+              />
+            )}
+            {entry.english_usage_rate && (
+              <DetailRow
+                label="英語使用率"
+                value={labelOf(ENGLISH_USAGE_OPTS, entry.english_usage_rate)}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* ビザ・満足度 */}
+        <div className="bg-cream border border-ink/15 rounded-2xl p-4">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-ink-faint font-bold mb-2">
+            🛂 ビザ・満足度
+          </p>
+          <div className="space-y-1.5">
+            {entry.visa_type && (
+              <DetailRow label="ビザ" value={labelOf(VISA_OPTS, entry.visa_type)} />
+            )}
+            {entry.has_pr != null && (
+              <DetailRow label="永住権" value={entry.has_pr ? "あり" : "なし"} />
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-dashed border-ink/15">
+            {entry.wlb_satisfaction != null && (
+              <Meter label="WLB" value={entry.wlb_satisfaction} max={5} />
+            )}
+            {entry.life_satisfaction != null && (
+              <Meter label="生活満足度" value={entry.life_satisfaction} max={10} />
+            )}
+            {entry.overseas_satisfaction != null && (
+              <Meter
+                label="移住満足度"
+                value={entry.overseas_satisfaction}
+                max={10}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  strong,
+}: {
+  label: string;
+  value: React.ReactNode;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[11px] text-ink-soft">{label}</span>
+      <span
+        className={`text-ink ${strong ? "display font-bold text-[16px]" : "text-[12px] font-bold"}`}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
 

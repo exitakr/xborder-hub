@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { GlobalMap } from "./GlobalMap";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
+import { dismissSample } from "@/lib/samples/actions";
 import {
   ANNUAL_TOP_FLOWS,
   RECENT_MOVES,
@@ -27,19 +30,40 @@ function formatCount(n: number) {
 
 export function HomeClient({
   trendingThreads,
-}: { trendingThreads?: TrendingThread[] } = {}) {
+  isAdmin = false,
+  dismissedKeys = [],
+}: {
+  trendingThreads?: TrendingThread[];
+  isAdmin?: boolean;
+  dismissedKeys?: string[];
+} = {}) {
+  const router = useRouter();
   const [trendKey, setTrendKey] = useState<TrendKey>("industry");
   const [highlightedFlow, setHighlightedFlow] = useState<{
     from: string;
     to: string;
   } | null>(null);
-  const trendItems = TRENDS[trendKey];
-  const trending =
+  const [, startDismiss] = useTransition();
+
+  const dismissed = useMemo(() => new Set(dismissedKeys), [dismissedKeys]);
+  function hideSample(key: string) {
+    startDismiss(async () => {
+      await dismissSample(key);
+      router.refresh();
+    });
+  }
+
+  const trendItems = TRENDS[trendKey].filter(
+    (item) => !dismissed.has(`trend:${trendKey}:${item.name}`),
+  );
+
+  // Trending threads come from the DB when present; otherwise the seeded
+  // samples are shown to everyone. Admin-dismissed items are filtered out.
+  const trending = (
     trendingThreads && trendingThreads.length > 0
       ? trendingThreads
-      : SHOW_DEMO_CONTENT
-        ? TRENDING_THREADS
-        : [];
+      : TRENDING_THREADS
+  ).filter((t) => !dismissed.has(`thread:${t.id}`));
 
   return (
     <>
@@ -149,27 +173,35 @@ export function HomeClient({
                         ? "industry"
                         : "role";
                   return (
-                    <Link
-                      key={item.name}
-                      href={`/search?${param}=${encodeURIComponent(item.name)}`}
-                      className="flex-none bg-cream border border-ink/10 rounded-2xl p-3 shadow-pop-sm w-[140px] hover:border-ink transition-colors"
-                    >
-                      <div className="text-xl">{item.flag}</div>
-                      <p className="display font-bold text-[13px] text-ink mt-1 leading-tight">
-                        {item.name}
-                      </p>
-                      <div className="flex items-baseline gap-1.5 mt-1">
-                        <span className="display font-bold text-[16px] text-ink">
-                          {formatCount(item.count)}
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold ${positive ? "text-jade-deep" : "text-plum"}`}
-                        >
-                          {positive ? "↑" : "↓"}
-                          {Math.abs(item.change)}%
-                        </span>
-                      </div>
-                    </Link>
+                    <div key={item.name} className="relative flex-none">
+                      {isAdmin && (
+                        <DeleteSampleButton
+                          onClick={() =>
+                            hideSample(`trend:${trendKey}:${item.name}`)
+                          }
+                        />
+                      )}
+                      <Link
+                        href={`/search?${param}=${encodeURIComponent(item.name)}`}
+                        className="block bg-cream border border-ink/10 rounded-2xl p-3 shadow-pop-sm w-[140px] hover:border-ink transition-colors"
+                      >
+                        <div className="text-xl">{item.flag}</div>
+                        <p className="display font-bold text-[13px] text-ink mt-1 leading-tight">
+                          {item.name}
+                        </p>
+                        <div className="flex items-baseline gap-1.5 mt-1">
+                          <span className="display font-bold text-[16px] text-ink">
+                            {formatCount(item.count)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold ${positive ? "text-jade-deep" : "text-plum"}`}
+                          >
+                            {positive ? "↑" : "↓"}
+                            {Math.abs(item.change)}%
+                          </span>
+                        </div>
+                      </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -192,23 +224,29 @@ export function HomeClient({
 
               <div className="grid gap-2 sm:grid-cols-2">
                 {trending.map((t) => (
-                  <Link
-                    key={t.id}
-                    href={`/thread?id=${t.id}`}
-                    className="bg-cream border border-ink rounded-2xl p-3 shadow-pop-sm hover:shadow-pop transition-shadow"
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
-                        {t.category}
-                      </span>
-                      <span className="text-[10px] text-ink-faint font-bold">
-                        👍 {t.ups} · 💬 {t.replies}
-                      </span>
-                    </div>
-                    <p className="display font-bold text-[13px] text-ink leading-tight">
-                      {t.title}
-                    </p>
-                  </Link>
+                  <div key={t.id} className="relative">
+                    {isAdmin && (
+                      <DeleteSampleButton
+                        onClick={() => hideSample(`thread:${t.id}`)}
+                      />
+                    )}
+                    <Link
+                      href={`/thread?id=${t.id}`}
+                      className="block bg-cream border border-ink rounded-2xl p-3 shadow-pop-sm hover:shadow-pop transition-shadow"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
+                          {t.category}
+                        </span>
+                        <span className="text-[10px] text-ink-faint font-bold">
+                          👍 {t.ups} · 💬 {t.replies}
+                        </span>
+                      </div>
+                      <p className="display font-bold text-[13px] text-ink leading-tight">
+                        {t.title}
+                      </p>
+                    </Link>
+                  </div>
                 ))}
               </div>
             </section>

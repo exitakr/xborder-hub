@@ -8,7 +8,9 @@ export type CareerStep = {
   id: string;
   country: string;
   company: string;
+  industry: string;
   role: string;
+  salary: string;
   startYear: string;
   startMonth: string;
   endYear: string;

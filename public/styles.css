@@ -353,13 +353,19 @@ details[open] .faq-arrow { transform: rotate(45deg); }
 }
 
 @media (min-width: 1024px) {
-  .container-app    { max-width: 64rem; padding-left: 32px; padding-right: 32px; }
+  .container-app    { max-width: 80rem; padding-left: 32px; padding-right: 32px; }
   .container-narrow { max-width: 48rem; }
   .container-wide   { max-width: 80rem; padding-left: 32px; padding-right: 32px; }
 
-  .app-grid       { max-width: 48rem; }
+  .app-grid {
+    max-width: 76rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    gap: 32px;
+    align-items: start;
+  }
   .app-grid-main  { min-width: 0; }
-  .app-grid-side  { display: none !important; }
+  .app-grid-side  { position: sticky; top: 80px; align-self: start; }
 
   .bottom-nav-mobile { display: none !important; }
   .sidebar-nav { display: block; }
@@ -367,7 +373,13 @@ details[open] .faq-arrow { transform: rotate(45deg); }
 }
 
 @media (min-width: 1280px) {
-  .container-wide { max-width: 88rem; }
+  .container-app    { max-width: 88rem; }
+  .container-wide   { max-width: 88rem; }
+  .app-grid {
+    max-width: 84rem;
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    gap: 40px;
+  }
 }
 
 /* Map should never exceed reasonable size */

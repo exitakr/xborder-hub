@@ -10,15 +10,21 @@ import {
   ROLE_OPTS,
 } from "@/lib/profile/options";
 import { track } from "@/lib/analytics/track";
-import { completeOnboarding } from "./actions";
+import { completeOnboarding, skipOnboarding } from "./actions";
 
 const STEPS = ["お名前", "あなたの移動", "仕事"] as const;
 
-export function WelcomeClient({ next }: { next?: string }) {
+export function WelcomeClient({
+  next,
+  initialName = "",
+}: {
+  next?: string;
+  initialName?: string;
+}) {
   const router = useRouter();
   const [, setLocalProfile] = useProfile();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [fromCountry, setFromCountry] = useState("Japan");
   const [fromCity, setFromCity] = useState("");
   const [toCountry, setToCountry] = useState("");
@@ -28,6 +34,15 @@ export function WelcomeClient({ next }: { next?: string }) {
   const [allowCc, setAllowCc] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [skipPending, setSkipPending] = useState(false);
+
+  function skip() {
+    setSkipPending(true);
+    startTransition(async () => {
+      await skipOnboarding();
+      router.replace(next && next.startsWith("/") ? next : "/mypage");
+    });
+  }
 
   const canNext =
     step === 0 ? name.trim().length > 0 : step === 1 ? true : true;
@@ -287,7 +302,15 @@ export function WelcomeClient({ next }: { next?: string }) {
         </div>
 
         <p className="text-[11px] text-ink-faint text-center mt-4">
-          あとからマイページでいつでも変更できます
+          あとからマイページでいつでも変更できます ·{" "}
+          <button
+            type="button"
+            onClick={skip}
+            disabled={skipPending || pending}
+            className="underline underline-offset-2 disabled:opacity-50"
+          >
+            {skipPending ? "…" : "スキップして始める"}
+          </button>
         </p>
       </div>
     </main>
