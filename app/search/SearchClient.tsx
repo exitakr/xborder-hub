@@ -7,8 +7,9 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
+import { dismissSample } from "@/lib/samples/actions";
+import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { track } from "@/lib/analytics/track";
-import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { INDUSTRY_OPTS, ROLE_OPTS } from "@/lib/profile/options";
 import { SAMPLE_PEOPLE, type Person } from "./data";
 
@@ -123,10 +124,14 @@ export function SearchClient({
   isLoggedIn = false,
   initial,
   dbPeople = [],
+  isAdmin = false,
+  dismissedKeys = [],
 }: {
   isLoggedIn?: boolean;
   initial?: InitialFilters;
   dbPeople?: Person[];
+  isAdmin?: boolean;
+  dismissedKeys?: string[];
 } = {}) {
   const router = useRouter();
   const [profile] = useProfile();
@@ -143,16 +148,21 @@ export function SearchClient({
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applyPending, startApply] = useTransition();
 
-  // Real members first, then the signed-in user's own card (only when
-  // they've set a name). Sample personas pad the list only while demo
-  // content is enabled (dev / staging).
+  const dismissed = useMemo(() => new Set(dismissedKeys), [dismissedKeys]);
+  function hideSample(key: string) {
+    void dismissSample(key).then(() => router.refresh());
+  }
+
+  // Real members first, then the signed-in user's own card, then seeded
+  // sample personas so the page never looks empty. Admins can × any
+  // sample to hide it for everyone (persisted in dismissed_samples).
   const allPeople = useMemo<Person[]>(() => {
     const me = profile.name.trim() ? [profileToPerson(profile)] : [];
-    const rest = SHOW_DEMO_CONTENT
-      ? SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
-      : [];
-    return [...dbPeople, ...me, ...rest];
-  }, [profile, dbPeople]);
+    const samples = SAMPLE_PEOPLE.filter((p) => p.initials !== "YT")
+      .map((p): Person => ({ ...p, _sampleKey: `person:${p.initials}` }))
+      .filter((p) => !dismissed.has(p._sampleKey!));
+    return [...dbPeople, ...me, ...samples];
+  }, [profile, dbPeople, dismissed]);
 
   const filtered = useMemo<Person[]>(
     () =>
@@ -367,8 +377,13 @@ export function SearchClient({
                   {shown.map((p) => (
                     <article
                       key={p.initials + p.name}
-                      className="result-card bg-cream border border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm"
+                      className="result-card bg-cream border border-ink rounded-2xl p-4 lg:p-5 shadow-pop-sm relative"
                     >
+                      {isAdmin && p._sampleKey && (
+                        <DeleteSampleButton
+                          onClick={() => hideSample(p._sampleKey!)}
+                        />
+                      )}
                       <div className="flex items-start gap-3 mb-3">
                         <div
                           className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-paper flex items-center justify-center text-[28px] lg:text-[34px] border border-ink shadow-pop-sm flex-shrink-0"
