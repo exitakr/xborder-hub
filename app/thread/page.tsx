@@ -5,9 +5,10 @@ import { THREADS } from "@/app/threads/data";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   adaptCommentRow,
-  adaptThreadRow,
   fetchComments,
   fetchThreadById,
+  toDisplayThread,
+  type DisplayThread,
 } from "@/lib/threads/queries";
 import { ThreadClient } from "./ThreadClient";
 
@@ -38,6 +39,29 @@ export async function generateMetadata({
   return { title: "スレッド詳細" };
 }
 
+/** Adapter for the bundled sample threads → DisplayThread shape. */
+function sampleToDisplay(t: (typeof THREADS)[number]): DisplayThread {
+  return {
+    id: t.id,
+    title: t.title,
+    body: t.body,
+    category: t.category,
+    country: t.country,
+    industry: t.industry,
+    role: t.role,
+    ups: t.ups,
+    downs: t.downs,
+    replies: t.replies,
+    authorLabel: t.author,
+    authorHandle: t.author + "Sample",
+    authorVerified: false,
+    authorBg: t.bg,
+    authorText: t.text,
+    authorInitials: t.author,
+    posted: t.posted,
+  };
+}
+
 export default async function ThreadPage({ searchParams }: Props) {
   const user = await getCurrentUser();
   const { id } = await searchParams;
@@ -45,11 +69,11 @@ export default async function ThreadPage({ searchParams }: Props) {
   if (id && UUID_RE.test(id)) {
     const row = await fetchThreadById(id);
     if (row) {
-      const [comments] = await Promise.all([fetchComments(id)]);
+      const comments = await fetchComments(id);
       return (
         <ThreadClient
           isLoggedIn={!!user}
-          thread={adaptThreadRow(row)}
+          thread={toDisplayThread(row)}
           comments={comments.map(adaptCommentRow)}
         />
       );
@@ -58,6 +82,12 @@ export default async function ThreadPage({ searchParams }: Props) {
 
   if (!SHOW_DEMO_CONTENT) notFound();
 
-  const thread = (id && THREADS.find((t) => t.id === id)) || THREADS[0]!;
-  return <ThreadClient isLoggedIn={!!user} thread={thread} comments={[]} />;
+  const sample = (id && THREADS.find((t) => t.id === id)) || THREADS[0]!;
+  return (
+    <ThreadClient
+      isLoggedIn={!!user}
+      thread={sampleToDisplay(sample)}
+      comments={[]}
+    />
+  );
 }
