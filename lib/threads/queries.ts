@@ -6,19 +6,31 @@ import type {
   Thread as DbThread,
 } from "@/lib/supabase/database.types";
 import type { Thread as SampleThread } from "@/app/threads/data";
+import { COUNTRY_OPTS, INDUSTRY_OPTS, ROLE_OPTS } from "@/lib/profile/options";
 
 /**
- * Thread row joined with its author's display name. Comes straight from
- * Supabase when the 0002 migration has been applied; otherwise
- * `fetchThreads` returns an empty array and the client falls back to
- * the static sample data shipped in app/threads/data.ts.
+ * Thread row with the minimum profile fields we need to render the
+ * author byline. We do NOT use PostgREST `!fk_hint` joins because
+ * `threads.author_id` references `auth.users` (not `profiles`), so the
+ * embed `author:profiles!threads_author_id_fkey(...)` errors out with
+ * "Could not find a relationship". We fetch profiles in a follow-up
+ * batched query instead.
  */
 export type ThreadRow = DbThread & {
-  author: { display_name: string | null } | null;
+  author: AuthorSnapshot | null;
 };
 
 export type CommentRow = DbComment & {
-  author: { display_name: string | null } | null;
+  author: AuthorSnapshot | null;
+};
+
+export type AuthorSnapshot = {
+  display_name: string | null;
+  industry: string | null;
+  role: string | null;
+  to_country: string | null;
+  from_country: string | null;
+  onboarded_at: string | null;
 };
 
 const SCHEMA_MISSING = /relation .* does not exist/i;
@@ -35,6 +47,46 @@ function safeIgnore(error: unknown) {
   return false;
 }
 
+/**
+ * Batched profile lookup keyed by user id. Returns a Map so callers can
+ * cheaply attach the snapshot back onto each row.
+ */
+async function loadAuthors(
+  authorIds: string[],
+): Promise<Map<string, AuthorSnapshot>> {
+  const unique = Array.from(new Set(authorIds.filter(Boolean)));
+  const map = new Map<string, AuthorSnapshot>();
+  if (unique.length === 0) return map;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, display_name, industry, role, to_country, from_country, onboarded_at",
+      )
+      .in("id", unique);
+    if (error) {
+      if (!safeIgnore(error)) console.error("[threads] loadAuthors", error);
+      return map;
+    }
+    for (const row of (data ?? []) as Array<
+      AuthorSnapshot & { id: string }
+    >) {
+      map.set(row.id, {
+        display_name: row.display_name,
+        industry: row.industry,
+        role: row.role,
+        to_country: row.to_country,
+        from_country: row.from_country,
+        onboarded_at: row.onboarded_at,
+      });
+    }
+  } catch (err) {
+    console.error("[threads] loadAuthors (catch)", err);
+  }
+  return map;
+}
+
 /** All threads, most recent first. Returns [] when DB is unavailable. */
 export async function fetchThreads(limit = 50): Promise<ThreadRow[]> {
   try {
@@ -42,7 +94,7 @@ export async function fetchThreads(limit = 50): Promise<ThreadRow[]> {
     const { data, error } = await supabase
       .from("threads")
       .select(
-        "id, author_id, community_id, country, industry, role, category, title, body, ups_count, downs_count, replies_count, created_at, updated_at, author:profiles!threads_author_id_fkey(display_name)",
+        "id, author_id, community_id, country, industry, role, category, title, body, ups_count, downs_count, replies_count, created_at, updated_at",
       )
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -51,7 +103,12 @@ export async function fetchThreads(limit = 50): Promise<ThreadRow[]> {
       console.error("[threads] fetchThreads", error);
       return [];
     }
-    return (data ?? []) as unknown as ThreadRow[];
+    const rows = (data ?? []) as DbThread[];
+    const authors = await loadAuthors(rows.map((r) => r.author_id));
+    return rows.map((r) => ({
+      ...r,
+      author: authors.get(r.author_id) ?? null,
+    }));
   } catch (err) {
     console.error("[threads] fetchThreads (catch)", err);
     return [];
@@ -65,7 +122,7 @@ export async function fetchThreadById(id: string): Promise<ThreadRow | null> {
     const { data, error } = await supabase
       .from("threads")
       .select(
-        "id, author_id, community_id, country, industry, role, category, title, body, ups_count, downs_count, replies_count, created_at, updated_at, author:profiles!threads_author_id_fkey(display_name)",
+        "id, author_id, community_id, country, industry, role, category, title, body, ups_count, downs_count, replies_count, created_at, updated_at",
       )
       .eq("id", id)
       .maybeSingle();
@@ -73,7 +130,10 @@ export async function fetchThreadById(id: string): Promise<ThreadRow | null> {
       if (!safeIgnore(error)) console.error("[threads] fetchThreadById", error);
       return null;
     }
-    return (data ?? null) as ThreadRow | null;
+    if (!data) return null;
+    const row = data as DbThread;
+    const authors = await loadAuthors([row.author_id]);
+    return { ...row, author: authors.get(row.author_id) ?? null };
   } catch (err) {
     console.error("[threads] fetchThreadById (catch)", err);
     return null;
@@ -87,7 +147,7 @@ export async function fetchComments(threadId: string): Promise<CommentRow[]> {
     const { data, error } = await supabase
       .from("comments")
       .select(
-        "id, thread_id, author_id, parent_id, body, ups_count, downs_count, created_at, updated_at, author:profiles!comments_author_id_fkey(display_name)",
+        "id, thread_id, author_id, parent_id, body, ups_count, downs_count, created_at, updated_at",
       )
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true });
@@ -95,7 +155,12 @@ export async function fetchComments(threadId: string): Promise<CommentRow[]> {
       if (!safeIgnore(error)) console.error("[threads] fetchComments", error);
       return [];
     }
-    return (data ?? []) as unknown as CommentRow[];
+    const rows = (data ?? []) as DbComment[];
+    const authors = await loadAuthors(rows.map((r) => r.author_id));
+    return rows.map((r) => ({
+      ...r,
+      author: authors.get(r.author_id) ?? null,
+    }));
   } catch (err) {
     console.error("[threads] fetchComments (catch)", err);
     return [];
@@ -155,6 +220,61 @@ function relativeJa(iso: string): string {
 }
 
 /**
+ * Workcircle-style anonymous handle — six alphanumerics derived
+ * deterministically from the user id. Same author = same handle, but
+ * the handle can't be reversed into the underlying uuid.
+ */
+function anonHandle(authorId: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0xdeadbeef;
+  for (let i = 0; i < authorId.length; i++) {
+    const c = authorId.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ c, 0x85ebca6b);
+  }
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = [h1, h1 >>> 8, h1 >>> 16, h2, h2 >>> 8, h2 >>> 16];
+  return bytes
+    .map((b) => alphabet[Math.abs(b) % alphabet.length])
+    .join("");
+}
+
+/**
+ * Choose the primary byline for a thread author. Priority:
+ *  1. Industry label from the author profile (e.g. "コンサルティング")
+ *  2. Industry label from the thread itself (e.g. "テック") — useful
+ *     when the post was tagged but the profile is blank
+ *  3. Country label from the author profile
+ *  4. Display name (last resort)
+ */
+function bylineLabel(
+  author: AuthorSnapshot | null,
+  threadIndustry?: string | null,
+  threadCountry?: string | null,
+): string {
+  const labelFrom = (
+    opts: ReadonlyArray<{ v: string; label: string }>,
+    value: string | null | undefined,
+  ): string | null => {
+    if (!value) return null;
+    const hit = opts.find((o) => o.v === value);
+    return hit ? stripFlag(hit.label) : value;
+  };
+  return (
+    labelFrom(INDUSTRY_OPTS, author?.industry) ??
+    labelFrom(INDUSTRY_OPTS, threadIndustry) ??
+    labelFrom(COUNTRY_OPTS, author?.to_country) ??
+    labelFrom(COUNTRY_OPTS, threadCountry) ??
+    author?.display_name?.trim() ??
+    "メンバー"
+  );
+}
+
+function stripFlag(label: string): string {
+  return label.replace(/^[^\p{L}\p{N}]+\s*/u, "").trim() || label;
+}
+
+/**
  * Convert a DB row into the SampleThread shape the existing
  * ThreadsClient / ThreadClient already render. Keeps the visual
  * language identical regardless of data origin.
@@ -181,9 +301,61 @@ export function adaptThreadRow(row: ThreadRow): SampleThread {
   };
 }
 
+export type DisplayThread = {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  country: string;
+  industry: string;
+  role: string;
+  ups: number;
+  downs: number;
+  replies: number;
+  /** Profile-derived byline ("コンサルティング" / "テック") */
+  authorLabel: string;
+  /** Anonymous 6-char handle */
+  authorHandle: string;
+  /** True when the author has finished onboarding (real verified user) */
+  authorVerified: boolean;
+  /** Deterministic avatar bg/text classes */
+  authorBg: string;
+  authorText: string;
+  /** 2-char monogram */
+  authorInitials: string;
+  posted: string;
+};
+
+export function toDisplayThread(row: ThreadRow): DisplayThread {
+  const chip = authorChip(row.author_id);
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    category: row.category,
+    country: row.country ?? "",
+    industry: row.industry ?? "",
+    role: row.role ?? "",
+    ups: row.ups_count,
+    downs: row.downs_count,
+    replies: row.replies_count,
+    authorLabel: bylineLabel(row.author, row.industry, row.country),
+    authorHandle: anonHandle(row.author_id),
+    authorVerified: !!row.author?.onboarded_at,
+    authorBg: chip.bg,
+    authorText: chip.text,
+    authorInitials: initialsFor(row.author?.display_name),
+    posted: relativeJa(row.created_at),
+  };
+}
+
 export type DisplayComment = {
   id: string;
+  parentId: string | null;
   authorName: string;
+  authorLabel: string;
+  authorHandle: string;
+  authorVerified: boolean;
   initials: string;
   bg: string;
   text: string;
@@ -199,7 +371,11 @@ export function adaptCommentRow(row: CommentRow): DisplayComment {
   const chip = authorChip(row.author_id);
   return {
     id: row.id,
+    parentId: row.parent_id,
     authorName: author,
+    authorLabel: bylineLabel(row.author),
+    authorHandle: anonHandle(row.author_id),
+    authorVerified: !!row.author?.onboarded_at,
     initials: initialsFor(author),
     bg: chip.bg,
     text: chip.text,
