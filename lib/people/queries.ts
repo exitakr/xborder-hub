@@ -2,21 +2,6 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Person } from "@/app/search/data";
-import type { CareerStepRow } from "@/lib/supabase/database.types";
-
-/** Oldest→newest list of company names from a career jsonb array. */
-function companiesFromCareer(career: unknown): string {
-  if (!Array.isArray(career)) return "—";
-  const steps = (career as CareerStepRow[])
-    .filter((s) => s && (s.company ?? "").trim())
-    .sort((a, b) => {
-      const ak = Number(a.startYear || 0) * 100 + Number(a.startMonth || 0);
-      const bk = Number(b.startYear || 0) * 100 + Number(b.startMonth || 0);
-      return ak - bk;
-    })
-    .map((s) => s.company.trim());
-  return steps.length > 0 ? steps.join(" → ") : "—";
-}
 
 const SCHEMA_MISSING = /relation .* does not exist/i;
 
@@ -56,17 +41,14 @@ export async function fetchMemberPeople(
 ): Promise<(Person & { userId: string })[]> {
   try {
     const supabase = await createClient();
-    // select("*") so this keeps working before migration 0006 adds the
-    // career / tenure columns (naming a missing column would 400).
-    let query = supabase
-      .from("profiles")
-      .select("*")
-      .not("display_name", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(100);
-    if (excludeUserId) query = query.neq("id", excludeUserId);
-
-    const { data, error } = await query;
+    // Goes through fetch_member_directory (0007): server-side function
+    // that returns only the safe public columns and applies the owner's
+    // visibility_settings before returning companies. The base `profiles`
+    // table is owner-only at the RLS level since 0007.
+    const { data, error } = await supabase.rpc("fetch_member_directory", {
+      p_limit: 100,
+      p_offset: 0,
+    });
     if (error) {
       if (!SCHEMA_MISSING.test(error.message)) {
         console.error("[people] fetchMemberPeople", error);
@@ -74,20 +56,29 @@ export async function fetchMemberPeople(
       return [];
     }
 
-    return (data ?? [])
+    type Row = {
+      id: string;
+      display_name: string;
+      age: number | null;
+      bio: string | null;
+      from_country: string | null;
+      from_city: string | null;
+      to_country: string | null;
+      to_city: string | null;
+      industry: string | null;
+      role: string | null;
+      tenure: string | null;
+      companies: string | null;
+      allow_coffee_chat: boolean;
+    };
+
+    return ((data ?? []) as Row[])
+      .filter((row) => row.id !== excludeUserId)
       .filter((row) => (row.display_name ?? "").trim().length > 0)
       .map((row) => {
         const chip = chipFor(row.id);
-        const name = row.display_name!.trim();
-        const vis = (row.visibility_settings ?? {}) as {
-          allow_coffee_chat?: boolean;
-          show_companies?: boolean;
-        };
-        const ccOk = vis.allow_coffee_chat !== false;
-        const companies =
-          vis.show_companies === false
-            ? "—"
-            : companiesFromCareer(row.career);
+        const name = row.display_name.trim();
+        const ccOk = row.allow_coffee_chat !== false;
         return {
           userId: row.id,
           initials: initialsFor(name),
@@ -106,7 +97,7 @@ export async function fetchMemberPeople(
           toCity: row.to_city ?? row.to_country ?? "—",
           industry: row.industry ?? "—",
           role: row.role ?? "—",
-          companies,
+          companies: row.companies ?? "—",
           bio: row.bio?.trim() || "プロフィール準備中",
           badge: ccOk ? "⚡ 相談可" : "🔒 受付停止",
         };
