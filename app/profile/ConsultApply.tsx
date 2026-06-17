@@ -69,7 +69,7 @@ export function ConsultApply({
                 ☕ Coffee Chat
               </p>
               <p className="display font-bold text-[15px] text-cream">
-                SGD 30 · 20分
+                話を聞く · 無料
               </p>
             </div>
             <button
@@ -126,7 +126,7 @@ export function ConsultApply({
             <div className="min-w-0 flex-1">
               <p className="font-bold text-[14px] text-ink">{name}</p>
               <p className="text-[11px] text-ink-soft">
-                Tokyo → Singapore · SGD 30/20分
+                15〜20分の対話 · 無料
               </p>
             </div>
           </div>

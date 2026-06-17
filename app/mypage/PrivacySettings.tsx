@@ -24,7 +24,6 @@ const ROWS: {
     key: "show_salary",
     label: "給与レンジを表示する",
     hint: "正確な金額ではなくレンジ(例: SGD 8k–10k)だけが公開されます。",
-    badge: "Premium",
   },
   {
     key: "show_skills",

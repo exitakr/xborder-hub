@@ -1,7 +1,11 @@
 /**
  * Anonymity tiers for profile data. The site renders different subsets of
- * a profile depending on (a) viewer signed-in state, (b) viewer premium
- * state, and (c) the owner's own visibility_settings toggle.
+ * a profile depending on (a) viewer signed-in state and (b) the owner's
+ * own visibility_settings toggle.
+ *
+ * We removed the "premium_only" tier when the business model shifted to
+ * B2B job-ad revenue — every signed-in member now sees every member-only
+ * field, subject to the owner's visibility settings.
  *
  * Use `canShow(field, viewer)` from this file to decide whether to render
  * a piece of data, rather than scattering tier checks across the UI.
@@ -18,17 +22,17 @@ export const ANONYMITY_RULES = {
     "bio",
   ],
 
-  /** Visible only to signed-in members. */
+  /**
+   * Visible to every signed-in member. The owner's visibility_settings
+   * (show_companies, show_salary, show_skills, show_visa) gate these
+   * further on a per-field basis at the database RPC level.
+   */
   members_only: [
     "from_city",
     "to_city",
-    "companies", // anonymised before display, see anonymizeCompany()
+    "companies", // anonymised before display when show_companies is off
     "toeic_range",
     "overseas_years",
-  ],
-
-  /** Visible only to premium subscribers. */
-  premium_only: [
     "base_salary_range",
     "savings_rate_range",
     "visa_type",
@@ -50,7 +54,6 @@ export type Tier = keyof typeof ANONYMITY_RULES;
 
 export type Viewer = {
   isSignedIn: boolean;
-  isPremium: boolean;
 };
 
 /** Tier lookup keyed by field name. Built once at module load. */
@@ -67,7 +70,7 @@ const TIER_BY_FIELD: Record<string, Tier> = (() => {
 /**
  * Returns true when the given viewer is allowed to see the given field
  * based purely on the membership tier. The owner's visibility_settings
- * are applied on top of this (a premium-only field can still be hidden
+ * are applied on top of this (a members-only field can still be hidden
  * if the owner toggled "show_salary" off).
  */
 export function canShow(field: string, viewer: Viewer): boolean {
@@ -82,8 +85,6 @@ export function canShow(field: string, viewer: Viewer): boolean {
       return true;
     case "members_only":
       return viewer.isSignedIn;
-    case "premium_only":
-      return viewer.isSignedIn && viewer.isPremium;
     case "aggregate_only":
       return false;
   }

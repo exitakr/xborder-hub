@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
@@ -72,14 +71,12 @@ export function SalariesClient({
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  // Premium reveals the actual salary figures; non-members see masked ranges.
-  // Beta gate mirrors the localStorage flag used on /mypage and /premium.
-  const [premium, setPremium] = useState(false);
+  // All signed-in members who have contributed see the real figures.
+  // The previous premium gate (xbh_premium localStorage flag) was removed
+  // when we shifted to a B2B revenue model — focus is on growing the
+  // member base, with future revenue coming from job-ad placements.
+  const premium = true;
   const [selected, setSelected] = useState<CompEntry | null>(null);
-
-  useEffect(() => {
-    setPremium(window.localStorage.getItem("xbh_premium") === "1");
-  }, []);
 
   function setFilter(key: keyof Filters, value: string) {
     const next = { ...filters, [key]: value };
@@ -198,31 +195,6 @@ export function SalariesClient({
           {/* Unlocked: filters + entries */}
           {unlocked && !showForm && (
             <>
-              {!premium && (
-                <section className="bg-ink text-cream border border-ink rounded-2xl p-4 shadow-pop-blue relative overflow-hidden">
-                  <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-mustard opacity-20" />
-                  <div className="relative flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                      <p className="text-[9px] uppercase tracking-[0.22em] text-mustard font-bold">
-                        ✦ premium
-                      </p>
-                      <p className="display font-bold text-[15px] leading-tight mt-0.5">
-                        年収の数字はプレミアム会員のみ表示
-                      </p>
-                      <p className="text-[11px] opacity-80 mt-1 leading-relaxed">
-                        家賃・ビザ・満足度は誰でも閲覧可。実額レンジの解除はこちら。
-                      </p>
-                    </div>
-                    <Link
-                      href="/premium"
-                      className="bg-mustard text-ink rounded-full px-4 py-2 font-bold text-[12px] whitespace-nowrap"
-                    >
-                      数字を見る →
-                    </Link>
-                  </div>
-                </section>
-              )}
-
               <section className="bg-paper border border-ink rounded-2xl p-3 lg:p-4 shadow-pop-sm">
                 <div className="grid grid-cols-3 gap-2">
                   <FilterSelect
@@ -501,14 +473,6 @@ function EntryDetail({
               />
             )}
           </div>
-          {!premium && (
-            <Link
-              href="/premium"
-              className="mt-3 block text-center bg-mustard text-ink rounded-full px-4 py-2 font-bold text-[12px]"
-            >
-              ✦ プレミアムで数字を見る →
-            </Link>
-          )}
         </div>
 
         {/* 生活 */}
