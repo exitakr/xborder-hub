@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/guard";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { fetchPublicProfile } from "@/lib/profiles/getProfile";
 import { ProfileView } from "../ProfileView";
 
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MemberProfilePage({ params }: Props) {
   const user = await requireUser();
+  await enforceOnboarding("/search");
   const { id } = await params;
   if (!UUID_RE.test(id)) notFound();
 

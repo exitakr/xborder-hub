@@ -1,5 +1,6 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -26,5 +27,21 @@ export async function needsOnboarding(): Promise<boolean> {
     return (data as { onboarded_at: string | null }).onboarded_at === null;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Page-level guard: a signed-in member who hasn't finished onboarding is
+ * bounced to /welcome before they can use the app. Call at the top of an
+ * authenticated page's server component, passing the page's own path so we
+ * return them here after they finish.
+ *
+ * Safe against loops: `needsOnboarding()` returns false for signed-out
+ * visitors (public pages render normally) and /welcome only redirects in
+ * the opposite direction (away, once onboarded).
+ */
+export async function enforceOnboarding(next: string): Promise<void> {
+  if (await needsOnboarding()) {
+    redirect(`/welcome?next=${encodeURIComponent(next)}`);
   }
 }

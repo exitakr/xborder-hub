@@ -3,16 +3,22 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LogoMark } from "@/components/site/LogoMark";
-import { useProfile } from "@/lib/profile/store";
+import { useProfile, type CareerStep } from "@/lib/profile/store";
 import {
   COUNTRY_OPTS,
   INDUSTRY_OPTS,
   ROLE_OPTS,
 } from "@/lib/profile/options";
+import {
+  CareerEditorRow,
+  freshStep,
+  isCareerStepValid,
+} from "@/components/profile/CareerEditor";
 import { track } from "@/lib/analytics/track";
-import { completeOnboarding, skipOnboarding } from "./actions";
+import { completeOnboarding } from "./actions";
 
-const STEPS = ["お名前", "あなたの移動", "仕事"] as const;
+const STEPS = ["お名前", "あなたの移動", "仕事", "歩んできた軌跡"] as const;
+const CAREER_STEP = 3;
 
 export function WelcomeClient({
   next,
@@ -32,20 +38,52 @@ export function WelcomeClient({
   const [industry, setIndustry] = useState("");
   const [role, setRole] = useState("");
   const [allowCc, setAllowCc] = useState(true);
+  const [career, setCareer] = useState<CareerStep[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [skipPending, setSkipPending] = useState(false);
 
-  function skip() {
-    setSkipPending(true);
-    startTransition(async () => {
-      await skipOnboarding();
-      router.replace(next && next.startsWith("/") ? next : "/mypage");
-    });
+  const validCareer = career.filter(isCareerStepValid);
+  const canNext = step === 0 ? name.trim().length > 0 : true;
+  const canFinish = validCareer.length > 0;
+
+  function advance() {
+    setError(null);
+    // Seed the first career row when arriving at the career step so the
+    // user only has to confirm/adjust — prefilled with their current job.
+    if (step + 1 === CAREER_STEP && career.length === 0) {
+      setCareer([
+        freshStep({
+          country: toCountry,
+          industry,
+          role,
+          current: true,
+        }),
+      ]);
+    }
+    setStep((s) => s + 1);
   }
 
-  const canNext =
-    step === 0 ? name.trim().length > 0 : step === 1 ? true : true;
+  function patchStep(id: string, patch: Partial<CareerStep>) {
+    setCareer((list) =>
+      list.map((s) => {
+        if (s.id !== id) return patch.current ? { ...s, current: false } : s;
+        const merged = { ...s, ...patch };
+        if (merged.current) {
+          merged.endYear = "";
+          merged.endMonth = "";
+        }
+        return merged;
+      }),
+    );
+  }
+
+  function addRow() {
+    setCareer((list) => [...list, freshStep()]);
+  }
+
+  function removeRow(id: string) {
+    setCareer((list) => list.filter((s) => s.id !== id));
+  }
 
   function finish() {
     setError(null);
@@ -59,6 +97,7 @@ export function WelcomeClient({
         industry,
         role,
         allowCoffeeChat: allowCc,
+        career: validCareer,
       });
       if (!res.ok) {
         setError(res.error);
@@ -69,6 +108,7 @@ export function WelcomeClient({
         to_country: toCountry,
         industry,
         role,
+        career_entries: validCareer.length,
       });
       // Seed the local store so AppTopBar / mypage hydrate instantly.
       setLocalProfile((p) => ({
@@ -81,8 +121,9 @@ export function WelcomeClient({
         industry: industry || p.industry,
         role: role || p.role,
         ccAvailable: allowCc,
+        career: validCareer.map((s) => ({ ...s })),
       }));
-      router.replace(next && next.startsWith("/") ? next : "/mypage");
+      router.replace(next && next.startsWith("/") ? next : "/home");
     });
   }
 
@@ -265,6 +306,44 @@ export function WelcomeClient({
             </section>
           )}
 
+          {step === CAREER_STEP && (
+            <section>
+              <h1 className="display font-bold text-[22px] text-ink leading-tight">
+                歩んできた軌跡
+              </h1>
+              <p className="text-[12px] text-ink-soft mt-2 leading-relaxed">
+                あなたのキャリアの変遷を残してください。経歴があると、同じ道を
+                歩む人にあなたが見つけてもらえます。
+                <span className="text-ink font-bold">
+                  {" "}最低 1 社(企業名・国・職種・開始年)は必須です。
+                </span>
+              </p>
+              <div className="mt-5 space-y-3">
+                {career.map((s, i) => (
+                  <CareerEditorRow
+                    key={s.id}
+                    step={s}
+                    index={i + 1}
+                    onChange={(patch) => patchStep(s.id, patch)}
+                    onRemove={() => removeRow(s.id)}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={addRow}
+                  className="w-full py-2.5 border border-dashed border-ink/30 rounded-2xl text-[12px] font-bold text-ink-soft hover:border-ink hover:text-ink transition-colors"
+                >
+                  + 経歴を追加
+                </button>
+                {!canFinish && (
+                  <p className="text-[11px] text-ink-faint">
+                    ※ 企業名・国・職種・開始年を入力すると「はじめる」が押せます。
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
           {error && (
             <p className="text-[11px] font-bold text-red-600 mt-4">{error}</p>
           )}
@@ -285,7 +364,7 @@ export function WelcomeClient({
               <button
                 type="button"
                 disabled={!canNext}
-                onClick={() => setStep((s) => s + 1)}
+                onClick={advance}
                 className={`btn-primary px-8 ${canNext ? "" : "opacity-40 cursor-not-allowed"}`}
               >
                 次へ →
@@ -293,9 +372,9 @@ export function WelcomeClient({
             ) : (
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || !canFinish}
                 onClick={finish}
-                className="btn-primary px-8 disabled:opacity-50"
+                className={`btn-primary px-8 ${pending || !canFinish ? "opacity-40 cursor-not-allowed" : ""}`}
               >
                 {pending ? "保存中…" : "はじめる 🎉"}
               </button>
@@ -304,15 +383,7 @@ export function WelcomeClient({
         </div>
 
         <p className="text-[11px] text-ink-faint text-center mt-4">
-          あとからマイページでいつでも変更できます ·{" "}
-          <button
-            type="button"
-            onClick={skip}
-            disabled={skipPending || pending}
-            className="underline underline-offset-2 disabled:opacity-50"
-          >
-            {skipPending ? "…" : "スキップして始める"}
-          </button>
+          入力した内容はあとからマイページでいつでも変更・追記できます。
         </p>
       </div>
     </main>

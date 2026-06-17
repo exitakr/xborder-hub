@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/guard";
 import { adaptThreadRow, fetchThreads } from "@/lib/threads/queries";
 import { isCurrentUserAdmin } from "@/lib/admin/queries";
 import { fetchDismissedSampleKeys } from "@/lib/samples/queries";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { ThreadsClient } from "./ThreadsClient";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ThreadsPage() {
+  await enforceOnboarding("/threads");
   const [user, rows, isAdmin, dismissedKeys] = await Promise.all([
     getCurrentUser(),
     fetchThreads(),
