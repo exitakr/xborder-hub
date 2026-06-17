@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
+import { AppFooter } from "@/components/site/AppFooter";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
 import { syncProfileBasics } from "./actions";
@@ -1111,6 +1112,7 @@ export function MyPageClient({
         </div>
       </div>
 
+      <AppFooter />
       <BottomNavMobile />
     </>
   );
