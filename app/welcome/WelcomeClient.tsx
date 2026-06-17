@@ -74,6 +74,8 @@ export function WelcomeClient({
       setLocalProfile((p) => ({
         ...p,
         name: name.replace(/(さん|くん|さま|様)\s*$/, "").trim(),
+        fromCountry: fromCountry || p.fromCountry,
+        fromCity: fromCity || p.fromCity,
         country: toCountry || p.country,
         city: toCity || p.city,
         industry: industry || p.industry,

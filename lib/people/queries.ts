@@ -2,6 +2,21 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Person } from "@/app/search/data";
+import type { CareerStepRow } from "@/lib/supabase/database.types";
+
+/** Oldest→newest list of company names from a career jsonb array. */
+function companiesFromCareer(career: unknown): string {
+  if (!Array.isArray(career)) return "—";
+  const steps = (career as CareerStepRow[])
+    .filter((s) => s && (s.company ?? "").trim())
+    .sort((a, b) => {
+      const ak = Number(a.startYear || 0) * 100 + Number(a.startMonth || 0);
+      const bk = Number(b.startYear || 0) * 100 + Number(b.startMonth || 0);
+      return ak - bk;
+    })
+    .map((s) => s.company.trim());
+  return steps.length > 0 ? steps.join(" → ") : "—";
+}
 
 const SCHEMA_MISSING = /relation .* does not exist/i;
 
@@ -41,11 +56,11 @@ export async function fetchMemberPeople(
 ): Promise<(Person & { userId: string })[]> {
   try {
     const supabase = await createClient();
+    // select("*") so this keeps working before migration 0006 adds the
+    // career / tenure columns (naming a missing column would 400).
     let query = supabase
       .from("profiles")
-      .select(
-        "id, display_name, age, bio, from_country, from_city, to_country, to_city, industry, role, visibility_settings",
-      )
+      .select("*")
       .not("display_name", "is", null)
       .order("updated_at", { ascending: false })
       .limit(100);
@@ -66,8 +81,13 @@ export async function fetchMemberPeople(
         const name = row.display_name!.trim();
         const vis = (row.visibility_settings ?? {}) as {
           allow_coffee_chat?: boolean;
+          show_companies?: boolean;
         };
         const ccOk = vis.allow_coffee_chat !== false;
+        const companies =
+          vis.show_companies === false
+            ? "—"
+            : companiesFromCareer(row.career);
         return {
           userId: row.id,
           initials: initialsFor(name),
@@ -75,14 +95,18 @@ export async function fetchMemberPeople(
           avatarText: chip.fg,
           name: `${name} さん`,
           age: row.age ?? 30,
-          tenure: row.to_city ? `在 ${row.to_city}` : "",
+          tenure: row.tenure?.trim()
+            ? `在 ${row.to_city ?? row.to_country ?? ""} ${row.tenure}`.trim()
+            : row.to_city
+              ? `在 ${row.to_city}`
+              : "",
           from: row.from_country ?? "Japan",
           fromCity: row.from_city ?? "—",
           to: row.to_country ?? "—",
           toCity: row.to_city ?? row.to_country ?? "—",
           industry: row.industry ?? "—",
           role: row.role ?? "—",
-          companies: "—",
+          companies,
           bio: row.bio?.trim() || "プロフィール準備中",
           badge: ccOk ? "⚡ 相談可" : "🔒 受付停止",
         };

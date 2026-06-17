@@ -6,6 +6,8 @@ import {
   DEFAULT_VISIBILITY_SETTINGS,
   type VisibilitySettings,
 } from "@/lib/anonymity/rules";
+import { clientProfileToDbColumns } from "@/lib/profile/serverProfile";
+import type { Profile as ClientProfile } from "@/lib/profile/store";
 
 export type UpdateState =
   | { ok?: undefined; error?: undefined }
@@ -59,25 +61,24 @@ export async function updateVisibilitySettings(
 }
 
 /**
- * Mirror the locally-edited identity card into the profiles table so other
- * members see real display names on threads / comments / Coffee Chat.
- * Fire-and-forget from the client: failures degrade to localStorage-only.
+ * Persist the entire edited profile (identity, current position, skills,
+ * goals, career timeline, Coffee Chat availability) into the profiles
+ * table so it propagates to every page, every user, and every device.
+ *
+ * Coffee-chat availability lives in visibility_settings.allow_coffee_chat
+ * (its canonical home) — we read-merge the existing settings so the other
+ * privacy flags are preserved.
+ *
+ * Degrades gracefully: if migration 0006 columns aren't present yet, it
+ * retries with only the original identity columns so the app still works.
  */
-export async function syncProfileBasics(input: {
-  displayName: string;
-  age?: string;
-  bio?: string;
-  country?: string;
-  city?: string;
-  industry?: string;
-  role?: string;
-  goalCountry?: string;
-}): Promise<UpdateState> {
-  const displayName = input.displayName
-    .replace(/(さん|くん|さま|様)\s*$/, "")
-    .trim();
-  if (!displayName) return { error: "表示名を入力してください" };
-  if (displayName.length > 60) return { error: "表示名は 60 文字以内です" };
+export async function syncProfileBasics(
+  input: ClientProfile,
+): Promise<UpdateState> {
+  const cols = clientProfileToDbColumns(input);
+  if (!cols.display_name) return { error: "表示名を入力してください" };
+  if (cols.display_name.length > 60)
+    return { error: "表示名は 60 文字以内です" };
 
   const supabase = await createClient();
   const {
@@ -85,21 +86,47 @@ export async function syncProfileBasics(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "ログインが必要です" };
 
-  const ageNum = input.age ? Number.parseInt(input.age, 10) : null;
+  // Merge allow_coffee_chat into the existing visibility settings.
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("visibility_settings")
+    .eq("id", user.id)
+    .maybeSingle();
+  const visibility: VisibilitySettings = {
+    ...DEFAULT_VISIBILITY_SETTINGS,
+    ...((existing?.visibility_settings as Partial<VisibilitySettings>) ?? {}),
+    allow_coffee_chat: input.ccAvailable !== false,
+  };
 
-  const { error } = await supabase.from("profiles").upsert(
-    {
+  const full = {
+    id: user.id,
+    ...cols,
+    visibility_settings: visibility,
+  };
+
+  let { error } = await supabase
+    .from("profiles")
+    .upsert(full, { onConflict: "id" });
+
+  // Pre-0006 fallback: write only the columns guaranteed by 0001/0004.
+  if (error && /column .* does not exist/i.test(error.message)) {
+    const basic = {
       id: user.id,
-      display_name: displayName,
-      age: Number.isFinite(ageNum) ? ageNum : null,
-      bio: input.bio?.trim() || null,
-      to_country: input.country || null,
-      to_city: input.city || null,
-      industry: input.industry || null,
-      role: input.role || null,
-    },
-    { onConflict: "id" },
-  );
+      display_name: cols.display_name,
+      age: cols.age,
+      bio: cols.bio,
+      from_country: cols.from_country,
+      from_city: cols.from_city,
+      to_country: cols.to_country,
+      to_city: cols.to_city,
+      industry: cols.industry,
+      role: cols.role,
+      visibility_settings: visibility,
+    };
+    ({ error } = await supabase
+      .from("profiles")
+      .upsert(basic, { onConflict: "id" }));
+  }
 
   if (error) {
     if (/relation .* does not exist/i.test(error.message)) {
@@ -112,5 +139,7 @@ export async function syncProfileBasics(input: {
   }
 
   revalidatePath("/mypage");
+  revalidatePath("/search");
+  revalidatePath("/profile");
   return { ok: true };
 }

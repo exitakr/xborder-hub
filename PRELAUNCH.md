@@ -25,6 +25,14 @@
     非表示にできる(dismissed_samples テーブルに記録)
   - 未実行でもサンプルは表示される。ただし「×」削除は
     「DB がまだ準備できていません」エラーになる(0005 実行で解消)
+- [ ] **`supabase/migrations/0006_profile_full.sql` を SQL Editor で実行(最重要)**
+  - プロフィール全項目(職歴 career / スキル / 志望 / VISA / 年収 / 滞在年数 /
+    相談トピック / 出身地)を profiles テーブルに保存する列を追加
+  - **未実行のうちは、マイページで入力した職歴・スキル等が他のユーザーや
+    他の端末に反映されない**(表示名・年齢・国・業界・職種だけは 0001 の列で
+    同期される)。実行すると `/profile/<uuid>` で他会員の経歴まで見えるようになる
+  - 冪等。実行後、別アカウントで `/search` のカードから「詳細 →」を開き、
+    相手の職歴(企業遍歴)が表示されることを確認
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -33,12 +41,24 @@
   設定後、そのアカウントで `/admin` にアクセスできる(非管理者には 404)
 - [ ] Supabase Dashboard → Authentication → URL Configuration
   - Site URL: 本番ドメイン(例: `https://xborder-hub.vercel.app`)
-  - Redirect URLs: `https://xborder-hub.vercel.app/auth/callback`,
+  - Redirect URLs(**ここに無い URL に届いた確認リンクは無効化される**):
+    `https://xborder-hub.vercel.app/auth/callback`,
     `https://xborder-hub.vercel.app/reset-password`,
     開発用も `http://localhost:3000/auth/callback`,
     `http://localhost:3000/reset-password`
-- [ ] Authentication → Email Templates の Magic Link / Recovery のリンクが
-  `{{ .ConfirmationURL }}` を使っていること(初期値で OK)
+  - カスタムドメイン / プレビュー URL からもサインアップを試すなら、それらも追加
+  - ⚠️ Vercel の `NEXT_PUBLIC_SITE_URL` を設定しておくと、確認メールのリンクは
+    常にこの URL を指すようになり、ホスト不一致での失敗を防げる(コード側対応済)
+- [ ] Authentication → Email Templates の Confirm signup / Magic Link / Recovery が
+  `{{ .ConfirmationURL }}` を使っていること(初期値で OK)。コールバックは
+  PKCE(`?code=`)と token_hash(`?token_hash=&type=`)の**両方**に対応済なので、
+  どちらのテンプレート形式でも確認リンクは通る
+- [ ] **メール送信(SMTP)を本番用に設定** — Authentication → Emails → SMTP Settings。
+  Supabase 内蔵の送信は 1 時間あたり数通の厳しいレート制限があり、迷惑メール送りに
+  なりやすい。公開時は Resend / Postmark / Amazon SES などのカスタム SMTP を設定する
+  (未設定だと公開直後に新規登録メールが届かなくなる可能性が高い)
+- [ ] 新規登録 → 確認メール受信 → リンククリック → `/auth/callback` 経由で
+  `/welcome` に着地する一連を、実際のメールアドレスで 1 度通す
 - [ ] Database → Roles → `service_role` の鍵を Vercel に保存していない
   (anon key だけが NEXT_PUBLIC_ で公開される。OK な状態を再確認)
 
@@ -70,10 +90,10 @@
 
 ## D. 未実装の機能(β中は隠す / 動かなくても OK)
 
-- [ ] **他人のプロフィール表示** — `/profile` は自分専用のまま。
-  ただし Coffee Chat 申請は `/search` の実会員カードから直接 DB に
-  保存されるようになったので、公開ブロッカーではない。
-  `/profile?id=<uuid>` の閲覧ページは将来の改善項目
+- [x] **他人のプロフィール表示** — 実装済。`/profile/<uuid>` で他会員の
+  プロフィール(経歴・スキル・志望・相談トピック)を閲覧でき、`/search` の
+  カードの「詳細 →」から遷移する。公開範囲は各会員の visibility_settings に従う
+  (企業名・年収・スキル・VISA は非公開設定なら表示されない)。0006 実行が前提
 - [ ] **決済 (Stripe Checkout)** — `app/premium/SubscribeButton.tsx` は
   `localStorage('xbh_premium','1')` を立ててマイページに飛ぶだけ。
   本番では Stripe Checkout セッションを起動する
@@ -98,16 +118,21 @@
 - [ ] 各スレッドに自然なコメントを 2〜3 件(サブアカウントがあれば理想)
 - [ ] `/salaries` に自分の年収データを 1 件投稿(最初の 1 行が無いと
   ロック画面の件数が 0 のまま)
-- [ ] プロフィール(表示名・From/To・業界/職種)を設定し、検索に
-  実会員として表示されることを確認
+- [ ] プロフィール(表示名・From/To・業界/職種・**職歴**)を設定し、検索に
+  実会員として表示され、別アカウントから `/profile/<uuid>` で職歴まで
+  見えることを確認(0006 実行が前提)
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録** → `/welcome` ウィザード → 完了 → `/mypage` に実名表示。
   既存アカウントは /welcome を経由しないこと、パスワード再設定リンクが
   /reset-password に直行することも確認
+- [ ] **プロフィール連携** — `/mypage` で職歴・スキル・志望・自己紹介を保存 →
+  別ブラウザ(またはシークレットウィンドウ)で同じアカウントにログインし、
+  入力内容が反映されること(DB が真実の源。端末跨ぎで一致)。
+  さらに別アカウントから検索 → カードに企業遍歴が出て、「詳細 →」で経歴が見える
 - [ ] **/salaries** — 未投稿だとロック画面 → 匿名投稿 → 全データ解放。
   2 アカウント目で投稿し、互いのデータが見える(名前は見えない)こと
 - [ ] `/threads` でスレッドが DB から表示される(空ならサンプル)

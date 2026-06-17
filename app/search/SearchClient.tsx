@@ -405,12 +405,14 @@ export function SearchClient({
                             {p.age}歳 · {p.tenure}
                           </p>
                         </div>
-                        <Link
-                          href="/profile"
-                          className="text-[11px] text-blue font-bold whitespace-nowrap"
-                        >
-                          詳細 →
-                        </Link>
+                        {(p.userId || !p._sampleKey) && (
+                          <Link
+                            href={p.userId ? `/profile/${p.userId}` : "/profile"}
+                            className="text-[11px] text-blue font-bold whitespace-nowrap"
+                          >
+                            詳細 →
+                          </Link>
+                        )}
                       </div>
 
                       {/* Career move — large, prominent */}

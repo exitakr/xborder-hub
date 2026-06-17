@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
 import { initials, useProfile } from "@/lib/profile/store";
+import { ProfileSync } from "@/lib/profile/ProfileSync";
 import { useNotifications } from "@/lib/notifications/store";
 
 type Tab = "home" | "search" | "threads" | "salaries";
@@ -66,6 +67,7 @@ export function AppTopBar({ active }: { active?: Tab }) {
 
   return (
     <header className="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b border-ink/10">
+      <ProfileSync />
       <div className="container-app py-2.5 flex items-center justify-between gap-2">
         <Link
           href="/home"

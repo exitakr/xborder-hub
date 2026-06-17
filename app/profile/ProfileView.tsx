@@ -8,6 +8,7 @@ import {
   initials,
   useProfile,
   type CareerStep,
+  type Profile,
 } from "@/lib/profile/store";
 import {
   INDUSTRY_OPTS,
@@ -45,8 +46,18 @@ function countryLabel(v: string) {
   return COUNTRY_LABEL[v] ?? v;
 }
 
-export function ProfileView() {
-  const [profile] = useProfile();
+export function ProfileView({
+  viewProfile,
+  targetUserId,
+}: {
+  /** When set, render this member's profile (read-only). Otherwise show
+   * the signed-in user's own profile from the local store. */
+  viewProfile?: Profile;
+  targetUserId?: string;
+} = {}) {
+  const [ownProfile] = useProfile();
+  const profile = viewProfile ?? ownProfile;
+  const isOwn = !viewProfile;
   const monogram = initials(profile.name, 3);
 
   // First name (without "さん") for visual flair in the heading
@@ -304,8 +315,12 @@ export function ProfileView() {
         </div>
       </main>
 
-      {profile.ccAvailable && (
-        <ConsultApply name={cleanName} initialsText={monogram} />
+      {profile.ccAvailable && !isOwn && (
+        <ConsultApply
+          name={cleanName}
+          initialsText={monogram}
+          targetUserId={targetUserId}
+        />
       )}
       <BottomNavMobile />
     </>

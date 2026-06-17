@@ -22,6 +22,8 @@ export type CareerStep = {
 export type Profile = {
   name: string;
   age: string;
+  fromCountry: string;
+  fromCity: string;
   country: string;
   city: string;
   tenure: string;
@@ -48,6 +50,8 @@ const KEY = "xbh.profile.v2";
 export const DEFAULT_PROFILE: Profile = {
   name: "",
   age: "",
+  fromCountry: "",
+  fromCity: "",
   country: "",
   city: "",
   tenure: "",

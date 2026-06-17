@@ -21,8 +21,36 @@ export type Profile = {
   is_admin: boolean;
   visibility_settings: VisibilitySettings;
   onboarded_at: string | null;
+  /* Full profile columns added by migration 0006 */
+  tenure: string | null;
+  visa: string | null;
+  salary: string | null;
+  tech_skills: string[];
+  business_skills: string[];
+  goal_country: string | null;
+  goal_industry: string | null;
+  goal_role: string | null;
+  goal_salary: string | null;
+  cc_topics: string | null;
+  career: CareerStepRow[];
   created_at: string;
   updated_at: string;
+};
+
+/** Shape of one career timeline entry stored in profiles.career (jsonb). */
+export type CareerStepRow = {
+  id: string;
+  country: string;
+  company: string;
+  industry: string;
+  role: string;
+  salary: string;
+  startYear: string;
+  startMonth: string;
+  endYear: string;
+  endMonth: string;
+  achievements: string;
+  current: boolean;
 };
 
 export type ProfileUpdate = Partial<
