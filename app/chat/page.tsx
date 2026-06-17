@@ -7,6 +7,7 @@ import {
   partnerOf,
 } from "@/lib/chat/queries";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { ChatClient } from "./ChatClient";
 import { ChatRoomsList } from "./ChatRoomsList";
 
@@ -25,6 +26,7 @@ type Props = {
 
 export default async function ChatPage({ searchParams }: Props) {
   const user = await requireUser("/chat");
+  await enforceOnboarding("/chat");
   const { room: roomParam, with: withParam } = await searchParams;
 
   // Real DB-backed room

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/guard";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { ThreadNewClient } from "./ThreadNewClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,6 @@ export const metadata: Metadata = {
 
 export default async function ThreadNewPage() {
   await requireUser("/thread/new");
+  await enforceOnboarding("/thread/new");
   return <ThreadNewClient />;
 }

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/guard";
 import { fetchMemberPeople } from "@/lib/people/queries";
 import { isCurrentUserAdmin } from "@/lib/admin/queries";
 import { fetchDismissedSampleKeys } from "@/lib/samples/queries";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { SearchClient } from "./SearchClient";
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export default async function SearchPage({ searchParams }: Props) {
+  await enforceOnboarding("/search");
   const [user, sp] = await Promise.all([getCurrentUser(), searchParams]);
   const [members, isAdmin, dismissedKeys] = await Promise.all([
     fetchMemberPeople(user?.id),

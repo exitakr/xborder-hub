@@ -6,6 +6,18 @@ import {
   DEFAULT_VISIBILITY_SETTINGS,
   type VisibilitySettings,
 } from "@/lib/anonymity/rules";
+import type { CareerStep } from "@/lib/profile/store";
+
+/** A career step is "valid" once it carries the required core fields. */
+function isValidStep(s: CareerStep): boolean {
+  return (
+    !!s &&
+    s.company.trim().length > 0 &&
+    s.country.length > 0 &&
+    s.role.length > 0 &&
+    s.startYear.length > 0
+  );
+}
 
 /** Mark the user as onboarded without collecting any profile data. */
 export async function skipOnboarding(): Promise<OnboardingResult> {
@@ -43,6 +55,7 @@ export async function completeOnboarding(input: {
   industry?: string;
   role?: string;
   allowCoffeeChat: boolean;
+  career?: CareerStep[];
 }): Promise<OnboardingResult> {
   const displayName = input.displayName
     .replace(/(さん|くん|さま|様)\s*$/, "")
@@ -50,6 +63,16 @@ export async function completeOnboarding(input: {
   if (!displayName) return { ok: false, error: "表示名を入力してください" };
   if (displayName.length > 60)
     return { ok: false, error: "表示名は 60 文字以内です" };
+
+  // Career history is mandatory at signup — at least one complete entry.
+  const career = (input.career ?? []).filter(isValidStep);
+  if (career.length === 0) {
+    return {
+      ok: false,
+      error:
+        "経歴を 1 社以上、企業名・国・職種・開始年まで入力してください。",
+    };
+  }
 
   try {
     const supabase = await createClient();
@@ -63,24 +86,33 @@ export async function completeOnboarding(input: {
       allow_coffee_chat: input.allowCoffeeChat,
     };
 
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: user.id,
-        display_name: displayName,
-        from_country: input.fromCountry || null,
-        from_city: input.fromCity?.trim() || null,
-        to_country: input.toCountry || null,
-        to_city: input.toCity?.trim() || null,
-        industry: input.industry || null,
-        role: input.role || null,
-        visibility_settings: visibility,
-        onboarded_at: new Date().toISOString(),
-      },
-      { onConflict: "id" },
-    );
+    const base = {
+      id: user.id,
+      display_name: displayName,
+      from_country: input.fromCountry || null,
+      from_city: input.fromCity?.trim() || null,
+      to_country: input.toCountry || null,
+      to_city: input.toCity?.trim() || null,
+      industry: input.industry || null,
+      role: input.role || null,
+      visibility_settings: visibility,
+      onboarded_at: new Date().toISOString(),
+    };
+
+    let { error } = await supabase
+      .from("profiles")
+      .upsert({ ...base, career }, { onConflict: "id" });
+
+    // Pre-0006 fallback: the `career` column may not exist yet. Persist the
+    // rest so the user still gets through onboarding.
+    if (error && /column .* does not exist/i.test(error.message)) {
+      ({ error } = await supabase
+        .from("profiles")
+        .upsert(base, { onConflict: "id" }));
+    }
 
     if (error) {
-      if (/column .* does not exist|relation .* does not exist/i.test(error.message)) {
+      if (/relation .* does not exist/i.test(error.message)) {
         return {
           ok: false,
           error:

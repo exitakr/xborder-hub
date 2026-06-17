@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/guard";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { THREADS } from "@/app/threads/data";
-import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import {
   adaptCommentRow,
   fetchComments,
@@ -65,6 +64,7 @@ function sampleToDisplay(t: (typeof THREADS)[number]): DisplayThread {
 }
 
 export default async function ThreadPage({ searchParams }: Props) {
+  await enforceOnboarding("/threads");
   const user = await getCurrentUser();
   const { id } = await searchParams;
 
@@ -83,8 +83,10 @@ export default async function ThreadPage({ searchParams }: Props) {
     }
   }
 
-  if (!SHOW_DEMO_CONTENT) notFound();
-
+  // Sample thread fallback. Shown regardless of SHOW_DEMO_CONTENT because the
+  // /threads list always renders the bundled samples — clicking one must open
+  // a real detail page, not 404. A non-sample, non-UUID id falls back to the
+  // first sample so the route never errors.
   const sample = (id && THREADS.find((t) => t.id === id)) || THREADS[0]!;
   return (
     <ThreadClient

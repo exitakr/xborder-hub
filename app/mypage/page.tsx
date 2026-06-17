@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/guard";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { getCurrentProfile } from "@/lib/profiles/getProfile";
 import {
   adaptReceivedRow,
@@ -18,6 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MyPage() {
   const user = await requireUser("/mypage");
+  await enforceOnboarding("/mypage");
   const [profile, sent, received, ownComp] = await Promise.all([
     getCurrentProfile(),
     fetchSentCcRequests(user.id),

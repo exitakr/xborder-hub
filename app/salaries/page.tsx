@@ -6,6 +6,7 @@ import {
   fetchCompEntryCount,
   fetchOwnCompRow,
 } from "@/lib/compensation/queries";
+import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { SalariesClient } from "./SalariesClient";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export default async function SalariesPage({ searchParams }: Props) {
+  await enforceOnboarding("/salaries");
   const [user, sp] = await Promise.all([getCurrentUser(), searchParams]);
   const own = user ? await fetchOwnCompRow() : null;
   const unlocked = !!own;
