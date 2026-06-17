@@ -12,9 +12,14 @@ export type ActionState = {
 };
 
 async function siteOrigin() {
+  // Prefer the configured canonical URL so email links always point at the
+  // production domain (and match Supabase's redirect allow-list), even from
+  // preview deployments or behind a proxy.
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (configured) return configured;
   const h = await headers();
   const proto = h.get("x-forwarded-proto") ?? "http";
-  const host = h.get("host") ?? "localhost:3000";
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   return `${proto}://${host}`;
 }
 
@@ -53,10 +58,14 @@ export async function signUpWithPassword(
 
   const supabase = await createClient();
   const origin = await siteOrigin();
+  const next = String(formData.get("next") ?? "/mypage");
+  const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(
+    safeNext(next),
+  )}`;
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
+    options: { emailRedirectTo },
   });
   if (error) {
     return { error: friendly(error.message) };
@@ -65,7 +74,6 @@ export async function signUpWithPassword(
   // If Supabase project has "Confirm email" turned OFF, signUp returns a
   // session immediately and we can drop the user straight into the app.
   if (data.session) {
-    const next = String(formData.get("next") ?? "/mypage");
     if (await needsOnboarding()) {
       redirect(`/welcome?next=${encodeURIComponent(safeNext(next))}`);
     }

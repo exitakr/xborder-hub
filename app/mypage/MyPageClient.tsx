@@ -288,21 +288,14 @@ export function MyPageClient({
   }
 
   function saveAll() {
-    // Persist all sections in one go.
+    // Persist all sections in one go — localStorage for instant UI, then
+    // the full profile to Supabase so it reaches every page / user / device.
     const cleaned = {
       ...form,
       career: form.career.filter((s) => s.company.trim() || s.role || s.country),
     };
     setProfile(cleaned);
-    void syncProfileBasics({
-      displayName: cleaned.name,
-      age: cleaned.age,
-      bio: cleaned.bio,
-      country: cleaned.country,
-      city: cleaned.city,
-      industry: cleaned.industry,
-      role: cleaned.role,
-    });
+    void syncProfileBasics(cleaned);
     setEditOpen(false);
   }
 
@@ -860,14 +853,32 @@ export function MyPageClient({
                     onChange={(e) => setForm({ ...form, age: e.target.value })}
                   />
                 </Field>
-                <Field label="現在の国">
+                <Field label="出身国 (From)">
+                  <Select
+                    value={form.fromCountry}
+                    onChange={(v) => setForm({ ...form, fromCountry: v })}
+                    options={COUNTRY_OPTS}
+                  />
+                </Field>
+                <Field label="出身都市 (From)">
+                  <input
+                    type="text"
+                    className="field"
+                    placeholder="例: Tokyo"
+                    value={form.fromCity}
+                    onChange={(e) =>
+                      setForm({ ...form, fromCity: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="現在の国 (To)">
                   <Select
                     value={form.country}
                     onChange={(v) => setForm({ ...form, country: v })}
                     options={COUNTRY_OPTS}
                   />
                 </Field>
-                <Field label="現在の都市">
+                <Field label="現在の都市 (To)">
                   <input
                     type="text"
                     className="field"

@@ -2,10 +2,40 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/supabase/database.types";
+import type { Profile as ClientProfile } from "@/lib/profile/store";
+import { dbProfileToClient } from "@/lib/profile/serverProfile";
 import {
   DEFAULT_VISIBILITY_SETTINGS,
   type VisibilitySettings,
 } from "@/lib/anonymity/rules";
+
+/**
+ * Any member's profile by id, mapped to the client shape with the owner's
+ * visibility_settings applied (companies / salary / skills / visa are
+ * stripped when hidden). Returns null when not found or the row has no
+ * display name yet. RLS allows any authenticated user to read profiles.
+ */
+export async function fetchPublicProfile(
+  id: string,
+): Promise<{ profile: ClientProfile; userId: string } | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) return null;
+    const row = data as Profile;
+    if (!(row.display_name ?? "").trim()) return null;
+    return {
+      profile: dbProfileToClient(row, { respectVisibility: true }),
+      userId: row.id,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Returns the signed-in user's profile row, or null if not signed in or
