@@ -43,6 +43,7 @@ export async function generateMetadata({
 function sampleToDisplay(t: (typeof THREADS)[number]): DisplayThread {
   return {
     id: t.id,
+    authorId: "",
     title: t.title,
     body: t.body,
     category: t.category,
@@ -59,6 +60,7 @@ function sampleToDisplay(t: (typeof THREADS)[number]): DisplayThread {
     authorText: t.text,
     authorInitials: t.author,
     posted: t.posted,
+    edited: false,
   };
 }
 
@@ -73,6 +75,7 @@ export default async function ThreadPage({ searchParams }: Props) {
       return (
         <ThreadClient
           isLoggedIn={!!user}
+          isAuthor={!!user && user.id === row.author_id}
           thread={toDisplayThread(row)}
           comments={comments.map(adaptCommentRow)}
         />

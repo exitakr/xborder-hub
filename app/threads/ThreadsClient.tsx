@@ -258,7 +258,7 @@ export function ThreadsClient({
                     href={`/thread?id=${t.id}`}
                     className="block bg-cream border border-ink/20 hover:border-ink rounded-xl p-3.5 transition-colors"
                   >
-                    {/* Top: author + tag chips */}
+                    {/* Top: anonymous byline = 国 · 職種 · 時間 */}
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div
@@ -267,11 +267,22 @@ export function ThreadsClient({
                           {t.author}
                         </div>
                         <p className="text-[11px] text-ink-soft truncate">
-                          <span className="font-bold text-ink">{t.author}</span>
-                          <span className="text-ink-faint">
-                            {" "}
-                            · {t.location} · {t.posted}
-                          </span>
+                          {[
+                            t.country
+                              ? LABELS.countries[t.country] ?? t.country
+                              : null,
+                            t.role ? LABELS.roles[t.role] ?? t.role : null,
+                          ]
+                            .filter(Boolean)
+                            .map((s, i, arr) => (
+                              <span key={i}>
+                                <span className="font-bold text-ink">{s}</span>
+                                {i < arr.length - 1 && (
+                                  <span className="text-ink-faint"> · </span>
+                                )}
+                              </span>
+                            ))}
+                          <span className="text-ink-faint"> · {t.posted}</span>
                         </p>
                       </div>
                       <span className="text-[10px] text-ink-faint font-bold whitespace-nowrap">
