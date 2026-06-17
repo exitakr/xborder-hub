@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
@@ -233,7 +233,6 @@ export function MyPageClient({
   }
 
   const [editOpen, setEditOpen] = useState(false);
-  const [premium, setPremium] = useState(false);
   const [signingOut, startSignOut] = useTransition();
 
   // Single source of truth — persisted to localStorage and shared across
@@ -300,11 +299,8 @@ export function MyPageClient({
     setEditOpen(false);
   }
 
-  useEffect(() => {
-    setPremium(window.localStorage.getItem("xbh_premium") === "1");
-  }, []);
-
   function logout() {
+    // Clear any legacy premium-tier flag from earlier builds.
     window.localStorage.removeItem("xbh_premium");
     startSignOut(() => signOut());
   }
@@ -731,23 +727,6 @@ export function MyPageClient({
               </h2>
               <div className="space-y-2">
                 <Link
-                  href="/premium"
-                  className="w-full flex items-center justify-between bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">✦</span>
-                    <div className="text-left">
-                      <p className="font-bold text-[13px] text-ink">
-                        プレミアム会員
-                      </p>
-                      <p className="text-[11px] text-ink-soft">
-                        {premium ? "✦ 加入中" : "未加入"}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-blue font-bold">登録 →</span>
-                </Link>
-                <Link
                   href="/notifications"
                   className="w-full flex items-center justify-between bg-cream border border-ink/10 rounded-2xl p-4 shadow-pop-sm hover:border-ink transition-colors"
                 >
@@ -789,16 +768,16 @@ export function MyPageClient({
               style={{ background: "#0A1F3D" }}
             >
               <p className="text-[10px] uppercase tracking-[0.24em] text-mustard font-bold mb-2">
-                ✦ Premium
+                ☕ Coffee Chat
               </p>
               <p className="display font-bold text-[15px] leading-tight text-cream">
-                給与データをすべて見る
+                先に行った人に、話を聞こう
               </p>
               <Link
-                href="/premium"
+                href="/search"
                 className="mt-3 block text-center py-2 bg-mustard text-ink rounded-full font-bold text-[11px]"
               >
-                無料トライアル →
+                メンバーを探す →
               </Link>
             </div>
           </aside>

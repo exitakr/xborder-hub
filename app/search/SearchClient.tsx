@@ -493,28 +493,28 @@ export function SearchClient({
               )}
             </section>
 
-            {/* Premium CTA */}
+            {/* Salaries CTA — give-to-get model: contribute to unlock */}
             <section className="mt-10 rise" style={{ animationDelay: "0.18s" }}>
               <div className="bg-ink text-cream border border-ink rounded-3xl p-5 lg:p-7 shadow-pop-blue relative overflow-hidden">
                 <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-mustard opacity-20" />
                 <div className="relative">
                   <div className="inline-flex items-center gap-1.5 bg-mustard text-ink rounded-full px-2 py-1 mb-3">
-                    <span>✦</span>
+                    <span>💴</span>
                     <span className="text-[9px] uppercase tracking-widest font-bold">
-                      PREMIUM
+                      REAL NUMBERS
                     </span>
                   </div>
                   <h3 className="display font-bold text-[20px] lg:text-[24px] leading-tight">
-                    給与の本当の数字を見る
+                    リアルな年収・家賃・ビザを見る
                   </h3>
                   <p className="text-[12px] opacity-80 mt-2 leading-relaxed">
-                    中央値・四分位・ボーナス・株式まで。先に行った人のリアルな手取りを公開。
+                    匿名で 1 件投稿すると、全てのデータが見られるようになります。
                   </p>
                   <Link
-                    href="/premium"
+                    href="/salaries"
                     className="mt-4 inline-flex items-center gap-2 bg-mustard text-ink rounded-full px-5 py-2.5 font-bold text-[13px]"
                   >
-                    給与データを見る
+                    年収データを見る
                     <svg
                       width="14"
                       height="14"

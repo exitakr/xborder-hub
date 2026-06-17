@@ -251,9 +251,11 @@ export default function TermsPage() {
       </ol>
 
       <p className="text-[11px] text-ink-faint mt-12 border-t border-ink/10 pt-4 leading-relaxed">
-        本規約は β 版です。正式版公開時に有償サービス(Coffee Chat・Premium)の
-        提供条件、特定商取引法に基づく表記、消費者保護に関する詳細条項を追加
-        します。ご質問は{" "}
+        本規約は β 版です。本サービスは現時点では会員登録のみで全ての機能
+        (スレッド投稿・コメント・Coffee Chat・年収データ閲覧)を無料で
+        ご利用いただけます。将来的に求人広告等の B2B 機能を提供する場合、
+        本規約に有償サービス条項・特定商取引法に基づく表記を追加し、
+        既存利用者には事前に通知します。ご質問は{" "}
         <a className="text-blue underline" href="/legal/contact">
           お問い合わせ
         </a>
