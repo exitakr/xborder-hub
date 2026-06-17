@@ -240,17 +240,15 @@ function anonHandle(authorId: string): string {
 }
 
 /**
- * Choose the primary byline for a thread author. Priority:
- *  1. Industry label from the author profile (e.g. "コンサルティング")
- *  2. Industry label from the thread itself (e.g. "テック") — useful
- *     when the post was tagged but the profile is blank
- *  3. Country label from the author profile
- *  4. Display name (last resort)
+ * Compose the author byline as "国 · 業界 · 職種" — falls back to the
+ * thread's own tags when the profile is blank, and finally to the
+ * display name. Empty parts are dropped so we never render ` ·  · `.
  */
 function bylineLabel(
   author: AuthorSnapshot | null,
   threadIndustry?: string | null,
   threadCountry?: string | null,
+  threadRole?: string | null,
 ): string {
   const labelFrom = (
     opts: ReadonlyArray<{ v: string; label: string }>,
@@ -260,14 +258,17 @@ function bylineLabel(
     const hit = opts.find((o) => o.v === value);
     return hit ? stripFlag(hit.label) : value;
   };
-  return (
-    labelFrom(INDUSTRY_OPTS, author?.industry) ??
-    labelFrom(INDUSTRY_OPTS, threadIndustry) ??
+  const country =
     labelFrom(COUNTRY_OPTS, author?.to_country) ??
-    labelFrom(COUNTRY_OPTS, threadCountry) ??
-    author?.display_name?.trim() ??
-    "メンバー"
-  );
+    labelFrom(COUNTRY_OPTS, threadCountry);
+  const industry =
+    labelFrom(INDUSTRY_OPTS, author?.industry) ??
+    labelFrom(INDUSTRY_OPTS, threadIndustry);
+  const role =
+    labelFrom(ROLE_OPTS, author?.role) ?? labelFrom(ROLE_OPTS, threadRole);
+  const parts = [country, industry, role].filter(Boolean) as string[];
+  if (parts.length > 0) return parts.join(" · ");
+  return author?.display_name?.trim() || "メンバー";
 }
 
 function stripFlag(label: string): string {
@@ -303,6 +304,7 @@ export function adaptThreadRow(row: ThreadRow): SampleThread {
 
 export type DisplayThread = {
   id: string;
+  authorId: string;
   title: string;
   body: string;
   category: string;
@@ -312,7 +314,7 @@ export type DisplayThread = {
   ups: number;
   downs: number;
   replies: number;
-  /** Profile-derived byline ("コンサルティング" / "テック") */
+  /** Composed byline "国 · 業界 · 職種" */
   authorLabel: string;
   /** Anonymous 6-char handle */
   authorHandle: string;
@@ -324,12 +326,17 @@ export type DisplayThread = {
   /** 2-char monogram */
   authorInitials: string;
   posted: string;
+  /** True when updated_at is meaningfully after created_at (post was edited) */
+  edited: boolean;
 };
 
 export function toDisplayThread(row: ThreadRow): DisplayThread {
   const chip = authorChip(row.author_id);
+  const createdMs = new Date(row.created_at).getTime();
+  const updatedMs = new Date(row.updated_at).getTime();
   return {
     id: row.id,
+    authorId: row.author_id,
     title: row.title,
     body: row.body,
     category: row.category,
@@ -339,13 +346,16 @@ export function toDisplayThread(row: ThreadRow): DisplayThread {
     ups: row.ups_count,
     downs: row.downs_count,
     replies: row.replies_count,
-    authorLabel: bylineLabel(row.author, row.industry, row.country),
+    authorLabel: bylineLabel(row.author, row.industry, row.country, row.role),
     authorHandle: anonHandle(row.author_id),
     authorVerified: !!row.author?.onboarded_at,
     authorBg: chip.bg,
     authorText: chip.text,
     authorInitials: initialsFor(row.author?.display_name),
     posted: relativeJa(row.created_at),
+    // Treat as edited if updated > 60s after creation — the initial
+    // insert may write updated_at first.
+    edited: updatedMs - createdMs > 60_000,
   };
 }
 

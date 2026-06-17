@@ -1,10 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, LABELS, ROLES } from "@/app/threads/data";
-import { addCommentAction, toggleReactionAction } from "./actions";
+import {
+  addCommentAction,
+  deleteThreadAction,
+  toggleReactionAction,
+  updateThreadAction,
+} from "./actions";
 import type { DisplayComment, DisplayThread } from "@/lib/threads/queries";
 
 type VoteState = "up" | "down" | null;
@@ -14,10 +19,12 @@ const UUID_RE =
 
 export function ThreadClient({
   isLoggedIn = false,
+  isAuthor = false,
   thread,
   comments = [],
 }: {
   isLoggedIn?: boolean;
+  isAuthor?: boolean;
   thread: DisplayThread;
   comments?: DisplayComment[];
 }) {
@@ -32,7 +39,74 @@ export function ThreadClient({
   const [error, setError] = useState<string | null>(null);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState(thread.title);
+  const [editBody, setEditBody] = useState(thread.body);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editPending, startEdit] = useTransition();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deletePending, startDelete] = useTransition();
+  const [deleteToast, setDeleteToast] = useState(false);
+  const [editedJustNow, setEditedJustNow] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const isPersisted = UUID_RE.test(thread.id);
+  const isEdited = thread.edited || editedJustNow;
+
+  // Close the 3-dot menu when the user clicks outside it.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
+
+  function openEdit() {
+    setMenuOpen(false);
+    setEditTitle(thread.title);
+    setEditBody(thread.body);
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  function submitEdit() {
+    setEditError(null);
+    startEdit(async () => {
+      const res = await updateThreadAction({
+        threadId: thread.id,
+        title: editTitle,
+        body: editBody,
+      });
+      if (res.ok) {
+        setEditOpen(false);
+        setEditedJustNow(true);
+        router.refresh();
+      } else {
+        setEditError(res.error);
+      }
+    });
+  }
+
+  function submitDelete() {
+    startDelete(async () => {
+      const res = await deleteThreadAction({ threadId: thread.id });
+      if (res.ok) {
+        setConfirmDelete(false);
+        setDeleteToast(true);
+        // Brief toast then navigate to the list. revalidatePath() on the
+        // server makes /threads reflect the deletion immediately.
+        setTimeout(() => router.push("/threads"), 1100);
+      } else {
+        setEditError(res.error);
+        setConfirmDelete(false);
+      }
+    });
+  }
 
   // Group nested replies under their parent so the UI mirrors the
   // indented "返信" rows from the reference screenshot.
@@ -209,12 +283,41 @@ export function ThreadClient({
         <div className="max-w-2xl mx-auto">
           {/* Original post */}
           <article className="px-5 py-5 border-b border-ink/10">
-            <AuthorLine
-              label={thread.authorLabel}
-              handle={thread.authorHandle}
-              verified={thread.authorVerified}
-              posted={thread.posted}
-            />
+            <div className="relative">
+              <AuthorLine
+                label={thread.authorLabel}
+                handle={thread.authorHandle}
+                verified={thread.authorVerified}
+                posted={thread.posted}
+                edited={isEdited}
+                showMenu={isAuthor && isPersisted}
+                onMenuClick={() => setMenuOpen((v) => !v)}
+              />
+              {menuOpen && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-6 z-30 bg-paper border border-ink rounded-xl shadow-pop overflow-hidden w-32"
+                >
+                  <button
+                    type="button"
+                    onClick={openEdit}
+                    className="w-full text-left px-3 py-2 text-[12px] font-bold text-ink hover:bg-cream"
+                  >
+                    ✎ 編集
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setConfirmDelete(true);
+                    }}
+                    className="w-full text-left px-3 py-2 text-[12px] font-bold text-red-600 hover:bg-cream border-t border-ink/10"
+                  >
+                    🗑 削除
+                  </button>
+                </div>
+              )}
+            </div>
             <h1 className="display font-bold text-[19px] lg:text-[22px] text-ink leading-snug mt-3">
               {thread.title}
             </h1>
@@ -303,24 +406,6 @@ export function ThreadClient({
             <p className="text-[11px] font-bold text-red-600 mb-1.5">{error}</p>
           )}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="w-8 h-8 flex items-center justify-center text-ink-soft flex-shrink-0"
-              aria-label="画像を添付"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <circle cx="9" cy="11" r="1.5" />
-                <path d="M21 17l-5-5-9 9" />
-              </svg>
-            </button>
             <textarea
               ref={commentInputRef}
               rows={1}
@@ -360,6 +445,111 @@ export function ThreadClient({
           </div>
         </div>
       </div>
+
+      {/* Edit modal */}
+      {editOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-end lg:items-center justify-center"
+          onClick={() => !editPending && setEditOpen(false)}
+        >
+          <div
+            className="bg-paper w-full lg:max-w-lg lg:rounded-2xl rounded-t-2xl border border-ink shadow-pop p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="display font-bold text-[16px] text-ink">投稿を編集</h2>
+              <button
+                type="button"
+                onClick={() => !editPending && setEditOpen(false)}
+                className="w-8 h-8 flex items-center justify-center text-ink-soft"
+                aria-label="閉じる"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <label className="label">タイトル</label>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              maxLength={120}
+              className="field mb-3"
+            />
+            <label className="label">本文</label>
+            <textarea
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              maxLength={4000}
+              rows={8}
+              className="field"
+            />
+            {editError && (
+              <p className="text-[11px] font-bold text-red-600 mt-2">{editError}</p>
+            )}
+            <div className="flex items-center justify-end gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => !editPending && setEditOpen(false)}
+                className="px-4 py-2 text-[12px] font-bold text-ink-soft"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={submitEdit}
+                disabled={editPending}
+                className="btn-primary px-5 disabled:opacity-50"
+              >
+                {editPending ? "保存中…" : "保存する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {confirmDelete && (
+        <div
+          className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center px-5"
+          onClick={() => !deletePending && setConfirmDelete(false)}
+        >
+          <div
+            className="bg-paper border border-ink rounded-2xl shadow-pop p-5 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="display font-bold text-[15px] text-ink">投稿を削除しますか?</p>
+            <p className="text-[12px] text-ink-soft mt-1.5 leading-relaxed">
+              削除すると元に戻せません。コメントも一緒に削除されます。
+            </p>
+            <div className="flex items-center justify-end gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => !deletePending && setConfirmDelete(false)}
+                className="px-4 py-2 text-[12px] font-bold text-ink-soft"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={submitDelete}
+                disabled={deletePending}
+                className="px-5 py-2 rounded-full text-[12px] font-bold bg-red-600 text-cream border border-red-700 disabled:opacity-50"
+              >
+                {deletePending ? "削除中…" : "削除する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation toast */}
+      {deleteToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-ink text-cream text-[12px] font-bold px-4 py-2 rounded-full shadow-pop">
+          ✓ 投稿を削除しました
+        </div>
+      )}
     </>
   );
 }
@@ -372,12 +562,18 @@ function AuthorLine({
   verified,
   posted,
   small = false,
+  edited = false,
+  showMenu = false,
+  onMenuClick,
 }: {
   label: string;
   handle: string;
   verified: boolean;
   posted: string;
   small?: boolean;
+  edited?: boolean;
+  showMenu?: boolean;
+  onMenuClick?: () => void;
 }) {
   const size = small ? "text-[11px]" : "text-[12px]";
   return (
@@ -387,6 +583,9 @@ function AuthorLine({
       <span className="font-mono text-ink-faint">{handle}</span>
       <span>·</span>
       <span>{posted}</span>
+      {edited && (
+        <span className="text-ink-faint italic ml-0.5">(編集済み)</span>
+      )}
       {verified && (
         <svg
           width={small ? 11 : 12}
@@ -409,17 +608,20 @@ function AuthorLine({
           />
         </svg>
       )}
-      <button
-        type="button"
-        className="ml-auto text-ink-faint px-1 py-0.5"
-        aria-label="メニュー"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="5" cy="12" r="1.5" />
-          <circle cx="12" cy="12" r="1.5" />
-          <circle cx="19" cy="12" r="1.5" />
-        </svg>
-      </button>
+      {showMenu && (
+        <button
+          type="button"
+          onClick={onMenuClick}
+          className="ml-auto text-ink-faint px-1 py-0.5"
+          aria-label="メニュー"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="5" cy="12" r="1.5" />
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="19" cy="12" r="1.5" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

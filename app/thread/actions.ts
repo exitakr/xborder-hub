@@ -7,6 +7,95 @@ const SCHEMA_MISSING = /relation .* does not exist/i;
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
 
+/**
+ * Edit a thread the caller owns. RLS already restricts the row to the
+ * author so an UPDATE from a non-author returns 0 rows — we detect that
+ * and surface a permission error.
+ */
+export async function updateThreadAction(input: {
+  threadId: string;
+  title: string;
+  body: string;
+}): Promise<ActionResult> {
+  const title = input.title.trim();
+  const body = input.body.trim();
+  if (title.length < 5)
+    return { ok: false, error: "タイトルは 5 文字以上で入力してください。" };
+  if (body.length < 10)
+    return { ok: false, error: "本文は 10 文字以上で入力してください。" };
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "ログインが必要です。" };
+
+    const { data, error } = await supabase
+      .from("threads")
+      .update({ title, body })
+      .eq("id", input.threadId)
+      .eq("author_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      if (SCHEMA_MISSING.test(error.message)) {
+        return { ok: false, error: "DB がまだ準備できていません。" };
+      }
+      console.error("[thread] updateThreadAction", error);
+      return { ok: false, error: "編集の保存に失敗しました。" };
+    }
+    if (!data) {
+      return { ok: false, error: "編集できる権限がありません。" };
+    }
+
+    revalidatePath(`/thread`);
+    return { ok: true, id: data.id };
+  } catch (err) {
+    console.error("[thread] updateThreadAction (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
+/** Delete a thread the caller owns. Comments cascade via the FK. */
+export async function deleteThreadAction(input: {
+  threadId: string;
+}): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, error: "ログインが必要です。" };
+
+    const { data, error } = await supabase
+      .from("threads")
+      .delete()
+      .eq("id", input.threadId)
+      .eq("author_id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      if (SCHEMA_MISSING.test(error.message)) {
+        return { ok: false, error: "DB がまだ準備できていません。" };
+      }
+      console.error("[thread] deleteThreadAction", error);
+      return { ok: false, error: "削除に失敗しました。" };
+    }
+    if (!data) {
+      return { ok: false, error: "削除できる権限がありません。" };
+    }
+
+    revalidatePath("/threads");
+    return { ok: true };
+  } catch (err) {
+    console.error("[thread] deleteThreadAction (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
 export async function addCommentAction(input: {
   threadId: string;
   body: string;
