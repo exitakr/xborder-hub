@@ -50,6 +50,12 @@ function safeIgnore(error: unknown) {
 /**
  * Batched profile lookup keyed by user id. Returns a Map so callers can
  * cheaply attach the snapshot back onto each row.
+ *
+ * Uses the `fetch_author_bylines` SECURITY DEFINER RPC (migration 0007)
+ * because the base `profiles` table is owner-only — direct `.from('profiles')`
+ * reads only return the caller's own row. The RPC returns the minimum
+ * needed for an author byline (name + industry + role + country); no
+ * visa / salary / career.
  */
 async function loadAuthors(
   authorIds: string[],
@@ -59,12 +65,9 @@ async function loadAuthors(
   if (unique.length === 0) return map;
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("profiles")
-      .select(
-        "id, display_name, industry, role, to_country, from_country, onboarded_at",
-      )
-      .in("id", unique);
+    const { data, error } = await supabase.rpc("fetch_author_bylines", {
+      p_ids: unique,
+    });
     if (error) {
       if (!safeIgnore(error)) console.error("[threads] loadAuthors", error);
       return map;

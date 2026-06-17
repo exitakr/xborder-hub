@@ -17,7 +17,11 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/mypage";
+  // Open-redirect guard: only allow same-origin paths. `//evil.com` would
+  // otherwise be treated as a protocol-relative URL by the browser.
+  const rawNext = searchParams.get("next") ?? "/mypage";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/mypage";
 
   // Build redirects from a trusted origin: prefer the configured site URL,
   // then the proxy's forwarded host (Vercel), then the request origin.

@@ -25,14 +25,23 @@
     非表示にできる(dismissed_samples テーブルに記録)
   - 未実行でもサンプルは表示される。ただし「×」削除は
     「DB がまだ準備できていません」エラーになる(0005 実行で解消)
-- [ ] **`supabase/migrations/0006_profile_full.sql` を SQL Editor で実行(最重要)**
+- [ ] **`supabase/migrations/0006_profile_full.sql` を SQL Editor で実行(必須)**
   - プロフィール全項目(職歴 career / スキル / 志望 / VISA / 年収 / 滞在年数 /
     相談トピック / 出身地)を profiles テーブルに保存する列を追加
   - **未実行のうちは、マイページで入力した職歴・スキル等が他のユーザーや
     他の端末に反映されない**(表示名・年齢・国・業界・職種だけは 0001 の列で
     同期される)。実行すると `/profile/<uuid>` で他会員の経歴まで見えるようになる
-  - 冪等。実行後、別アカウントで `/search` のカードから「詳細 →」を開き、
-    相手の職歴(企業遍歴)が表示されることを確認
+- [ ] **`supabase/migrations/0007_profile_lockdown.sql` を SQL Editor で実行(公開前必須・セキュリティ修正)**
+  - 0006 まで profiles は「全認証ユーザーが SELECT * 可能」だったため、
+    会員登録した攻撃者が anon-key で他会員の visa/salary/career(企業名・実年収・実績)を
+    直接抜き取れる状態だった。これを「自分の行のみ SELECT 可」に変更し、
+    他会員の閲覧は visibility_settings を強制適用する SECURITY DEFINER RPC 経由のみに
+  - 同時に career_profile テーブルも owner-only に変更
+  - RPC 3 本を追加: `fetch_public_profile`(単独), `fetch_member_directory`(/search 一覧),
+    `fetch_author_bylines`(スレッド/コメントの著者表示)
+  - **0007 未実行のままアプリを使うと検索一覧・他人のプロフィール・スレッド著者名が
+    全部空表示になる**(コード側は 0007 RPC を呼ぶ実装に切替済)。必ず 0006 と
+    一緒に実行してください
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -124,7 +133,7 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録** → `/welcome` ウィザード → 完了 → `/mypage` に実名表示。
   既存アカウントは /welcome を経由しないこと、パスワード再設定リンクが
