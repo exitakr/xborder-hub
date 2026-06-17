@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
+import { AppFooter } from "@/components/site/AppFooter";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { GlobalMap } from "./GlobalMap";
@@ -397,6 +398,7 @@ export function HomeClient({
         </div>
       </main>
 
+      <AppFooter />
       <BottomNavMobile active="home" />
     </>
   );

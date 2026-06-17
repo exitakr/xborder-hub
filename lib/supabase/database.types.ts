@@ -296,3 +296,26 @@ export type AppNotificationRow = {
   read: boolean;
   created_at: string;
 };
+
+/** Rows in `contact_submissions` (migration 0008). */
+export type ContactSubmissionCategory =
+  | "general"
+  | "account"
+  | "report"
+  | "business"
+  | "bug";
+
+export type ContactSubmission = {
+  id: string;
+  user_id: string | null;
+  email: string;
+  name: string | null;
+  category: ContactSubmissionCategory;
+  subject: string;
+  body: string;
+  status: "new" | "in_progress" | "resolved";
+  ip: string | null;
+  user_agent: string | null;
+  created_at: string;
+  responded_at: string | null;
+};
