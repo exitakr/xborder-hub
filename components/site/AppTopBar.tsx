@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogoMark } from "./LogoMark";
 import { initials, useProfile } from "@/lib/profile/store";
 import { ProfileSync } from "@/lib/profile/ProfileSync";
+import { careerLevel } from "@/lib/profile/level";
 import { useNotifications } from "@/lib/notifications/store";
 
 type Tab = "home" | "search" | "threads" | "salaries";
@@ -17,6 +18,7 @@ type BeforeInstallPromptEvent = Event & {
 export function AppTopBar({ active }: { active?: Tab }) {
   const [profile] = useProfile();
   const monogram = initials(profile.name, 3);
+  const level = profile.name ? careerLevel(profile.career) : 0;
   const { unread } = useNotifications();
   const [installEvent, setInstallEvent] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -143,11 +145,21 @@ export function AppTopBar({ active }: { active?: Tab }) {
           </Link>
           <Link
             href="/mypage"
-            className="ml-1 w-10 h-10 rounded-full bg-mustard border border-ink/20 flex items-center justify-center text-[11px] font-bold shadow-pop-sm text-ink flex-shrink-0"
+            className="ml-1 relative w-10 h-10 rounded-full bg-mustard border border-ink/20 flex items-center justify-center text-[11px] font-bold shadow-pop-sm text-ink flex-shrink-0"
             aria-label="マイページ"
-            title={profile.name}
+            title={
+              level > 0 ? `${profile.name} · Lv.${level}` : profile.name
+            }
           >
             {monogram}
+            {level > 0 && (
+              <span
+                aria-hidden
+                className="absolute -bottom-1 -right-1 min-w-[18px] h-[14px] px-1 rounded-full bg-ink text-cream text-[8px] font-bold flex items-center justify-center border border-cream tabular-nums leading-none"
+              >
+                {level}
+              </span>
+            )}
           </Link>
         </nav>
       </div>

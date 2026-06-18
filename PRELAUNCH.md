@@ -46,6 +46,12 @@
   - `/legal/contact` のフォーム送信を保存するテーブル。未実行のうちは
     お問い合わせフォーム送信時に「DB がまだ準備できていません」エラー
   - 受信は Supabase Dashboard → Table Editor → contact_submissions で一覧確認
+- [ ] **`supabase/migrations/0009_member_directory_level.sql` を SQL Editor で実行**
+  - 検索カードのユーザー名横に「Lv.N」バッジを出すため、`fetch_member_directory`
+    RPC に `level int` 列を追加(国・業界・企業・職種の distinct 最大数)。
+    未実行でもアプリは動く(検索カードの Lv バッジが消えるだけ)。
+  - 自分のプロフィール / マイページ / AppTopBar の Lv 表示は localStorage 側の
+    `career` から即計算するので 0009 と無関係に常に出る
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -154,7 +160,7 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録** → `/welcome` ウィザード → 完了 → `/mypage` に実名表示。
   既存アカウントは /welcome を経由しないこと、パスワード再設定リンクが

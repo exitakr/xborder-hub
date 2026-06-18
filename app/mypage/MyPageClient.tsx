@@ -41,6 +41,8 @@ import {
   Select,
   freshStep,
 } from "@/components/profile/CareerEditor";
+import { LevelBadge } from "@/components/profile/LevelBadge";
+import { careerLevel } from "@/lib/profile/level";
 
 type CcTab = "sent" | "received";
 
@@ -329,9 +331,14 @@ export function MyPageClient({
                         {initials(profile.name, 3)}
                       </div>
                       <div>
-                        <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
-                          {profile.name || "プロフィールを設定しましょう"}
-                        </h1>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h1 className="display font-bold text-[22px] lg:text-[28px] text-ink leading-tight">
+                            {profile.name || "プロフィールを設定しましょう"}
+                          </h1>
+                          {profile.name && (
+                            <LevelBadge level={careerLevel(profile.career)} />
+                          )}
+                        </div>
                         {profile.name ? (
                           <p className="text-[12px] lg:text-[14px] text-ink-soft mt-1 font-semibold">
                             {profile.age ? `${profile.age}歳 · ` : ""}

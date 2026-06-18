@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { initials, useProfile, type Profile } from "@/lib/profile/store";
+import { LevelBadge } from "@/components/profile/LevelBadge";
+import { careerLevel } from "@/lib/profile/level";
 import { createCoffeeChatRequest } from "@/lib/coffee-chat/actions";
 import { dismissSample } from "@/lib/samples/actions";
 import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
@@ -41,6 +43,7 @@ function profileToPerson(p: Profile): Person {
         ? p.ccTopics
         : p.bio || "プロフィール未設定",
     badge: p.ccAvailable ? "⚡ 相談可" : "🔒 受付停止",
+    level: careerLevel(p.career),
   };
 }
 
@@ -397,6 +400,7 @@ export function SearchClient({
                             <p className="font-bold text-[14px] text-ink">
                               {p.name}
                             </p>
+                            <LevelBadge level={p.level} size="sm" />
                             <span className="text-[9px] uppercase tracking-wider bg-jade/20 text-jade-deep px-1.5 py-0.5 rounded border border-jade font-bold whitespace-nowrap">
                               {p.badge}
                             </span>

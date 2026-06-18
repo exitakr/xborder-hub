@@ -70,6 +70,9 @@ export async function fetchMemberPeople(
       tenure: string | null;
       companies: string | null;
       allow_coffee_chat: boolean;
+      // Added in migration 0009. May be undefined when 0009 hasn't been
+      // applied yet — the LevelBadge silently hides itself in that case.
+      level?: number | null;
     };
 
     return ((data ?? []) as Row[])
@@ -100,6 +103,7 @@ export async function fetchMemberPeople(
           companies: row.companies ?? "—",
           bio: row.bio?.trim() || "プロフィール準備中",
           badge: ccOk ? "⚡ 相談可" : "🔒 受付停止",
+          level: row.level ?? undefined,
         };
       });
   } catch (err) {
