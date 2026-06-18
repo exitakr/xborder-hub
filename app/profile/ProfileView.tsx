@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/site/AppHeader";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
+import { LevelBadge } from "@/components/profile/LevelBadge";
+import { careerLevel } from "@/lib/profile/level";
 import {
   formatPeriod,
   initials,
@@ -139,9 +141,12 @@ export function ProfileView({
                     )}
                   </div>
                   <div className="flex-1">
-                    <h1 className="display font-bold text-[22px] text-ink leading-tight">
-                      {profile.name}
-                    </h1>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="display font-bold text-[22px] text-ink leading-tight">
+                        {profile.name}
+                      </h1>
+                      <LevelBadge level={careerLevel(profile.career)} />
+                    </div>
                     <p className="text-[12px] text-ink-soft mt-1 font-semibold">
                       {profile.age}歳 ·{" "}
                       在 {profile.city || profile.country} {profile.tenure}
@@ -218,9 +223,21 @@ export function ProfileView({
 
           {/* CAREER RIVER (driven by profile.career) */}
           <section className="mt-8 rise" style={{ animationDelay: "0.08s" }}>
-            <h2 className="display font-bold text-[22px] leading-tight text-ink mb-4">
-              歩んできた軌跡
-            </h2>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h2 className="display font-bold text-[22px] leading-tight text-ink">
+                歩んできた軌跡
+              </h2>
+              <LevelBadge
+                level={careerLevel(profile.career)}
+                size="sm"
+                withTooltip={false}
+              />
+            </div>
+            <p className="text-[10px] text-ink-faint leading-relaxed mb-4">
+              Lv は <strong>国・業界・企業・職種</strong> のうち、最も多くの
+              種類を経験している軸の数で上がります(例: 同じ会社でも職種が
+              変わると Lv.2 へ)。
+            </p>
             <div className="space-y-5">
               {profile.career.length === 0 ? (
                 <p className="text-[12px] text-ink-faint">

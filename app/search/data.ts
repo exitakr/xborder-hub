@@ -20,6 +20,10 @@ export type Person = {
   rating?: string;
   sessions?: number;
   badge: string;
+  /** Career level — derived from career diversity. See lib/profile/level.ts.
+   * Undefined for samples and when the directory RPC (0009) hasn't been
+   * applied yet, in which case the LevelBadge renders nothing. */
+  level?: number;
   /** Set when this row came from SAMPLE_PEOPLE so admins can dismiss it. */
   _sampleKey?: string;
 };
