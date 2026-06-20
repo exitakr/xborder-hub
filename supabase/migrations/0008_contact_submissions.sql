@@ -44,10 +44,11 @@ alter table public.contact_submissions enable row level security;
 -- 送信は誰でも可(未ログインの問い合わせを受け付けるため)。
 -- ただし anon と authenticated に分けて、authenticated には user_id を
 -- 自分自身に強制する。
-drop policy if exists "contact_insert_anon"  on public.contact_submissions;
-drop policy if exists "contact_insert_auth"  on public.contact_submissions;
-drop policy if exists "contact_select_admin" on public.contact_submissions;
-drop policy if exists "contact_select_own"   on public.contact_submissions;
+drop policy if exists "contact_insert_anon"   on public.contact_submissions;
+drop policy if exists "contact_insert_auth"   on public.contact_submissions;
+drop policy if exists "contact_select_admin"  on public.contact_submissions;
+drop policy if exists "contact_select_own"    on public.contact_submissions;
+drop policy if exists "contact_update_admin"  on public.contact_submissions;
 
 create policy "contact_insert_anon"
   on public.contact_submissions for insert
