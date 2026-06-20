@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { needsOnboarding } from "@/lib/profile/onboarding";
@@ -92,6 +92,7 @@ export async function signUpWithPassword(
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  (await cookies()).delete("xb_onb");
   redirect("/login");
 }
 

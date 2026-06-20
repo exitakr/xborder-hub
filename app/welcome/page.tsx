@@ -16,7 +16,7 @@ type Props = {
 };
 
 export default async function WelcomePage({ searchParams }: Props) {
-  const user = await requireUser("/welcome");
+  await requireUser("/welcome");
   const { next } = await searchParams;
 
   // Already onboarded (or migration missing) — one-directional bounce,
@@ -25,10 +25,5 @@ export default async function WelcomePage({ searchParams }: Props) {
     redirect(next && next.startsWith("/") ? next : "/mypage");
   }
 
-  // Pre-fill name from the email local-part so step 1 isn't a blocker.
-  const initialName = user.email
-    ? user.email.split("@")[0]!.replace(/[._-]/g, " ").trim()
-    : "";
-
-  return <WelcomeClient next={next} initialName={initialName} />;
+  return <WelcomeClient next={next} />;
 }

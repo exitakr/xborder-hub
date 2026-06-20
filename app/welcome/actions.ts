@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -19,32 +20,22 @@ function isValidStep(s: CareerStep): boolean {
   );
 }
 
-/** Mark the user as onboarded without collecting any profile data. */
-export async function skipOnboarding(): Promise<OnboardingResult> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { ok: false, error: "ログインが必要です" };
-
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ id: user.id, onboarded_at: new Date().toISOString() }, { onConflict: "id" });
-
-    if (error) {
-      console.error("[welcome] skipOnboarding", error);
-      return { ok: false, error: "スキップに失敗しました。" };
-    }
-    revalidatePath("/mypage");
-    return { ok: true };
-  } catch (err) {
-    console.error("[welcome] skipOnboarding (catch)", err);
-    return { ok: false, error: "通信エラーが発生しました。" };
-  }
-}
-
 export type OnboardingResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Marks the user's onboarded session for the edge middleware fast-path so
+ * subsequent navigations skip the profiles DB read. Cleared on signOut.
+ */
+async function setOnboardedCookie() {
+  const jar = await cookies();
+  jar.set("xb_onb", "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: true,
+    path: "/",
+    maxAge: 60 * 60 * 12,
+  });
+}
 
 export async function completeOnboarding(input: {
   displayName: string;
@@ -123,6 +114,7 @@ export async function completeOnboarding(input: {
       return { ok: false, error: "保存に失敗しました。もう一度お試しください。" };
     }
 
+    await setOnboardedCookie();
     revalidatePath("/mypage");
     return { ok: true };
   } catch (err) {

@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
  * onboarded_at is null. Any error / missing row / missing column returns
  * false so users are never trapped in /welcome by infrastructure issues
  * (e.g. migration 0004 not applied yet).
+ *
+ * NOTE: middleware.ts applies a stricter gate that also requires a
+ * non-empty display_name. This helper stays on onboarded_at alone so the
+ * one-directional bounce in app/welcome/page.tsx can't loop.
  */
 export async function needsOnboarding(): Promise<boolean> {
   try {

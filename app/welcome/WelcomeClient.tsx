@@ -20,17 +20,11 @@ import { completeOnboarding } from "./actions";
 const STEPS = ["お名前", "あなたの移動", "仕事", "歩んできた軌跡"] as const;
 const CAREER_STEP = 3;
 
-export function WelcomeClient({
-  next,
-  initialName = "",
-}: {
-  next?: string;
-  initialName?: string;
-}) {
+export function WelcomeClient({ next }: { next?: string }) {
   const router = useRouter();
   const [, setLocalProfile] = useProfile();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState(initialName);
+  const [name, setName] = useState("");
   const [fromCountry, setFromCountry] = useState("Japan");
   const [fromCity, setFromCity] = useState("");
   const [toCountry, setToCountry] = useState("");

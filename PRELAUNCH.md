@@ -52,6 +52,16 @@
     未実行でもアプリは動く(検索カードの Lv バッジが消えるだけ)。
   - 自分のプロフィール / マイページ / AppTopBar の Lv 表示は localStorage 側の
     `career` から即計算するので 0009 と無関係に常に出る
+- [ ] **`supabase/migrations/0010_onboarding_required.sql` を SQL Editor で実行(必須)**
+  - `handle_new_user()` から email ローカル部 → display_name の自動補完を撤去。
+    新規登録ユーザーの display_name は NULL になり、`/welcome` ウィザード完了が
+    強制される(`middleware.ts` が未オンボーディング者を全保護ルートで /welcome に
+    リダイレクト)
+  - **バックフィル**: display_name が email ローカル部のままの **全ユーザー**
+    (オンボーディング済みも含む)について `display_name = null, onboarded_at = null`
+    にリセット。次回ログイン時に /welcome へ強制送還され、本人として表示名を
+    入力し直すまで他のページは使えない
+  - 名前を別途設定済み(メアド由来でない)のユーザーには影響なし
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -190,11 +200,21 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010)を流したあとログイン → 下記をひと通り
 
-- [ ] **新規登録** → `/welcome` ウィザード → 完了 → `/mypage` に実名表示。
-  既存アカウントは /welcome を経由しないこと、パスワード再設定リンクが
-  /reset-password に直行することも確認
+- [ ] **新規登録 → 強制オンボーディング** — 確認メールリンク → `/welcome` ウィザード
+  に着地(名前欄は **空**、メアド由来の自動補完が無いこと)。途中で URL バーから
+  `/threads`, `/mypage`, `/home`, `/search`, `/salaries`, `/profile`, `/notifications`
+  に直アクセス → **すべて `/welcome?next=<元のパス>` に強制リダイレクト**される
+  (middleware.ts が onboarded_at + display_name を毎リクエストチェック)
+- [ ] **/welcome 完了後** — 指定 next に着地し、以後すべての保護ルートで
+  リダイレクトされない。`xb_onb=1` cookie が DevTools の Application タブに見える
+  (12時間キャッシュ。サインアウトで削除)
+- [ ] **既存メアド由来名ユーザー** — 0010 実行後、自分(exitakr@gmail.com で
+  display_name = "exitakr" のはず)で再ログイン → /welcome に戻され、本人として
+  表示名を入力 → 完了後はメアドが画面のどこにも残らない
+- 既存アカウント(別名で登録済み)は /welcome を経由しないこと、パスワード再設定
+  リンクが /reset-password に直行することも確認
 - [ ] **プロフィール連携** — `/mypage` で職歴・スキル・志望・自己紹介を保存 →
   別ブラウザ(またはシークレットウィンドウ)で同じアカウントにログインし、
   入力内容が反映されること(DB が真実の源。端末跨ぎで一致)。
