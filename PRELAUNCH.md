@@ -69,12 +69,24 @@
     - `http://localhost:3000/**`(開発用)
   - ⚠️ Vercel 側の `NEXT_PUBLIC_SITE_URL` を同じドメインに設定しておくこと
     (`app/login/actions.ts:14-24` の `siteOrigin()` がこれを最優先で参照)
-- [ ] Authentication → Email Templates の Confirm signup / Magic Link / Recovery が
-  `{{ .ConfirmationURL }}` を使っていること(初期値で OK)。コールバックは
-  PKCE(`?code=`)と token_hash(`?token_hash=&type=`)の**両方**に対応済なので、
-  どちらのテンプレート形式でも確認リンクは通る
+- [ ] **重要: Email Templates をデフォルトの `{{ .ConfirmationURL }}` から
+  `token_hash` 直リンクに変更する(必須・既知の不具合の修正)**
+  - `@supabase/ssr` はデフォルトで PKCE フローを使うため、`{{ .ConfirmationURL }}`
+    のデフォルトリンクは「サインアップしたブラウザの Cookie に保存された
+    code_verifier」と突き合わせる方式。**サインアップした端末/ブラウザと、
+    確認メールのリンクをクリックする端末/ブラウザが違うと認証が失敗する**
+    (例: PC で登録 → スマホの Gmail でリンクをタップ → エラー)。
+    実際に「メールは届くがリンククリック後に認証失敗」の主因
+  - `app/auth/callback/route.ts:40-43` は token_hash 方式(ブラウザに依存しない
+    検証)にも対応済みなので、各テンプレートの `href="{{ .ConfirmationURL }}"` を
+    以下に置き換えるだけで解決(コード変更不要):
+    - Confirm signup: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&next=%2Fhome`
+    - Magic Link: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink&next=%2Fhome`
+    - Reset Password: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Freset-password`
+    - Change Email Address: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email_change&next=%2Fmypage`
   - 件名・本文を日本語に書き換えることを推奨(例: 件名「【X Border Hub】メール
-    アドレスの確認」)。`{{ .ConfirmationURL }}` プレースホルダはそのまま残す
+    アドレスの確認」)。`{{ .SiteURL }}` / `{{ .TokenHash }}` プレースホルダのみ
+    そのまま残す
 - [ ] **カスタム SMTP(Resend)を設定** — Authentication → Emails → SMTP Settings
   - Supabase 内蔵 SMTP は厳しいレート制限(1 時間数通)+ 送信元が
     `noreply@mail.app.supabase.io` でスパム判定されやすい。公開前に必ず切り替え
