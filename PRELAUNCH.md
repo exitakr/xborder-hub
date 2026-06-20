@@ -58,24 +58,41 @@
     where id = (select id from auth.users where email = 'exitakr@gmail.com');
   ```
   設定後、そのアカウントで `/admin` にアクセスできる(非管理者には 404)
-- [ ] Supabase Dashboard → Authentication → URL Configuration
-  - Site URL: 本番ドメイン(例: `https://xborder-hub.vercel.app`)
-  - Redirect URLs(**ここに無い URL に届いた確認リンクは無効化される**):
-    `https://xborder-hub.vercel.app/auth/callback`,
-    `https://xborder-hub.vercel.app/reset-password`,
-    開発用も `http://localhost:3000/auth/callback`,
-    `http://localhost:3000/reset-password`
-  - カスタムドメイン / プレビュー URL からもサインアップを試すなら、それらも追加
-  - ⚠️ Vercel の `NEXT_PUBLIC_SITE_URL` を設定しておくと、確認メールのリンクは
-    常にこの URL を指すようになり、ホスト不一致での失敗を防げる(コード側対応済)
+- [ ] **Supabase Dashboard → Authentication → URL Configuration**(認証エラー
+  の最大原因。新規登録メールのリンクがここに無い URL を指していると `otp_expired`
+  もしくは「認証に失敗しました」になる)
+  - **Site URL**: 独自ドメイン取得後は `https://xbordercareer.com`。それまでは
+    `https://xborder-hub.vercel.app`
+  - **Redirect URLs**(以下を全部追加。ワイルドカード `**` 推奨):
+    - `https://xbordercareer.com/**`
+    - `https://xborder-hub.vercel.app/**`(旧 URL からのリンク保険)
+    - `http://localhost:3000/**`(開発用)
+  - ⚠️ Vercel 側の `NEXT_PUBLIC_SITE_URL` を同じドメインに設定しておくこと
+    (`app/login/actions.ts:14-24` の `siteOrigin()` がこれを最優先で参照)
 - [ ] Authentication → Email Templates の Confirm signup / Magic Link / Recovery が
   `{{ .ConfirmationURL }}` を使っていること(初期値で OK)。コールバックは
   PKCE(`?code=`)と token_hash(`?token_hash=&type=`)の**両方**に対応済なので、
   どちらのテンプレート形式でも確認リンクは通る
-- [ ] **メール送信(SMTP)を本番用に設定** — Authentication → Emails → SMTP Settings。
-  Supabase 内蔵の送信は 1 時間あたり数通の厳しいレート制限があり、迷惑メール送りに
-  なりやすい。公開時は Resend / Postmark / Amazon SES などのカスタム SMTP を設定する
-  (未設定だと公開直後に新規登録メールが届かなくなる可能性が高い)
+  - 件名・本文を日本語に書き換えることを推奨(例: 件名「【X Border Hub】メール
+    アドレスの確認」)。`{{ .ConfirmationURL }}` プレースホルダはそのまま残す
+- [ ] **カスタム SMTP(Resend)を設定** — Authentication → Emails → SMTP Settings
+  - Supabase 内蔵 SMTP は厳しいレート制限(1 時間数通)+ 送信元が
+    `noreply@mail.app.supabase.io` でスパム判定されやすい。公開前に必ず切り替え
+  - **Resend セットアップ手順**(無料枠 3,000 通/月):
+    1. https://resend.com でサインアップ(GitHub OAuth)
+    2. **Domains → Add Domain** → `xbordercareer.com`
+    3. Resend が表示する DNS レコード(SPF / DKIM × 3 / DMARC)を Xserver の
+       **DNSレコード設定**に追加 → Resend 側で「Verify DNS」が全部緑になるまで待つ
+    4. **API Keys → Create API Key** で発行(SMTP パスワードとして使う)
+  - **Supabase SMTP 設定値**:
+    - Sender email: `noreply@xbordercareer.com`
+    - Sender name: `X Border Hub`
+    - Host: `smtp.resend.com`
+    - Port: `465`(SSL) または `587`(STARTTLS)
+    - Username: `resend`
+    - Password: 上記の Resend API Key
+    - 保存後「Send test email」で自分宛に届くこと、Gmail の「ソースを表示」で
+      SPF=PASS / DKIM=PASS / DMARC=PASS を確認
 - [ ] 新規登録 → 確認メール受信 → リンククリック → `/auth/callback` 経由で
   `/welcome` に着地する一連を、実際のメールアドレスで 1 度通す
 - [ ] Database → Roles → `service_role` の鍵を Vercel に保存していない
@@ -133,8 +150,9 @@
 - [ ] **B2B マネタイズ(将来)** — グローバル人材会員を集めてハブ化したのち、
   企業からの求人広告掲載で収益化。実装は別フェーズ(求人投稿フォーム・
   企業ダッシュボード・課金経路・求人 RLS テーブル)
-- [ ] **トランザクションメール (Resend / Postmark)** — Coffee Chat 承認・
-  コミュニティ申請受領などはアプリ内通知のみ。メール送付は別 PR
+- [ ] **アプリ内通知のメール送付** — Coffee Chat 承認・コミュニティ申請受領などは
+  現状アプリ内通知のみ。Supabase の認証メールが Resend 経由になれば、同じ Resend
+  プロジェクトでアプリからのトランザクションメール送信も追加可能(別 PR)
 - [ ] **i18n (DeepL)** — 日本語専用。EN / VI などは別 PR
 
 ## E. セキュリティ(Phase 5 にロードマップ済)
