@@ -74,12 +74,16 @@ export function ThreadsClient({
   const UUID_RE =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // Real DB threads when present; otherwise the seeded samples are shown to
-  // everyone. Admin-dismissed samples are filtered out for all users.
+  // Always show seeded samples alongside DB threads so the feed never reads
+  // as empty for newcomers. Samples are tagged so the card can render a
+  // visible "サンプル" badge. Admin-dismissed samples (dismissed_samples) are
+  // still filtered out for all users.
   const dismissed = useMemo(() => new Set(dismissedKeys), [dismissedKeys]);
-  const source = (dbThreads.length > 0 ? dbThreads : THREADS).filter(
-    (t) => !dismissed.has(`thread:${t.id}`),
-  );
+  const dbIds = useMemo(() => new Set(dbThreads.map((t) => t.id)), [dbThreads]);
+  const source = [
+    ...dbThreads,
+    ...THREADS.filter((s) => !dbIds.has(s.id)),
+  ].filter((t) => !dismissed.has(`thread:${t.id}`));
 
   const [, startDismiss] = useTransition();
   function hideSample(key: string) {
@@ -291,6 +295,11 @@ export function ThreadsClient({
                     </div>
 
                     <h3 className="display font-bold text-[15px] lg:text-[16px] text-ink leading-tight mb-1">
+                      {!UUID_RE.test(t.id) && (
+                        <span className="inline-block align-middle text-[9px] uppercase tracking-wider bg-ink/5 text-ink-soft px-1.5 py-0.5 rounded-full font-bold border border-ink/10 mr-1.5">
+                          サンプル
+                        </span>
+                      )}
                       {t.title}
                     </h3>
                     <p className="text-[12px] text-ink-soft leading-relaxed line-clamp-2 mb-2">

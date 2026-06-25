@@ -21,8 +21,12 @@ export async function updateThreadAction(input: {
   const body = input.body.trim();
   if (title.length < 5)
     return { ok: false, error: "タイトルは 5 文字以上で入力してください。" };
+  if (title.length > 200)
+    return { ok: false, error: "タイトルは 200 文字以内で入力してください。" };
   if (body.length < 10)
     return { ok: false, error: "本文は 10 文字以上で入力してください。" };
+  if (body.length > 10000)
+    return { ok: false, error: "本文は 10000 文字以内で入力してください。" };
 
   try {
     const supabase = await createClient();

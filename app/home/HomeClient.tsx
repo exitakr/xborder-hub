@@ -58,13 +58,19 @@ export function HomeClient({
     (item) => !dismissed.has(`trend:${trendKey}:${item.name}`),
   );
 
-  // Trending threads come from the DB when present; otherwise the seeded
-  // samples are shown to everyone. Admin-dismissed items are filtered out.
-  const trending = (
-    trendingThreads && trendingThreads.length > 0
-      ? trendingThreads
-      : TRENDING_THREADS
-  ).filter((t) => !dismissed.has(`thread:${t.id}`));
+  // Always show seeded samples alongside DB threads so the home never feels
+  // empty for newcomers, even after real activity starts flowing in.
+  // De-dup by id (DB takes precedence) and let admins hide individual samples
+  // through dismissed_samples — that filter still applies to both sources.
+  const dbTrending = trendingThreads ?? [];
+  const dbIds = new Set(dbTrending.map((t) => t.id));
+  const trending = [
+    ...dbTrending,
+    ...TRENDING_THREADS.filter((s) => !dbIds.has(s.id)).map((s) => ({
+      ...s,
+      isSample: true as const,
+    })),
+  ].filter((t) => !dismissed.has(`thread:${t.id}`));
 
   return (
     <>
@@ -236,9 +242,16 @@ export function HomeClient({
                       className="block bg-cream border border-ink rounded-2xl p-3 shadow-pop-sm hover:shadow-pop transition-shadow"
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
-                          {t.category}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] uppercase tracking-wider bg-blue-soft text-blue-deep px-2 py-0.5 rounded-full font-bold border border-blue/30">
+                            {t.category}
+                          </span>
+                          {(t as { isSample?: boolean }).isSample ? (
+                            <span className="text-[9px] uppercase tracking-wider bg-ink/5 text-ink-soft px-2 py-0.5 rounded-full font-bold border border-ink/10">
+                              サンプル
+                            </span>
+                          ) : null}
+                        </div>
                         <span className="text-[10px] text-ink-faint font-bold">
                           👍 {t.ups} · 💬 {t.replies}
                         </span>

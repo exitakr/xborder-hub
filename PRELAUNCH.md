@@ -58,6 +58,9 @@
     場合のみ `CONTACT_NOTIFY_EMAIL` を設定(未設定時は `contact@xbordercareer.com`)
   - `RESEND_API_KEY` 未設定でもフォーム送信自体は失敗しない(通知だけ
     スキップされ、コンソールに warning が出る。DB 保存は必ず成功する)
+  - ⚠️ Vercel → Settings → Environment Variables で `RESEND_API_KEY` を保存する際、
+    **"Sensitive" にチェック**を入れる(値が UI から再表示できなくなり、デプロイログ
+    にも出ない)。`SUPABASE_SERVICE_ROLE_KEY`(本リポは未使用)を将来追加する場合も同様
 - [ ] **`supabase/migrations/0009_member_directory_level.sql` を SQL Editor で実行**
   - 検索カードのユーザー名横に「Lv.N」バッジを出すため、`fetch_member_directory`
     RPC に `level int` 列を追加(国・業界・企業・職種の distinct 最大数)。
@@ -74,6 +77,12 @@
     にリセット。次回ログイン時に /welcome へ強制送還され、本人として表示名を
     入力し直すまで他のページは使えない
   - 名前を別途設定済み(メアド由来でない)のユーザーには影響なし
+- [ ] **`supabase/migrations/0011_onboarding_backfill_fix.sql` を SQL Editor で実行**
+  - 0010 のバックフィルは完全一致のみで、"Exitakr"(大文字)や " exitakr "
+    (空白入り)のような表示名を取りこぼしていた。これを case-insensitive +
+    trim 比較で再バックフィル。0010 と同じく `display_name` と `onboarded_at` を
+    NULL に戻して /welcome へ再誘導する
+  - 0010 を既に実行済みでも安全(冪等)。対象ユーザーがいない場合は 0 件 update
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -212,7 +221,7 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録 → 強制オンボーディング** — 確認メールリンク → `/welcome` ウィザード
   に着地(名前欄は **空**、メアド由来の自動補完が無いこと)。途中で URL バーから
