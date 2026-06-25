@@ -24,11 +24,6 @@ export default async function ContactPage() {
       <h1 className="display font-bold text-[28px] lg:text-[36px] leading-tight text-ink mt-1 mb-3">
         お問い合わせ
       </h1>
-      <p className="text-[12px] text-ink-faint mb-8">
-        ご質問・ご要望・取材依頼・アカウント削除依頼などはこちらから。
-        通常 1〜3 営業日以内にご返信します。
-      </p>
-
       <div className="bg-paper border border-ink/10 rounded-2xl p-5 lg:p-7 my-6 shadow-pop-sm">
         <ContactForm
           initialEmail={user?.email ?? ""}

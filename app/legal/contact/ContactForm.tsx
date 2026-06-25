@@ -20,10 +20,6 @@ export function ContactForm({
         <p className="display font-bold text-[16px] text-ink mb-1">
           ✓ 送信しました
         </p>
-        <p className="text-[12px] text-ink-soft leading-relaxed">
-          内容を確認のうえ、通常 1〜3 営業日以内にご返信します。
-          急ぎの場合は件名に「至急」とご記載ください。
-        </p>
       </div>
     );
   }

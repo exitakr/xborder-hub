@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { notifyContactSubmission } from "@/lib/email/notifyContact";
 
 export type ContactCategory =
   | "general"
@@ -27,9 +28,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Accept a contact-form submission. Persists into contact_submissions
- * (migration 0008) which the operator can review from Supabase Dashboard
- * → Table Editor. Anonymous users may submit; authenticated users' rows
- * carry their user_id so they can later view their own history.
+ * (migration 0008), which remains the source of truth and can be reviewed
+ * from Supabase Dashboard → Table Editor. Anonymous users may submit;
+ * authenticated users' rows carry their user_id so they can later view
+ * their own history. Also fires a best-effort notification email (see
+ * lib/email/notifyContact.ts) so submissions show up as a list in an inbox
+ * without needing the Supabase dashboard.
  */
 export async function submitContact(
   _prev: ContactState,
@@ -86,6 +90,8 @@ export async function submitContact(
       console.error("[contact] submitContact", error);
       return { error: "送信に失敗しました。時間をおいてお試しください。" };
     }
+
+    await notifyContactSubmission({ category, subject, body, email, name: name || null });
     return { ok: true };
   } catch (err) {
     console.error("[contact] submitContact (catch)", err);

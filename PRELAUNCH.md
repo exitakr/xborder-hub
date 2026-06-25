@@ -46,6 +46,18 @@
   - `/legal/contact` のフォーム送信を保存するテーブル。未実行のうちは
     お問い合わせフォーム送信時に「DB がまだ準備できていません」エラー
   - 受信は Supabase Dashboard → Table Editor → contact_submissions で一覧確認
+    (DB が常に正本。下記のメール通知が失敗してもここで必ず確認できる)
+- [ ] **お問い合わせ通知メールの宛先を実際に受信できるようにする**
+  (`lib/email/notifyContact.ts` が送信元 `noreply@xbordercareer.com` から
+  `contact@xbordercareer.com` 宛に毎送信を通知する。Resend は送信専用なので、
+  この宛先で実際に受信するには別途設定が必要)
+  - Xserver の **メールアカウント設定** で `contact@xbordercareer.com` を作成し、
+    届いたら手元の Gmail に自動転送する設定にするのが簡単(Xserver 側の
+    「メール転送設定」)
+  - Vercel 環境変数に `RESEND_API_KEY`(Resend の API Key)と、宛先を変えたい
+    場合のみ `CONTACT_NOTIFY_EMAIL` を設定(未設定時は `contact@xbordercareer.com`)
+  - `RESEND_API_KEY` 未設定でもフォーム送信自体は失敗しない(通知だけ
+    スキップされ、コンソールに warning が出る。DB 保存は必ず成功する)
 - [ ] **`supabase/migrations/0009_member_directory_level.sql` を SQL Editor で実行**
   - 検索カードのユーザー名横に「Lv.N」バッジを出すため、`fetch_member_directory`
     RPC に `level int` 列を追加(国・業界・企業・職種の distinct 最大数)。
