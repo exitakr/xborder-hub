@@ -1,18 +1,25 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { CITIES, FLOWS, type City } from "./data";
-import { WORLD_COASTLINES } from "./world-coastlines";
 
-const VIEW_W = 720;
-const VIEW_H = 360;
-const MIN_W = VIEW_W / 5; // max zoom-in
-const MAX_W = VIEW_W * 1.5; // max zoom-out
+/**
+ * Editorial world map for the home hero. Japan-centred Pacific projection so
+ * Tokyo — the most common origin — sits at the heart of the frame, with
+ * career flows arcing outward to the world. Light, brand-aligned styling.
+ *
+ * Props are unchanged from the previous implementation so HomeClient keeps
+ * working as-is: `highlightedFlow` (driven by the 移動トレンド buttons) lights
+ * up a single route; `className` is forwarded to the root element.
+ */
 
-/** Equirectangular projection from (lng, lat) to SVG coords. */
+const VIEW_W = 1200;
+const VIEW_H = 600;
+const CENTER_LNG = 139.69; // Tokyo — keeps Japan dead-centre
+
+/** Equirectangular projection, centred on Japan. */
 function project(lng: number, lat: number): [number, number] {
-  const centerLng = 10;
-  let l = lng - centerLng;
+  let l = lng - CENTER_LNG;
   if (l > 180) l -= 360;
   if (l < -180) l += 360;
   const x = ((l + 180) / 360) * VIEW_W;
@@ -20,47 +27,71 @@ function project(lng: number, lat: number): [number, number] {
   return [x, y];
 }
 
-/** Build an SVG path command string from a lng/lat polygon. */
-function polygonToPath(poly: [number, number][]): string {
-  let d = "";
-  for (let i = 0; i < poly.length; i++) {
-    const [lng, lat] = poly[i]!;
-    const [x, y] = project(lng, lat);
-    d += `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+/** Gentle quadratic arc that always bows upward/outward. */
+function arcPath(a: Pt, b: Pt): string {
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const nx = -dy / dist;
+  const ny = dx / dist;
+  const k = dist * 0.16;
+  let cx = mx + nx * k;
+  let cy = my + ny * k;
+  if (cy > my) {
+    cx = mx - nx * k;
+    cy = my - ny * k;
   }
-  return d + "Z";
+  return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(
+    1,
+  )} ${b.x.toFixed(1)},${b.y.toFixed(1)}`;
 }
 
-type Role = "hub" | "sender" | "receiver" | "quiet";
-const ROLE_COLOR: Record<Role, string> = {
-  hub: "#0055A4",
-  sender: "#E89943",
-  receiver: "#1FA89E",
-  quiet: "#94A3B8",
+type Pt = { x: number; y: number };
+type Positioned = City & Pt;
+
+const BLUE = new Set(["NYC", "SFO", "LAX", "LON", "DXB", "SEA"]);
+
+/** Big editorial labels — country (bold ink) over city (faint caps). */
+type LabelDef = {
+  code: string;
+  country?: string;
+  city?: string;
+  anchor: "start" | "middle" | "end";
+  ccx?: number;
+  ccy?: number;
+  csize?: number;
+  scx?: number;
+  scy?: number;
 };
-type Props = {
+const LABELS: LabelDef[] = [
+  { code: "TYO", country: "Japan", city: "TOKYO", anchor: "middle", ccx: 0, ccy: -42, csize: 30, scx: 0, scy: 60 },
+  { code: "SIN", country: "Singapore", city: "SIN", anchor: "end", ccx: -14, ccy: 6, csize: 21, scx: -14, scy: 24 },
+  { code: "NYC", country: "USA", city: "NEW YORK", anchor: "end", ccx: -12, ccy: -22, csize: 21, scx: -12, scy: -6 },
+  { code: "SFO", city: "SAN FRANCISCO", anchor: "end", scx: -10, scy: 4 },
+  { code: "LAX", city: "LOS ANGELES", anchor: "start", scx: 8, scy: 18 },
+  { code: "LON", country: "UK", city: "LONDON", anchor: "start", ccx: 10, ccy: -8, csize: 21, scx: 10, scy: 11 },
+  { code: "BER", country: "Germany", city: "BERLIN", anchor: "start", ccx: 8, ccy: 20, csize: 17, scx: 8, scy: 36 },
+  { code: "DXB", country: "UAE", city: "DUBAI", anchor: "start", ccx: 10, ccy: 5, csize: 17, scx: 10, scy: 22 },
+  { code: "BKK", country: "Thailand", city: "BANGKOK", anchor: "end", ccx: -10, ccy: 2, csize: 17, scx: -10, scy: 18 },
+  { code: "SYD", country: "Australia", city: "SYDNEY", anchor: "start", ccx: 10, ccy: 0, csize: 19, scx: 10, scy: 16 },
+  { code: "HKG", country: "Hong Kong", anchor: "end", ccx: -9, ccy: 5, csize: 17 },
+  { code: "SEL", city: "SEOUL", anchor: "end", scx: -8, scy: -6 },
+];
+
+const FONT = "Manrope, 'Zen Kaku Gothic New', sans-serif";
+
+export function GlobalMap({
+  className,
+  highlightedFlow,
+}: {
   className?: string;
   highlightedFlow?: { from: string; to: string } | null;
-};
-
-function clamp(v: number, lo: number, hi: number) {
-  return Math.min(hi, Math.max(lo, v));
-}
-
-export function GlobalMap({ className, highlightedFlow }: Props) {
-  const [vp, setVp] = useState({ x: 0, y: 0, w: VIEW_W, h: VIEW_H });
+}) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const drag = useRef<{
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    scale: number;
-    moved: boolean;
-  } | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
 
-  const positioned = useMemo<(City & { x: number; y: number })[]>(
+  const positioned = useMemo<Positioned[]>(
     () =>
       CITIES.map((c) => {
         const [x, y] = project(c.lng, c.lat);
@@ -74,154 +105,50 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
     [positioned],
   );
 
-  const maxFlow = useMemo(
-    () => FLOWS.reduce((m, f) => Math.max(m, f.count), 0),
-    [],
-  );
+  // Top outbound routes from Tokyo get an animated comet + draw-on accent.
+  const comets = useMemo(() => {
+    return FLOWS.filter((f) => f.from === "TYO")
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+      .map((f) => {
+        const a = lookup[f.from];
+        const b = lookup[f.to];
+        return a && b ? { d: arcPath(a, b), to: f.to } : null;
+      })
+      .filter(Boolean) as { d: string; to: string }[];
+  }, [lookup]);
 
-  /** Activity = in + out flow count for the city. Drives bubble size. */
-  const activityByCity = useMemo(() => {
-    const m: Record<string, { in: number; out: number }> = {};
-    for (const c of CITIES) m[c.code] = { in: 0, out: 0 };
-    for (const f of FLOWS) {
-      if (m[f.from]) m[f.from]!.out += f.count;
-      if (m[f.to]) m[f.to]!.in += f.count;
-    }
-    return m;
-  }, []);
-
-  const maxActivity = useMemo(() => {
-    let m = 1;
-    for (const code in activityByCity) {
-      const a = activityByCity[code]!;
-      m = Math.max(m, a.in + a.out);
-    }
-    return m;
-  }, [activityByCity]);
-
-  function radiusFor(code: string): number {
-    const a = activityByCity[code];
-    if (!a) return 3.5;
-    const total = a.in + a.out;
-    // sqrt scale for proper area perception
-    return 4 + Math.sqrt(total / maxActivity) * 14;
-  }
-
-  function roleFor(code: string): Role {
-    const a = activityByCity[code];
-    if (!a) return "quiet";
-    const total = a.in + a.out;
-    if (total === 0) return "quiet";
-    const net = (a.in - a.out) / total;
-    if (Math.abs(net) < 0.2) return "hub";
-    return net > 0 ? "receiver" : "sender";
-  }
-
-  // Pre-compute coastline paths once.
-  const coastPaths = useMemo(
-    () => WORLD_COASTLINES.map(polygonToPath),
-    [],
-  );
-
-  function zoomBy(factor: number, focusX?: number, focusY?: number) {
-    setVp((v) => {
-      const newW = clamp(v.w / factor, MIN_W, MAX_W);
-      const newH = newW * (VIEW_H / VIEW_W);
-      const fx = focusX ?? v.x + v.w / 2;
-      const fy = focusY ?? v.y + v.h / 2;
-      const newX = fx - (fx - v.x) * (newW / v.w);
-      const newY = fy - (fy - v.y) * (newH / v.h);
-      return { x: newX, y: newY, w: newW, h: newH };
-    });
-  }
-
-  function reset() {
-    setVp({ x: 0, y: 0, w: VIEW_W, h: VIEW_H });
-  }
-
-  function screenToView(clientX: number, clientY: number) {
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
-    return {
-      x: vp.x + ((clientX - rect.left) / rect.width) * vp.w,
-      y: vp.y + ((clientY - rect.top) / rect.height) * vp.h,
-    };
-  }
-
-  function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const scale = vp.w / rect.width;
-    drag.current = {
-      x: e.clientX,
-      y: e.clientY,
-      vx: vp.x,
-      vy: vp.y,
-      scale,
-      moved: false,
-    };
-    (e.currentTarget as SVGElement).setPointerCapture(e.pointerId);
-  }
-
-  function onPointerMove(e: React.PointerEvent<SVGSVGElement>) {
-    if (!drag.current) return;
-    const dx = (e.clientX - drag.current.x) * drag.current.scale;
-    const dy = (e.clientY - drag.current.y) * drag.current.scale;
-    if (Math.abs(dx) + Math.abs(dy) > 1) drag.current.moved = true;
-    setVp((v) => ({
-      ...v,
-      x: drag.current!.vx - dx,
-      y: drag.current!.vy - dy,
-    }));
-  }
-
-  function onPointerUp(e: React.PointerEvent<SVGSVGElement>) {
-    if (
-      drag.current &&
-      (e.currentTarget as SVGElement).hasPointerCapture(e.pointerId)
-    ) {
-      (e.currentTarget as SVGElement).releasePointerCapture(e.pointerId);
-    }
-    drag.current = null;
-  }
-
-  function onWheel(e: React.WheelEvent<SVGSVGElement>) {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.85 : 1.18;
-    const pt = screenToView(e.clientX, e.clientY);
-    zoomBy(factor, pt.x, pt.y);
-  }
-
-  // Decide which city labels to draw — only big bubbles, plus the hovered
-  // / highlighted city so the user can always read what they touched.
-  function shouldLabel(code: string, r: number): boolean {
-    if (hovered === code) return true;
-    if (
-      highlightedFlow &&
-      (highlightedFlow.from === code || highlightedFlow.to === code)
-    )
-      return true;
-    return r >= 10;
-  }
+  const tokyo = lookup["TYO"];
 
   return (
-    <div className={`${className ?? ""} relative`}>
+    <div
+      className={`${className ?? ""} relative w-full overflow-hidden rounded-xl aspect-[1200/375]`}
+      style={{
+        backgroundImage:
+          "radial-gradient(60% 80% at 50% 38%, rgba(255,201,60,.16), transparent 60%)," +
+          "radial-gradient(90% 90% at 50% 120%, rgba(31,168,158,.10), transparent 60%)," +
+          "linear-gradient(180deg,#FFFFFF 0%, #F7F9FC 100%)",
+      }}
+    >
       <svg
-        ref={svgRef}
-        viewBox={`${vp.x} ${vp.y} ${vp.w} ${vp.h}`}
+        viewBox="0 90 1200 375"
         preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full select-none touch-none cursor-grab active:cursor-grabbing"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onWheel={onWheel}
+        className="w-full h-full block select-none"
       >
         <defs>
+          <linearGradient id="gm-arc" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#0055A4" />
+            <stop offset="100%" stopColor="#1FA89E" stopOpacity="0.12" />
+          </linearGradient>
+          <radialGradient id="gm-jp" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFE9A8" />
+            <stop offset="42%" stopColor="#FFC93C" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#FFC93C" stopOpacity="0" />
+          </radialGradient>
           <marker
-            id="flow-arrow"
+            id="gm-arrow"
             viewBox="0 0 10 10"
-            refX="9"
+            refX="8"
             refY="5"
             markerWidth="5"
             markerHeight="5"
@@ -229,190 +156,206 @@ export function GlobalMap({ className, highlightedFlow }: Props) {
           >
             <path d="M0 0 L10 5 L0 10 z" fill="#0055A4" />
           </marker>
-          <radialGradient id="bubble-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
-            <stop offset="60%" stopColor="currentColor" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-          </radialGradient>
         </defs>
 
-        {/* Equator only — minimal reference line */}
-        <line
-          x1="0"
-          y1={VIEW_H / 2}
-          x2={VIEW_W}
-          y2={VIEW_H / 2}
-          stroke="#0A1F3D"
-          strokeWidth="0.3"
-          opacity="0.08"
-          strokeDasharray="2 4"
-        />
-
-        {/* World coastlines */}
-        <g
-          fill="#0A1F3D"
-          fillOpacity="0.05"
-          stroke="#94A3B8"
-          strokeWidth="0.5"
-          strokeLinejoin="round"
-        >
-          {coastPaths.map((d, i) => (
-            <path key={i} d={d} />
-          ))}
+        {/* Soft abstract land masses (decorative) */}
+        <g fill="#DCE6F1" opacity="0.55">
+          <ellipse cx="330" cy="150" rx="265" ry="82" />
+          <ellipse cx="540" cy="200" rx="155" ry="70" />
+          <ellipse cx="240" cy="330" rx="122" ry="118" />
+          <ellipse cx="590" cy="392" rx="84" ry="44" />
+          <ellipse cx="1000" cy="170" rx="172" ry="102" />
+          <ellipse cx="1110" cy="385" rx="92" ry="115" />
         </g>
 
-        {/* Flows — subtle network in the background */}
-        <g>
-          {FLOWS.map((flow, i) => {
-            const a = lookup[flow.from];
-            const b = lookup[flow.to];
+        {/* All flows — faint network */}
+        <g fill="none" strokeLinecap="round">
+          {FLOWS.map((f, i) => {
+            const a = lookup[f.from];
+            const b = lookup[f.to];
             if (!a || !b) return null;
-
-            const isHighlighted =
+            const isHi =
               highlightedFlow &&
-              flow.from === highlightedFlow.from &&
-              flow.to === highlightedFlow.to;
-            const intensity = flow.count / maxFlow;
-
-            const hoverActive =
-              hovered === null || hovered === flow.from || hovered === flow.to;
-
-            let opacity: number;
-            if (highlightedFlow) {
-              opacity = isHighlighted ? 1 : 0.04;
-            } else {
-              opacity = hoverActive ? 0.18 + intensity * 0.35 : 0.06;
-            }
-
-            const baseWidth = 0.6 + intensity * 1.8;
-            const strokeWidth = isHighlighted ? baseWidth * 1.8 : baseWidth;
-            const stroke = isHighlighted ? "#0055A4" : "#475569";
-
-            const dx = b.x - a.x;
-            const dy = b.y - a.y;
-            const mx = (a.x + b.x) / 2;
-            const my = (a.y + b.y) / 2;
-            const dist = Math.hypot(dx, dy);
-            const lift = Math.min(0.22, 60 / Math.max(40, dist));
-            const cx = mx - dy * lift;
-            const cy = my + dx * lift - dist * 0.08;
-
+              f.from === highlightedFlow.from &&
+              f.to === highlightedFlow.to;
+            const dim = highlightedFlow && !isHi;
             return (
               <path
                 key={i}
-                d={`M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`}
-                fill="none"
-                stroke={stroke}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-                opacity={opacity}
-                markerEnd={isHighlighted ? "url(#flow-arrow)" : undefined}
+                d={arcPath(a, b)}
+                stroke={isHi ? "#0055A4" : "url(#gm-arc)"}
+                strokeWidth={isHi ? 3.2 : 1.8}
+                opacity={isHi ? 1 : dim ? 0.08 : 0.5}
+                markerEnd={isHi ? "url(#gm-arrow)" : undefined}
               />
             );
           })}
         </g>
 
-        {/* City bubbles */}
-        <g>
-          {positioned.map((c) => {
-            const r = radiusFor(c.code);
-            const role = roleFor(c.code);
-            const isInHighlight =
-              highlightedFlow &&
-              (c.code === highlightedFlow.from ||
-                c.code === highlightedFlow.to);
-            const isHover = hovered === c.code;
-            const color = isInHighlight ? "#0055A4" : ROLE_COLOR[role];
-            const dimmed = highlightedFlow && !isInHighlight;
-            const opacity = dimmed ? 0.3 : 1;
-            const drawR = r + (isHover || isInHighlight ? 1.5 : 0);
-
-            return (
-              <g
-                key={c.code}
-                onMouseEnter={() => setHovered(c.code)}
-                onMouseLeave={() => setHovered(null)}
-                opacity={opacity}
-                style={{ cursor: "pointer", color }}
+        {/* Animated draw-on accents + comets on the top Tokyo routes */}
+        {!highlightedFlow &&
+          comets.map((c, i) => (
+            <g key={c.to}>
+              <path
+                d={c.d}
+                fill="none"
+                stroke={i % 2 === 0 ? "#0055A4" : "#1FA89E"}
+                strokeWidth="2"
+                strokeLinecap="round"
+                pathLength={100}
+                strokeDasharray="100"
               >
-                {/* Soft halo */}
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={drawR + 6}
-                  fill="url(#bubble-halo)"
-                  pointerEvents="none"
+                <animate
+                  attributeName="stroke-dashoffset"
+                  values="100;0;0"
+                  keyTimes="0;0.7;1"
+                  dur="5.5s"
+                  begin={`${i * 1.1}s`}
+                  repeatCount="indefinite"
                 />
-                {/* Body */}
+                <animate
+                  attributeName="opacity"
+                  values="0;0.9;0"
+                  keyTimes="0;0.5;1"
+                  dur="5.5s"
+                  begin={`${i * 1.1}s`}
+                  repeatCount="indefinite"
+                />
+              </path>
+              <circle r="3" fill={i % 2 === 0 ? "#0055A4" : "#1FA89E"}>
+                <animateMotion
+                  dur={`${2.8 + i * 0.3}s`}
+                  begin={`${i * 0.5}s`}
+                  repeatCount="indefinite"
+                  path={c.d}
+                />
+              </circle>
+            </g>
+          ))}
+
+        {/* City dots (Tokyo rendered separately as the glowing heart) */}
+        <g>
+          {positioned
+            .filter((c) => c.code !== "TYO")
+            .map((c) => {
+              const r = c.tier === 1 ? 3.8 : c.tier === 2 ? 3 : 2.4;
+              const isHi =
+                highlightedFlow &&
+                (c.code === highlightedFlow.from ||
+                  c.code === highlightedFlow.to);
+              const color = isHi
+                ? "#0055A4"
+                : BLUE.has(c.code)
+                  ? "#0055A4"
+                  : "#1FA89E";
+              const dim = highlightedFlow && !isHi;
+              return (
                 <circle
+                  key={c.code}
                   cx={c.x}
                   cy={c.y}
-                  r={drawR}
+                  r={r + (isHi ? 1.4 : 0)}
                   fill={color}
-                  fillOpacity="0.85"
+                  opacity={dim ? 0.3 : 1}
                   stroke="#FFFFFF"
                   strokeWidth="1"
-                  style={{ transition: "r 120ms" }}
+                  onMouseEnter={() => setHovered(c.code)}
+                  onMouseLeave={() => setHovered(null)}
+                  style={{ cursor: "pointer" }}
                 />
-                {/* White inner dot for the largest bubbles */}
-                {drawR >= 10 && (
-                  <circle
-                    cx={c.x}
-                    cy={c.y}
-                    r={Math.max(2, drawR - 6)}
-                    fill="#FFFFFF"
-                    opacity="0.55"
-                    pointerEvents="none"
-                  />
-                )}
-                {shouldLabel(c.code, drawR) && (
+              );
+            })}
+        </g>
+
+        {/* Tokyo — glowing heart at the centre */}
+        {tokyo && (
+          <g>
+            <circle cx={tokyo.x} cy={tokyo.y} r="16" fill="none" stroke="#FFC93C" strokeWidth="1.4">
+              <animate attributeName="r" values="16;58" dur="3.6s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;0" dur="3.6s" repeatCount="indefinite" />
+            </circle>
+            <circle cx={tokyo.x} cy={tokyo.y} r="16" fill="none" stroke="#FFC93C" strokeWidth="1">
+              <animate attributeName="r" values="16;90" dur="3.6s" begin="0.6s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.38;0" dur="3.6s" begin="0.6s" repeatCount="indefinite" />
+            </circle>
+            <circle cx={tokyo.x} cy={tokyo.y} r="54" fill="url(#gm-jp)" />
+            <circle cx={tokyo.x} cy={tokyo.y} r="8.5" fill="#0055A4" stroke="#FFFFFF" strokeWidth="2.5" />
+          </g>
+        )}
+
+        {/* Big editorial labels */}
+        <g>
+          {LABELS.map((l) => {
+            const c = lookup[l.code];
+            if (!c) return null;
+            const isHi =
+              highlightedFlow &&
+              (l.code === highlightedFlow.from ||
+                l.code === highlightedFlow.to);
+            const dim = highlightedFlow && !isHi && l.code !== "TYO";
+            return (
+              <g key={l.code} opacity={dim ? 0.3 : 1}>
+                {l.country && (
                   <text
-                    x={c.x}
-                    y={c.y - drawR - 4}
-                    fontFamily="Bricolage Grotesque, sans-serif"
-                    fontSize={drawR >= 12 ? 12 : 10}
-                    fontWeight={800}
+                    x={c.x + (l.ccx ?? 0)}
+                    y={c.y + (l.ccy ?? 0)}
+                    fontFamily={FONT}
+                    fontSize={l.csize ?? 20}
+                    fontWeight={700}
                     fill="#0A1F3D"
-                    textAnchor="middle"
+                    textAnchor={l.anchor}
+                    paintOrder="stroke"
+                    stroke="#FFFFFF"
+                    strokeWidth={3.5}
                     pointerEvents="none"
                   >
-                    {c.code}
+                    {l.country}
+                  </text>
+                )}
+                {l.city && (
+                  <text
+                    x={c.x + (l.scx ?? 0)}
+                    y={c.y + (l.scy ?? 0)}
+                    fontFamily={FONT}
+                    fontSize={11}
+                    fontWeight={600}
+                    fill={l.code === "TYO" ? "#003C7A" : "#94A3B8"}
+                    textAnchor={l.anchor}
+                    letterSpacing="0.12em"
+                    paintOrder="stroke"
+                    stroke="#FFFFFF"
+                    strokeWidth={2.5}
+                    pointerEvents="none"
+                  >
+                    {l.city}
                   </text>
                 )}
               </g>
             );
           })}
+
+          {/* Hover label for any unlabelled city */}
+          {hovered &&
+            !LABELS.some((l) => l.code === hovered) &&
+            lookup[hovered] && (
+              <text
+                x={lookup[hovered]!.x}
+                y={lookup[hovered]!.y - 8}
+                fontFamily={FONT}
+                fontSize={12}
+                fontWeight={700}
+                fill="#0A1F3D"
+                textAnchor="middle"
+                paintOrder="stroke"
+                stroke="#FFFFFF"
+                strokeWidth={3}
+                pointerEvents="none"
+              >
+                {lookup[hovered]!.name}
+              </text>
+            )}
         </g>
       </svg>
-
-      {/* Zoom controls */}
-      <div className="absolute right-2 top-2 flex flex-col gap-1">
-        <button
-          type="button"
-          onClick={() => zoomBy(1.6)}
-          aria-label="拡大"
-          className="w-8 h-8 rounded-lg bg-white/90 border border-ink/15 text-ink font-bold shadow-pop-sm hover:border-ink active:translate-y-px"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          onClick={() => zoomBy(1 / 1.6)}
-          aria-label="縮小"
-          className="w-8 h-8 rounded-lg bg-white/90 border border-ink/15 text-ink font-bold shadow-pop-sm hover:border-ink active:translate-y-px"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          onClick={reset}
-          aria-label="リセット"
-          title="リセット"
-          className="w-8 h-8 rounded-lg bg-white/90 border border-ink/15 text-ink-soft text-[11px] font-bold shadow-pop-sm hover:border-ink hover:text-ink active:translate-y-px"
-        >
-          ⟲
-        </button>
-      </div>
     </div>
   );
 }
