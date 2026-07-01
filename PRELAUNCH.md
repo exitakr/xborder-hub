@@ -83,12 +83,24 @@
     trim 比較で再バックフィル。0010 と同じく `display_name` と `onboarded_at` を
     NULL に戻して /welcome へ再誘導する
   - 0010 を既に実行済みでも安全(冪等)。対象ユーザーがいない場合は 0 件 update
+- [ ] **`supabase/migrations/0012_admin_moderation.sql` を SQL Editor で実行(管理画面の必須基盤)**
+  - 管理人ダッシュボード用の SECURITY DEFINER RPC を追加(すべて `public.is_admin()`
+    でゲート):`admin_stats`(真の件数)、`admin_list_members`(会員一覧・メール・
+    最終アクセス)、`admin_list_threads` / `admin_list_comments`(モデレーション)、
+    `admin_delete_thread` / `admin_delete_comment`(任意コンテンツ削除)
+  - 0007 で profiles が owner-only になり通常クエリでは会員一覧・総数が取れないため必須。
+    未実行だと `/admin` の会員タブ・実数統計・削除が動かない(コミュニティ承認は動く)
+  - service_role キーは不要(auth.users は RPC 内でのみ安全に参照)
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
     where id = (select id from auth.users where email = 'exitakr@gmail.com');
   ```
-  設定後、そのアカウントで `/admin` にアクセスできる(非管理者には 404)
+  設定後、そのアカウントで `/admin` にアクセスできる(非管理者には 404)。
+  ヘッダーに「管理」リンクが出る(管理人のみ)。管理画面では:
+  概要(実数統計)/ 会員(メール・登録日・最終アクセス・投稿数、検索可)/
+  コンテンツ(スレッド・コメントの削除)/ お問い合わせ(ステータス管理)/
+  コミュニティ(申請承認)をタブで操作できる
 - [ ] **Supabase Dashboard → Authentication → URL Configuration**(認証エラー
   の最大原因。新規登録メールのリンクがここに無い URL を指していると `otp_expired`
   もしくは「認証に失敗しました」になる)
@@ -221,7 +233,7 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録 → 強制オンボーディング** — 確認メールリンク → `/welcome` ウィザード
   に着地(名前欄は **空**、メアド由来の自動補完が無いこと)。途中で URL バーから

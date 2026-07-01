@@ -2,12 +2,22 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppTopBar } from "@/components/site/AppTopBar";
 import {
+  adminDeleteComment,
+  adminDeleteThread,
   approveCommunityRequest,
   rejectCommunityRequest,
+  updateContactStatus,
 } from "@/lib/admin/actions";
-import type { AdminStats } from "@/lib/admin/queries";
+import type {
+  AdminComment,
+  AdminMember,
+  AdminStats,
+  AdminThread,
+  ContactSubmission,
+} from "@/lib/admin/queries";
 import type { CommunityKind } from "@/lib/supabase/database.types";
 
 type RequestItem = {
@@ -34,27 +44,62 @@ const KIND_LABEL: Record<CommunityKind, string> = {
   role: "👤 職種",
 };
 
+type TabId = "overview" | "members" | "content" | "contact" | "communities";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "overview", label: "概要" },
+  { id: "members", label: "会員" },
+  { id: "content", label: "コンテンツ" },
+  { id: "contact", label: "お問い合わせ" },
+  { id: "communities", label: "コミュニティ" },
+];
+
+function fmtDate(s: string | null): string {
+  if (!s) return "—";
+  return new Date(s).toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+function fmtDateTime(s: string | null): string {
+  if (!s) return "—";
+  return new Date(s).toLocaleString("ja-JP", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function AdminClient({
   requests,
   communities,
   stats,
+  members,
+  threads,
+  comments,
+  contact,
 }: {
   requests: RequestItem[];
   communities: CommunityItem[];
   stats: AdminStats;
+  members: AdminMember[];
+  threads: AdminThread[];
+  comments: AdminComment[];
+  contact: ContactSubmission[];
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<TabId>("overview");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [memberSearch, setMemberSearch] = useState("");
   const [, startTransition] = useTransition();
 
   const pending = requests.filter((r) => r.status === "pending");
   const reviewed = requests.filter((r) => r.status !== "pending");
 
-  function act(
-    id: string,
-    fn: () => Promise<{ ok: boolean; error?: string }>,
-  ) {
+  function act(id: string, fn: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(id);
     setError(null);
     startTransition(async () => {
@@ -68,12 +113,21 @@ export function AdminClient({
     });
   }
 
+  const q = memberSearch.trim().toLowerCase();
+  const shownMembers = q
+    ? members.filter(
+        (m) =>
+          (m.email ?? "").toLowerCase().includes(q) ||
+          (m.display_name ?? "").toLowerCase().includes(q),
+      )
+    : members;
+
   return (
     <>
       <AppTopBar />
 
       <main className="container-app py-5 lg:py-6 relative z-10 pb-24 lg:pb-6">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-5">
           <section>
             <p className="text-[10px] uppercase tracking-[0.24em] text-ink-soft font-bold">
               🛠 admin console
@@ -83,180 +137,429 @@ export function AdminClient({
             </h1>
           </section>
 
-          {/* Stats */}
-          <section className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(
-              [
-                ["会員", stats.members],
-                ["スレッド", stats.threads],
-                ["コメント", stats.comments],
-                ["Coffee Chat", stats.coffeeChats],
-              ] as const
-            ).map(([label, value]) => (
-              <div
-                key={label}
-                className="bg-paper border border-ink rounded-2xl p-3 text-center shadow-pop-sm"
+          {/* Tabs */}
+          <div className="flex gap-1 p-1 bg-paper border border-ink/10 rounded-xl overflow-x-auto hide-scroll">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap transition-colors ${
+                  tab === t.id ? "bg-ink text-cream" : "text-ink-soft"
+                }`}
               >
-                <p className="display font-bold text-[22px] text-ink">
-                  {value ?? "—"}
-                </p>
-                <p className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
-                  {label}
-                </p>
-              </div>
+                {t.label}
+              </button>
             ))}
-          </section>
+          </div>
 
           {error && (
             <p className="text-[12px] font-bold text-red-600">{error}</p>
           )}
 
-          {/* Pending community requests */}
-          <section>
-            <h2 className="display font-bold text-[17px] text-ink mb-3">
-              コミュニティ申請(未対応 {pending.length} 件)
-            </h2>
-            {pending.length === 0 ? (
-              <p className="text-[12px] text-ink-faint">
-                未対応の申請はありません。
+          {/* ===== OVERVIEW ===== */}
+          {tab === "overview" && (
+            <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {(
+                [
+                  ["会員", stats.members],
+                  ["新規(7日)", stats.signups7d],
+                  ["スレッド", stats.threads],
+                  ["コメント", stats.comments],
+                  ["Coffee Chat", stats.coffeeChats],
+                  ["年収データ", stats.salaries],
+                  ["トークルーム", stats.chatRooms],
+                  ["コミュニティ", stats.communities],
+                  ["未対応の問合せ", stats.contactNew],
+                ] as const
+              ).map(([label, value]) => (
+                <div
+                  key={label}
+                  className="bg-paper border border-ink rounded-2xl p-3 text-center shadow-pop-sm"
+                >
+                  <p className="display font-bold text-[22px] text-ink">
+                    {value ?? "—"}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-ink-faint font-bold">
+                    {label}
+                  </p>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* ===== MEMBERS ===== */}
+          {tab === "members" && (
+            <section className="space-y-3">
+              <input
+                type="search"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder="メール / 表示名で検索"
+                className="field w-full"
+              />
+              <p className="text-[11px] text-ink-faint font-bold">
+                {shownMembers.length} 件表示
+                {members.length >= 200 && "(最新200件)"}
               </p>
-            ) : (
-              <div className="space-y-2">
-                {pending.map((r) => (
-                  <div
-                    key={r.id}
-                    className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3 mb-1">
-                      <p className="font-bold text-[14px] text-ink">
-                        {KIND_LABEL[r.kind]} · {r.name}
-                      </p>
-                      <p className="text-[10px] text-ink-faint whitespace-nowrap">
-                        {new Date(r.createdAt).toLocaleDateString("ja-JP")}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-ink-soft mb-1">
-                      申請者: {r.requesterName}
-                    </p>
-                    {r.description && (
-                      <p className="text-[12px] text-ink-soft leading-relaxed border-t border-dashed border-ink/20 pt-2 mt-2">
-                        {r.description}
-                      </p>
+              <div className="overflow-x-auto border border-ink/10 rounded-2xl">
+                <table className="w-full text-[12px] min-w-[720px]">
+                  <thead>
+                    <tr className="bg-paper text-ink-soft text-[10px] uppercase tracking-wider">
+                      <th className="text-left font-bold p-2">表示名</th>
+                      <th className="text-left font-bold p-2">メール</th>
+                      <th className="text-left font-bold p-2">登録日</th>
+                      <th className="text-left font-bold p-2">最終アクセス</th>
+                      <th className="text-left font-bold p-2">From→To</th>
+                      <th className="text-left font-bold p-2">業界/職種</th>
+                      <th className="text-right font-bold p-2">投稿</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shownMembers.map((m) => (
+                      <tr key={m.id} className="border-t border-ink/8">
+                        <td className="p-2 font-bold text-ink whitespace-nowrap">
+                          {m.display_name ?? (
+                            <span className="text-ink-faint">未設定</span>
+                          )}
+                          {m.is_admin && (
+                            <span className="ml-1 text-[9px] bg-mustard text-ink px-1.5 py-0.5 rounded-full font-bold">
+                              管理
+                            </span>
+                          )}
+                          {!m.onboarded_at && (
+                            <span className="ml-1 text-[9px] bg-ink/10 text-ink-faint px-1.5 py-0.5 rounded-full font-bold">
+                              未完了
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2 text-ink-soft whitespace-nowrap">
+                          {m.email ?? "—"}
+                        </td>
+                        <td className="p-2 text-ink-faint whitespace-nowrap">
+                          {fmtDate(m.created_at)}
+                        </td>
+                        <td className="p-2 text-ink-faint whitespace-nowrap">
+                          {fmtDateTime(m.last_sign_in_at)}
+                        </td>
+                        <td className="p-2 text-ink-soft whitespace-nowrap">
+                          {(m.from_country ?? "—") + " → " + (m.to_country ?? "—")}
+                        </td>
+                        <td className="p-2 text-ink-soft whitespace-nowrap">
+                          {[m.industry, m.role].filter(Boolean).join(" / ") ||
+                            "—"}
+                        </td>
+                        <td className="p-2 text-right text-ink-soft whitespace-nowrap">
+                          {m.thread_count}投 / {m.comment_count}コ
+                        </td>
+                      </tr>
+                    ))}
+                    {shownMembers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="p-4 text-center text-ink-faint"
+                        >
+                          該当する会員がいません。
+                        </td>
+                      </tr>
                     )}
-                    <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
-                      <button
-                        type="button"
-                        disabled={busy === r.id}
-                        onClick={() =>
-                          act(r.id, () =>
-                            rejectCommunityRequest({ requestId: r.id }),
-                          )
-                        }
-                        className="px-3 py-1.5 bg-cream border border-ink/15 text-ink rounded-full font-bold text-[11px] disabled:opacity-50"
-                      >
-                        却下
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy === r.id}
-                        onClick={() =>
-                          act(r.id, () =>
-                            approveCommunityRequest({
-                              requestId: r.id,
-                              kind: r.kind,
-                              name: r.name,
-                              description: r.description,
-                            }),
-                          )
-                        }
-                        className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[11px] disabled:opacity-50"
-                      >
-                        ✓ 承認して開設
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Communities */}
-          <section>
-            <h2 className="display font-bold text-[17px] text-ink mb-3">
-              コミュニティ ({communities.length})
-            </h2>
-            {communities.length === 0 ? (
-              <p className="text-[12px] text-ink-faint">
-                コミュニティがまだありません(マイグレーション 0002 のシードで
-                11 件作成されます)。
-              </p>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-2">
-                {communities.map((c) => (
-                  <div
-                    key={c.id}
-                    className="bg-cream border border-ink/20 rounded-xl p-3 flex items-center justify-between gap-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-bold text-[12px] text-ink truncate">
-                        {c.label}
-                      </p>
-                      <p className="text-[10px] text-ink-faint">
-                        {KIND_LABEL[c.kind]} · {c.membersCount} 人
-                      </p>
-                    </div>
-                    <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                        c.active
-                          ? "bg-jade text-ink"
-                          : "bg-ink/10 text-ink-faint"
-                      }`}
-                    >
-                      {c.active ? "公開中" : "停止中"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Reviewed history */}
-          {reviewed.length > 0 && (
-            <section>
-              <h2 className="display font-bold text-[17px] text-ink mb-3">
-                対応済みの申請
-              </h2>
-              <div className="space-y-1.5">
-                {reviewed.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between gap-3 bg-cream border border-ink/10 rounded-xl px-3 py-2"
-                  >
-                    <p className="text-[12px] text-ink truncate">
-                      {KIND_LABEL[r.kind]} · {r.name}
-                    </p>
-                    <span
-                      className={`status-badge ${
-                        r.status === "approved"
-                          ? "status-approved"
-                          : "status-rejected"
-                      }`}
-                    >
-                      {r.status === "approved" ? "✓ 承認" : "却下"}
-                    </span>
-                  </div>
-                ))}
+                  </tbody>
+                </table>
               </div>
             </section>
           )}
 
-          <p className="text-[11px] text-ink-faint leading-relaxed">
+          {/* ===== CONTENT MODERATION ===== */}
+          {tab === "content" && (
+            <section className="space-y-6">
+              <div>
+                <h2 className="display font-bold text-[16px] text-ink mb-2">
+                  スレッド ({threads.length})
+                </h2>
+                <div className="space-y-1.5">
+                  {threads.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-3 bg-cream border border-ink/10 rounded-xl px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/thread?id=${t.id}`}
+                          className="font-bold text-[13px] text-ink hover:underline truncate block"
+                        >
+                          {t.title}
+                        </Link>
+                        <p className="text-[10px] text-ink-faint">
+                          {t.author_name} · {fmtDate(t.created_at)} · 💬{" "}
+                          {t.comment_count}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busy === t.id}
+                        onClick={() => {
+                          if (!confirm(`スレッド「${t.title}」を削除しますか?`))
+                            return;
+                          act(t.id, () =>
+                            adminDeleteThread({ threadId: t.id }),
+                          );
+                        }}
+                        className="px-2.5 py-1 bg-cream border border-red-300 text-red-600 rounded-full font-bold text-[11px] disabled:opacity-50 whitespace-nowrap"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
+                  {threads.length === 0 && (
+                    <p className="text-[12px] text-ink-faint">
+                      スレッドがありません。
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h2 className="display font-bold text-[16px] text-ink mb-2">
+                  コメント ({comments.length})
+                </h2>
+                <div className="space-y-1.5">
+                  {comments.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center gap-3 bg-cream border border-ink/10 rounded-xl px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] text-ink truncate">{c.body}</p>
+                        <p className="text-[10px] text-ink-faint">
+                          {c.author_name} ·{" "}
+                          <Link
+                            href={`/thread?id=${c.thread_id}`}
+                            className="hover:underline"
+                          >
+                            {c.thread_title ?? "スレッド"}
+                          </Link>{" "}
+                          · {fmtDate(c.created_at)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busy === c.id}
+                        onClick={() => {
+                          if (!confirm("このコメントを削除しますか?")) return;
+                          act(c.id, () =>
+                            adminDeleteComment({ commentId: c.id }),
+                          );
+                        }}
+                        className="px-2.5 py-1 bg-cream border border-red-300 text-red-600 rounded-full font-bold text-[11px] disabled:opacity-50 whitespace-nowrap"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <p className="text-[12px] text-ink-faint">
+                      コメントがありません。
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ===== CONTACT ===== */}
+          {tab === "contact" && (
+            <section className="space-y-2">
+              {contact.length === 0 ? (
+                <p className="text-[12px] text-ink-faint">
+                  お問い合わせはありません。
+                </p>
+              ) : (
+                contact.map((c) => (
+                  <div
+                    key={c.id}
+                    className="bg-cream border border-ink/10 rounded-xl p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <p className="font-bold text-[13px] text-ink">
+                        {c.subject}
+                      </p>
+                      <select
+                        value={c.status}
+                        disabled={busy === c.id}
+                        onChange={(e) =>
+                          act(c.id, () =>
+                            updateContactStatus({
+                              id: c.id,
+                              status: e.target.value as
+                                | "new"
+                                | "in_progress"
+                                | "resolved",
+                            }),
+                          )
+                        }
+                        className="filter-select !w-auto !py-1 !text-[11px]"
+                      >
+                        <option value="new">未対応</option>
+                        <option value="in_progress">対応中</option>
+                        <option value="resolved">完了</option>
+                      </select>
+                    </div>
+                    <p className="text-[11px] text-ink-soft mb-1">
+                      {c.name ? `${c.name} · ` : ""}
+                      {c.email} · {c.category} · {fmtDate(c.created_at)}
+                    </p>
+                    <p className="text-[12px] text-ink-soft leading-relaxed border-t border-dashed border-ink/15 pt-2 mt-1 whitespace-pre-wrap">
+                      {c.body}
+                    </p>
+                  </div>
+                ))
+              )}
+            </section>
+          )}
+
+          {/* ===== COMMUNITIES ===== */}
+          {tab === "communities" && (
+            <div className="space-y-6">
+              <section>
+                <h2 className="display font-bold text-[16px] text-ink mb-3">
+                  コミュニティ申請(未対応 {pending.length} 件)
+                </h2>
+                {pending.length === 0 ? (
+                  <p className="text-[12px] text-ink-faint">
+                    未対応の申請はありません。
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {pending.map((r) => (
+                      <div
+                        key={r.id}
+                        className="bg-cream border border-ink rounded-2xl p-4 shadow-pop-sm"
+                      >
+                        <div className="flex items-center justify-between gap-3 mb-1">
+                          <p className="font-bold text-[14px] text-ink">
+                            {KIND_LABEL[r.kind]} · {r.name}
+                          </p>
+                          <p className="text-[10px] text-ink-faint whitespace-nowrap">
+                            {fmtDate(r.createdAt)}
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-ink-soft mb-1">
+                          申請者: {r.requesterName}
+                        </p>
+                        {r.description && (
+                          <p className="text-[12px] text-ink-soft leading-relaxed border-t border-dashed border-ink/20 pt-2 mt-2">
+                            {r.description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-dashed border-ink/20">
+                          <button
+                            type="button"
+                            disabled={busy === r.id}
+                            onClick={() =>
+                              act(r.id, () =>
+                                rejectCommunityRequest({ requestId: r.id }),
+                              )
+                            }
+                            className="px-3 py-1.5 bg-cream border border-ink/15 text-ink rounded-full font-bold text-[11px] disabled:opacity-50"
+                          >
+                            却下
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy === r.id}
+                            onClick={() =>
+                              act(r.id, () =>
+                                approveCommunityRequest({
+                                  requestId: r.id,
+                                  kind: r.kind,
+                                  name: r.name,
+                                  description: r.description,
+                                }),
+                              )
+                            }
+                            className="px-3 py-1.5 bg-jade-deep text-cream rounded-full font-bold text-[11px] disabled:opacity-50"
+                          >
+                            ✓ 承認して開設
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <h2 className="display font-bold text-[16px] text-ink mb-3">
+                  コミュニティ ({communities.length})
+                </h2>
+                {communities.length === 0 ? (
+                  <p className="text-[12px] text-ink-faint">
+                    コミュニティがまだありません。
+                  </p>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {communities.map((c) => (
+                      <div
+                        key={c.id}
+                        className="bg-cream border border-ink/20 rounded-xl p-3 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-bold text-[12px] text-ink truncate">
+                            {c.label}
+                          </p>
+                          <p className="text-[10px] text-ink-faint">
+                            {KIND_LABEL[c.kind]} · {c.membersCount} 人
+                          </p>
+                        </div>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            c.active
+                              ? "bg-jade text-ink"
+                              : "bg-ink/10 text-ink-faint"
+                          }`}
+                        >
+                          {c.active ? "公開中" : "停止中"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {reviewed.length > 0 && (
+                <section>
+                  <h2 className="display font-bold text-[16px] text-ink mb-3">
+                    対応済みの申請
+                  </h2>
+                  <div className="space-y-1.5">
+                    {reviewed.map((r) => (
+                      <div
+                        key={r.id}
+                        className="flex items-center justify-between gap-3 bg-cream border border-ink/10 rounded-xl px-3 py-2"
+                      >
+                        <p className="text-[12px] text-ink truncate">
+                          {KIND_LABEL[r.kind]} · {r.name}
+                        </p>
+                        <span
+                          className={`status-badge ${
+                            r.status === "approved"
+                              ? "status-approved"
+                              : "status-rejected"
+                          }`}
+                        >
+                          {r.status === "approved" ? "✓ 承認" : "却下"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          <p className="text-[11px] text-ink-faint leading-relaxed pt-2">
             ※ このページは profiles.is_admin = true のアカウントのみ表示されます。
-            管理者の追加は Supabase SQL Editor で
-            <code className="bg-paper px-1 rounded">
-              update profiles set is_admin = true where id = ...
-            </code>
-            を実行してください。
           </p>
         </div>
       </main>

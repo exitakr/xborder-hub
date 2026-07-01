@@ -89,26 +89,178 @@ export type AdminStats = {
   threads: number | null;
   comments: number | null;
   coffeeChats: number | null;
+  communities: number | null;
+  contactNew: number | null;
+  chatRooms: number | null;
+  salaries: number | null;
+  signups7d: number | null;
 };
 
+/**
+ * True totals via the admin_stats() RPC (migration 0012). This bypasses the
+ * owner-only RLS on profiles (0007) safely — the RPC is is_admin()-gated —
+ * so counts reflect the whole table, not just the caller's own row.
+ */
 export async function fetchAdminStats(): Promise<AdminStats> {
-  const supabase = await createClient();
-  async function count(table: string): Promise<number | null> {
-    try {
-      const { count: c, error } = await supabase
-        .from(table)
-        .select("*", { count: "exact", head: true });
-      if (error) return null;
-      return c ?? 0;
-    } catch {
-      return null;
+  const empty: AdminStats = {
+    members: null,
+    threads: null,
+    comments: null,
+    coffeeChats: null,
+    communities: null,
+    contactNew: null,
+    chatRooms: null,
+    salaries: null,
+    signups7d: null,
+  };
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_stats").maybeSingle();
+    if (error || !data) {
+      if (error && !safeIgnore(error)) console.error("[admin] stats", error);
+      return empty;
     }
+    const r = data as Record<string, number>;
+    return {
+      members: r.members ?? null,
+      threads: r.threads ?? null,
+      comments: r.comments ?? null,
+      coffeeChats: r.coffee_chats ?? null,
+      communities: r.communities ?? null,
+      contactNew: r.contact_new ?? null,
+      chatRooms: r.chat_rooms ?? null,
+      salaries: r.salaries ?? null,
+      signups7d: r.signups_7d ?? null,
+    };
+  } catch (err) {
+    console.error("[admin] stats (catch)", err);
+    return empty;
   }
-  const [members, threads, comments, coffeeChats] = await Promise.all([
-    count("profiles"),
-    count("threads"),
-    count("comments"),
-    count("coffee_chat_requests"),
-  ]);
-  return { members, threads, comments, coffeeChats };
+}
+
+export type AdminMember = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  from_country: string | null;
+  to_country: string | null;
+  industry: string | null;
+  role: string | null;
+  onboarded_at: string | null;
+  is_admin: boolean;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+  thread_count: number;
+  comment_count: number;
+};
+
+export async function fetchAdminMembers(
+  search = "",
+  limit = 200,
+): Promise<AdminMember[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_list_members", {
+      p_search: search || null,
+      p_limit: limit,
+      p_offset: 0,
+    });
+    if (error) {
+      if (!safeIgnore(error)) console.error("[admin] members", error);
+      return [];
+    }
+    return (data ?? []) as AdminMember[];
+  } catch (err) {
+    console.error("[admin] members (catch)", err);
+    return [];
+  }
+}
+
+export type AdminThread = {
+  id: string;
+  title: string;
+  category: string;
+  author_id: string;
+  author_name: string;
+  created_at: string;
+  comment_count: number;
+};
+
+export async function fetchAdminThreads(limit = 100): Promise<AdminThread[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_list_threads", {
+      p_search: null,
+      p_limit: limit,
+      p_offset: 0,
+    });
+    if (error) {
+      if (!safeIgnore(error)) console.error("[admin] threads", error);
+      return [];
+    }
+    return (data ?? []) as AdminThread[];
+  } catch (err) {
+    console.error("[admin] threads (catch)", err);
+    return [];
+  }
+}
+
+export type AdminComment = {
+  id: string;
+  thread_id: string;
+  thread_title: string | null;
+  author_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+};
+
+export async function fetchAdminComments(limit = 100): Promise<AdminComment[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_list_comments", {
+      p_limit: limit,
+      p_offset: 0,
+    });
+    if (error) {
+      if (!safeIgnore(error)) console.error("[admin] comments", error);
+      return [];
+    }
+    return (data ?? []) as AdminComment[];
+  } catch (err) {
+    console.error("[admin] comments (catch)", err);
+    return [];
+  }
+}
+
+export type ContactSubmission = {
+  id: string;
+  email: string;
+  name: string | null;
+  category: string;
+  subject: string;
+  body: string;
+  status: string;
+  created_at: string;
+};
+
+export async function fetchContactSubmissions(
+  limit = 100,
+): Promise<ContactSubmission[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("contact_submissions")
+      .select("id, email, name, category, subject, body, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) {
+      if (!safeIgnore(error)) console.error("[admin] contact", error);
+      return [];
+    }
+    return (data ?? []) as ContactSubmission[];
+  } catch (err) {
+    console.error("[admin] contact (catch)", err);
+    return [];
+  }
 }

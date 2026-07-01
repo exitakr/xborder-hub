@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/guard";
 import {
+  fetchAdminComments,
+  fetchAdminMembers,
   fetchAdminStats,
+  fetchAdminThreads,
   fetchCommunities,
   fetchCommunityRequests,
+  fetchContactSubmissions,
   isCurrentUserAdmin,
 } from "@/lib/admin/queries";
 import { AdminClient } from "./AdminClient";
@@ -23,10 +27,22 @@ export default async function AdminPage() {
   const admin = await isCurrentUserAdmin();
   if (!admin) notFound();
 
-  const [requests, communities, stats] = await Promise.all([
+  const [
+    requests,
+    communities,
+    stats,
+    members,
+    threads,
+    comments,
+    contact,
+  ] = await Promise.all([
     fetchCommunityRequests(),
     fetchCommunities(),
     fetchAdminStats(),
+    fetchAdminMembers(),
+    fetchAdminThreads(),
+    fetchAdminComments(),
+    fetchContactSubmissions(),
   ]);
 
   return (
@@ -48,6 +64,10 @@ export default async function AdminPage() {
         membersCount: c.members_count,
       }))}
       stats={stats}
+      members={members}
+      threads={threads}
+      comments={comments}
+      contact={contact}
     />
   );
 }

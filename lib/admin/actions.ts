@@ -75,6 +75,79 @@ export async function approveCommunityRequest(input: {
   }
 }
 
+/** Admin moderation: delete any thread (comments cascade). */
+export async function adminDeleteThread(input: {
+  threadId: string;
+}): Promise<AdminActionResult> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    if (!user) return { ok: false, error: "管理者権限がありません。" };
+    const { error } = await supabase.rpc("admin_delete_thread", {
+      p_id: input.threadId,
+    });
+    if (error) {
+      console.error("[admin] deleteThread", error);
+      return { ok: false, error: "削除に失敗しました。" };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/threads");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] deleteThread (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
+/** Admin moderation: delete any comment. */
+export async function adminDeleteComment(input: {
+  commentId: string;
+}): Promise<AdminActionResult> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    if (!user) return { ok: false, error: "管理者権限がありません。" };
+    const { error } = await supabase.rpc("admin_delete_comment", {
+      p_id: input.commentId,
+    });
+    if (error) {
+      console.error("[admin] deleteComment", error);
+      return { ok: false, error: "削除に失敗しました。" };
+    }
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] deleteComment (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
+/** Admin: update a contact submission's triage status. */
+export async function updateContactStatus(input: {
+  id: string;
+  status: "new" | "in_progress" | "resolved";
+}): Promise<AdminActionResult> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    if (!user) return { ok: false, error: "管理者権限がありません。" };
+    const patch: { status: string; responded_at?: string } = {
+      status: input.status,
+    };
+    if (input.status === "resolved") patch.responded_at = new Date().toISOString();
+    const { error } = await supabase
+      .from("contact_submissions")
+      .update(patch)
+      .eq("id", input.id);
+    if (error) {
+      console.error("[admin] contactStatus", error);
+      return { ok: false, error: "更新に失敗しました。" };
+    }
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] contactStatus (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
 export async function rejectCommunityRequest(input: {
   requestId: string;
   note?: string;

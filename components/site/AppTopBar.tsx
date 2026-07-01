@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "./LogoMark";
+import { AdminNavLink } from "./AdminNavLink";
 import { initials, useProfile } from "@/lib/profile/store";
 import { ProfileSync } from "@/lib/profile/ProfileSync";
 import { careerLevel } from "@/lib/profile/level";
@@ -119,6 +120,7 @@ export function AppTopBar({ active }: { active?: Tab }) {
           >
             年収データ
           </Link>
+          <AdminNavLink />
           {/* Mobile gets the bell in BottomNavMobile — avoid the duplicate. */}
           <Link
             href="/notifications"

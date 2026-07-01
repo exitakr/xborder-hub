@@ -58,14 +58,17 @@ export async function middleware(req: NextRequest) {
 
   const { data } = await supabase
     .from("profiles")
-    .select("onboarded_at, display_name")
+    .select("onboarded_at")
     .eq("id", user.id)
     .maybeSingle();
 
-  const onboarded =
-    !!data?.onboarded_at &&
-    typeof data.display_name === "string" &&
-    data.display_name.trim().length > 0;
+  // Gate solely on onboarded_at so this stays in lock-step with
+  // needsOnboarding()/app/welcome — /welcome bounces on the same condition,
+  // which rules out a /welcome⇄/mypage redirect loop. A non-empty
+  // display_name is already enforced server-side at onboarding
+  // (app/welcome/actions.ts) and on profile edits (app/mypage/actions.ts),
+  // so onboarded_at is a sufficient signal here.
+  const onboarded = !!data?.onboarded_at;
 
   if (!onboarded) {
     const url = req.nextUrl.clone();
