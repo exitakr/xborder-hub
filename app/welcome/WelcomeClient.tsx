@@ -117,7 +117,9 @@ export function WelcomeClient({ next }: { next?: string }) {
         ccAvailable: allowCc,
         career: validCareer.map((s) => ({ ...s })),
       }));
-      router.replace(next && next.startsWith("/") ? next : "/home");
+      // Fallback matches the login/auth-callback default so a direct
+      // /welcome visit lands in the same place as the normal flow.
+      router.replace(next && next.startsWith("/") ? next : "/mypage");
     });
   }
 

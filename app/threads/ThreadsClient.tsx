@@ -22,16 +22,25 @@ import {
 } from "./data";
 
 
+type CommunityChip = {
+  id: string;
+  kind: "country" | "industry" | "role";
+  label: string;
+  members_count: number;
+};
+
 export function ThreadsClient({
   isLoggedIn = false,
   dbThreads = [],
   isAdmin = false,
   dismissedKeys = [],
+  communities = [],
 }: {
   isLoggedIn?: boolean;
   dbThreads?: Thread[];
   isAdmin?: boolean;
   dismissedKeys?: string[];
+  communities?: CommunityChip[];
 } = {}) {
   const router = useRouter();
   const [country, setCountry] = useState<string>("");
@@ -154,6 +163,29 @@ export function ThreadsClient({
                 + コミュニティを申請
               </button>
             </section>
+
+            {/* Active communities — admin-approved ones appear here */}
+            {communities.length > 0 && (
+              <section className="rise" style={{ animationDelay: "0.02s" }}>
+                <div className="flex gap-1.5 overflow-x-auto hide-scroll pb-1">
+                  {communities.map((c) => (
+                    <span
+                      key={c.id}
+                      className="flex-none inline-flex items-baseline gap-1.5 bg-cream border border-ink/10 rounded-full px-3 py-1"
+                    >
+                      <span className="text-[11px] font-bold text-ink whitespace-nowrap">
+                        {c.label}
+                      </span>
+                      {c.members_count > 0 && (
+                        <span className="text-[9px] font-bold text-ink-faint whitespace-nowrap">
+                          {c.members_count}人
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Filter bar — 4 axes in a single dense row */}
             <section className="rise" style={{ animationDelay: "0.04s" }}>

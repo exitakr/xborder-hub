@@ -1,29 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useStreak } from "@/lib/streak";
+import { openDailyQuestionThread } from "./actions";
 import { questionForDate, type DailyQuestion as DQ } from "./dailyQuestions";
 
 /**
  * Home-page daily prompt. The question rotates once per day (deterministic
- * by date) and the CTA drops the user into /thread/new with the title and
- * category prefilled. Also shows the visit streak once it reaches 2 days.
+ * by date). 答える opens the shared thread for today's question — created
+ * lazily on first tap (migration 0013) — so everyone answers in one place
+ * as comments. Also shows the visit streak once it reaches 2 days.
  *
  * Rendered only after mount so the SSR HTML never disagrees with the
  * client's local date / localStorage streak (avoids hydration mismatch).
  */
 export function DailyQuestion() {
+  const router = useRouter();
   const [q, setQ] = useState<DQ | null>(null);
+  const [dateStr, setDateStr] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const streak = useStreak();
 
   useEffect(() => {
-    setQ(questionForDate(new Date()));
+    const now = new Date();
+    setQ(questionForDate(now));
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    setDateStr(`${y}-${m}-${d}`);
   }, []);
 
   if (!q) return null;
 
-  const href = `/thread/new?title=${encodeURIComponent(q.q)}&category=${q.category}`;
+  function answer() {
+    setError(null);
+    startTransition(async () => {
+      const res = await openDailyQuestionThread(dateStr);
+      if (res.ok) {
+        router.push(`/thread?id=${res.id}`);
+        return;
+      }
+      if (res.needLogin) {
+        router.push(`/login?next=${encodeURIComponent("/home")}`);
+        return;
+      }
+      setError(res.error ?? "スレッドを開けませんでした。");
+    });
+  }
 
   return (
     <section className="rise" style={{ animationDelay: "0.02s" }}>
@@ -42,13 +67,18 @@ export function DailyQuestion() {
           <p className="display font-bold text-[14px] lg:text-[15px] text-ink leading-snug mt-1">
             {q.q}
           </p>
+          {error && (
+            <p className="text-[11px] font-bold text-red-600 mt-1">{error}</p>
+          )}
         </div>
-        <Link
-          href={href}
-          className="flex-none bg-ink text-cream font-bold text-[12px] px-4 py-2 rounded-full hover:bg-blue-deep transition-colors"
+        <button
+          type="button"
+          onClick={answer}
+          disabled={pending}
+          className="flex-none bg-ink text-cream font-bold text-[12px] px-4 py-2 rounded-full hover:bg-blue-deep transition-colors disabled:opacity-50"
         >
-          答える →
-        </Link>
+          {pending ? "開いています…" : "答える →"}
+        </button>
       </div>
     </section>
   );

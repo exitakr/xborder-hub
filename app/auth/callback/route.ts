@@ -42,6 +42,17 @@ export async function GET(request: Request) {
     ok = !error;
   }
 
+  // Tokens are single-use: a second click (or an email scanner pre-fetching
+  // the link before the user) makes the verify fail even though this browser
+  // may already hold a valid session. If we're actually signed in, continue
+  // as success instead of dead-ending on the login error.
+  if (!ok) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) ok = true;
+  }
+
   if (ok) {
     if (next !== "/reset-password" && (await needsOnboarding())) {
       return NextResponse.redirect(

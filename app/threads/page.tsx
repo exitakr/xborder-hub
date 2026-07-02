@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/guard";
 import { adaptThreadRow, fetchThreads } from "@/lib/threads/queries";
 import { isCurrentUserAdmin } from "@/lib/admin/queries";
+import { fetchActiveCommunities } from "@/lib/communities/queries";
 import { fetchDismissedSampleKeys } from "@/lib/samples/queries";
 import { enforceOnboarding } from "@/lib/profile/onboarding";
 import { ThreadsClient } from "./ThreadsClient";
@@ -14,11 +15,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ThreadsPage() {
   await enforceOnboarding("/threads");
-  const [user, rows, isAdmin, dismissedKeys] = await Promise.all([
+  const [user, rows, isAdmin, dismissedKeys, communities] = await Promise.all([
     getCurrentUser(),
     fetchThreads(),
     isCurrentUserAdmin(),
     fetchDismissedSampleKeys(),
+    fetchActiveCommunities(),
   ]);
   const dbThreads = rows.map(adaptThreadRow);
   return (
@@ -27,6 +29,7 @@ export default async function ThreadsPage() {
       dbThreads={dbThreads}
       isAdmin={isAdmin}
       dismissedKeys={dismissedKeys}
+      communities={communities}
     />
   );
 }

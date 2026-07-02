@@ -52,7 +52,9 @@ export async function fetchChatRooms(): Promise<ChatRoomRow[]> {
     const { data, error } = await supabase
       .from("chat_rooms")
       .select(ROOM_SELECT)
-      .order("last_message_at", { ascending: false, nullsFirst: false })
+      // nullsFirst: freshly approved rooms (no message yet) surface at the
+      // top of the inbox instead of sinking to the bottom.
+      .order("last_message_at", { ascending: false, nullsFirst: true })
       .limit(50);
     if (error) {
       if (!safeIgnore(error)) console.error("[chat] fetchChatRooms", error);

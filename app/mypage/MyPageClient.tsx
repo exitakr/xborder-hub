@@ -9,7 +9,10 @@ import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { signOut } from "@/app/login/actions";
 import { syncProfileBasics } from "./actions";
 import type { VisibilitySettings } from "@/lib/anonymity/rules";
-import { useNotifications } from "@/lib/notifications/store";
+import {
+  resetLocalNotifications,
+  useNotifications,
+} from "@/lib/notifications/store";
 import {
   approveCoffeeChatRequest,
   cancelCoffeeChatRequest,
@@ -31,6 +34,7 @@ import {
 import {
   formatPeriod,
   initials,
+  resetLocalProfile,
   useProfile,
   type CareerStep,
   type Profile,
@@ -286,6 +290,10 @@ export function MyPageClient({
   function logout() {
     // Clear any legacy premium-tier flag from earlier builds.
     window.localStorage.removeItem("xbh_premium");
+    // Wipe per-user local state so the next account on this browser doesn't
+    // inherit the previous user's profile or notification feed.
+    resetLocalProfile();
+    resetLocalNotifications();
     startSignOut(() => signOut());
   }
 

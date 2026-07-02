@@ -123,6 +123,22 @@ function writeNotifs(next: AppNotification[]) {
   for (const l of notifListeners) l();
 }
 
+/**
+ * Wipe persisted notifications AND the in-memory cache. Called on sign-out
+ * so the next account on this browser doesn't see the previous user's feed.
+ */
+export function resetLocalNotifications() {
+  notifCache = [];
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(NOTIFS_KEY);
+    } catch {
+      // ignore
+    }
+  }
+  for (const l of notifListeners) l();
+}
+
 export function useNotifications() {
   const [list, setList] = useState<AppNotification[]>(seed);
 

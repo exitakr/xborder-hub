@@ -105,6 +105,24 @@ function write(next: Profile) {
   for (const l of listeners) l();
 }
 
+/**
+ * Wipe the persisted profile AND the in-memory cache. Called on sign-out so
+ * the next account on this browser doesn't inherit the previous user's
+ * name/career (the App Router redirect after signOut is a client-side
+ * navigation, so clearing localStorage alone would leave the cache live).
+ */
+export function resetLocalProfile() {
+  cached = DEFAULT_PROFILE;
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(KEY);
+    } catch {
+      // ignore
+    }
+  }
+  for (const l of listeners) l();
+}
+
 /* ──────────────── React hook ──────────────── */
 
 /**
