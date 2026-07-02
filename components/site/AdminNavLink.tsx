@@ -41,7 +41,7 @@ export function AdminNavLink() {
   return (
     <Link
       href="/admin"
-      className="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-bold whitespace-nowrap transition-colors text-blue hover:text-blue-deep hidden lg:inline-block"
+      className="px-2 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-[12px] font-bold whitespace-nowrap transition-colors text-blue hover:text-blue-deep"
       title="管理コンソール"
     >
       管理

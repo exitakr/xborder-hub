@@ -55,13 +55,21 @@ const CATEGORIES: { v: Category; label: string }[] = [
   { v: "other", label: "💬 その他" },
 ];
 
-export function ThreadNewClient() {
+export function ThreadNewClient({
+  initialTitle = "",
+  initialCategory = "",
+}: {
+  initialTitle?: string;
+  initialCategory?: string;
+} = {}) {
   const router = useRouter();
   const [country, setCountry] = useState<Country>("");
   const [industry, setIndustry] = useState<Industry>("");
   const [role, setRole] = useState<Role>("");
-  const [category, setCategory] = useState<Category>("");
-  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<Category>(
+    initialCategory as Category,
+  );
+  const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

@@ -8,6 +8,7 @@ import { AppFooter } from "@/components/site/AppFooter";
 import { BottomNavMobile } from "@/components/site/BottomNavMobile";
 import { DeleteSampleButton } from "@/components/site/DeleteSampleButton";
 import { GlobalMap } from "./GlobalMap";
+import { DailyQuestion } from "./DailyQuestion";
 import { SHOW_DEMO_CONTENT } from "@/lib/demo/flags";
 import { dismissSample } from "@/lib/samples/actions";
 import {
@@ -85,6 +86,9 @@ export function HomeClient({
                 今、誰がどこで活躍している?
               </h1>
             </section>
+
+            {/* DAILY QUESTION + streak */}
+            <DailyQuestion />
 
             {/* GLOBAL MAP */}
             <section className="rise" style={{ animationDelay: "0.04s" }}>

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useNotifications } from "@/lib/notifications/store";
 
 type Tab = "home" | "search" | "threads" | "salaries" | "notifications";
 
@@ -101,13 +100,11 @@ const TABS: {
 ];
 
 export function BottomNavMobile({ active }: { active?: Tab }) {
-  const { unread } = useNotifications();
   return (
     <nav className="bottom-nav-mobile fixed bottom-0 left-0 right-0 bg-cream/95 backdrop-blur-md border-t border-ink/10 z-40">
       <div className="container-app py-2 flex items-center justify-around">
         {TABS.map((tab) => {
           const isActive = active === tab.id;
-          const showBadge = tab.id === "notifications" && unread > 0;
           return (
             <Link
               key={tab.id}
@@ -116,14 +113,7 @@ export function BottomNavMobile({ active }: { active?: Tab }) {
                 isActive ? "text-ink" : "text-ink-soft"
               }`}
             >
-              <span className="relative inline-flex">
-                {tab.icon}
-                {showBadge && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-blue text-cream text-[9px] font-bold flex items-center justify-center">
-                    {unread > 9 ? "9+" : unread}
-                  </span>
-                )}
-              </span>
+              <span className="relative inline-flex">{tab.icon}</span>
               <span className="text-[9px] font-bold uppercase tracking-wider">
                 {tab.label}
               </span>
