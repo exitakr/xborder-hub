@@ -233,6 +233,35 @@ export async function fetchAdminComments(limit = 100): Promise<AdminComment[]> {
   }
 }
 
+export type DailyMetric = {
+  day: string;
+  signups: number;
+  threads: number;
+  comments: number;
+  comp_posts: number;
+  cc_requests: number;
+};
+
+/** Day-bucketed KPI series for the /admin data room (migration 0015). */
+export async function fetchAdminDailyMetrics(
+  days = 30,
+): Promise<DailyMetric[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("admin_daily_metrics", {
+      p_days: days,
+    });
+    if (error) {
+      if (!safeIgnore(error)) console.error("[admin] dailyMetrics", error);
+      return [];
+    }
+    return (data ?? []) as DailyMetric[];
+  } catch (err) {
+    console.error("[admin] dailyMetrics (catch)", err);
+    return [];
+  }
+}
+
 export type ContactSubmission = {
   id: string;
   email: string;

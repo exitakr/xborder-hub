@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/guard";
 import {
   fetchAdminComments,
+  fetchAdminDailyMetrics,
   fetchAdminMembers,
   fetchAdminStats,
   fetchAdminThreads,
@@ -35,6 +36,7 @@ export default async function AdminPage() {
     threads,
     comments,
     contact,
+    dailyMetrics,
   ] = await Promise.all([
     fetchCommunityRequests(),
     fetchCommunities(),
@@ -43,6 +45,7 @@ export default async function AdminPage() {
     fetchAdminThreads(),
     fetchAdminComments(),
     fetchContactSubmissions(),
+    fetchAdminDailyMetrics(30),
   ]);
 
   return (
@@ -68,6 +71,7 @@ export default async function AdminPage() {
       threads={threads}
       comments={comments}
       contact={contact}
+      dailyMetrics={dailyMetrics}
     />
   );
 }

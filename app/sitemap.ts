@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { fetchThreads } from "@/lib/threads/queries";
+import { SEO_COUNTRIES, SEO_ROLES } from "@/lib/seo/salaryPages";
 
 const BASE =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://xborder-hub.vercel.app";
@@ -18,6 +19,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/legal/contact`, changeFrequency: "yearly", priority: 0.1 },
   ];
 
+  // Programmatic SEO cluster: 15 country hubs + 300 country×role pages.
+  const salaryPages: MetadataRoute.Sitemap = SEO_COUNTRIES.flatMap((c) => [
+    {
+      url: `${BASE}/salaries/${c.slug}`,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
+    ...SEO_ROLES.map((r) => ({
+      url: `${BASE}/salaries/${c.slug}/${r.slug}`,
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    })),
+  ]);
+
   // Real threads (best-effort — [] while the DB is empty/unavailable).
   const threads = await fetchThreads(50);
   const threadUrls: MetadataRoute.Sitemap = threads.map((t) => ({
@@ -27,5 +42,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...statics, ...threadUrls];
+  return [...statics, ...salaryPages, ...threadUrls];
 }

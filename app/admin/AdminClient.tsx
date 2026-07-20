@@ -7,6 +7,7 @@ import { AppTopBar } from "@/components/site/AppTopBar";
 import {
   adminDeleteComment,
   adminDeleteThread,
+  adminExportCompData,
   approveCommunityRequest,
   rejectCommunityRequest,
   updateContactStatus,
@@ -17,6 +18,7 @@ import type {
   AdminStats,
   AdminThread,
   ContactSubmission,
+  DailyMetric,
 } from "@/lib/admin/queries";
 import type { CommunityKind } from "@/lib/supabase/database.types";
 
@@ -44,15 +46,94 @@ const KIND_LABEL: Record<CommunityKind, string> = {
   role: "👤 職種",
 };
 
-type TabId = "overview" | "members" | "content" | "contact" | "communities";
+type TabId =
+  | "overview"
+  | "kpi"
+  | "members"
+  | "content"
+  | "contact"
+  | "communities";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview", label: "概要" },
+  { id: "kpi", label: "KPI" },
   { id: "members", label: "会員" },
   { id: "content", label: "コンテンツ" },
   { id: "contact", label: "お問い合わせ" },
   { id: "communities", label: "コミュニティ" },
 ];
+
+/** Metric definitions for the KPI small multiples — fixed hue per entity. */
+const KPI_SERIES: { key: keyof Omit<DailyMetric, "day">; label: string; color: string }[] = [
+  { key: "signups", label: "新規登録", color: "#0055A4" },
+  { key: "comp_posts", label: "年収データ投稿", color: "#1FA89E" },
+  { key: "threads", label: "スレッド投稿", color: "#6B4F8E" },
+  { key: "comments", label: "コメント", color: "#E89943" },
+  { key: "cc_requests", label: "Coffee Chat 申請", color: "#0055A4" },
+];
+
+function KpiChart({
+  metrics,
+  seriesKey,
+  label,
+  color,
+}: {
+  metrics: DailyMetric[];
+  seriesKey: keyof Omit<DailyMetric, "day">;
+  label: string;
+  color: string;
+}) {
+  const values = metrics.map((m) => Number(m[seriesKey] ?? 0));
+  const max = Math.max(...values, 1);
+  const total7 = values.slice(-7).reduce((a, b) => a + b, 0);
+  const prev7 = values.slice(-14, -7).reduce((a, b) => a + b, 0);
+  return (
+    <div className="bg-paper border border-ink/10 rounded-2xl p-3">
+      <div className="flex items-baseline justify-between mb-2">
+        <p className="text-[11px] font-bold text-ink">{label}</p>
+        <p className="text-[10px] text-ink-faint font-bold">
+          直近7日 {total7}
+          {prev7 > 0 && (
+            <span className={total7 >= prev7 ? "text-jade-deep" : "text-plum"}>
+              {" "}
+              ({total7 >= prev7 ? "+" : ""}
+              {total7 - prev7})
+            </span>
+          )}
+        </p>
+      </div>
+      <div className="flex items-end gap-[2px] h-16">
+        {metrics.map((m, i) => {
+          const v = values[i]!;
+          return (
+            <div
+              key={m.day}
+              title={`${m.day}: ${v}`}
+              className="flex-1 rounded-t-[3px] min-h-[2px]"
+              style={{
+                height: `${Math.max((v / max) * 100, v > 0 ? 6 : 2)}%`,
+                background: v > 0 ? color : "rgba(10,31,61,0.08)",
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function toCsv(rows: Record<string, string | number | boolean | null>[]): string {
+  if (rows.length === 0) return "";
+  const headers = Object.keys(rows[0]!);
+  const esc = (v: string | number | boolean | null) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [
+    headers.join(","),
+    ...rows.map((r) => headers.map((h) => esc(r[h] ?? null)).join(",")),
+  ].join("\n");
+}
 
 function fmtDate(s: string | null): string {
   if (!s) return "—";
@@ -80,6 +161,7 @@ export function AdminClient({
   threads,
   comments,
   contact,
+  dailyMetrics = [],
 }: {
   requests: RequestItem[];
   communities: CommunityItem[];
@@ -88,6 +170,7 @@ export function AdminClient({
   threads: AdminThread[];
   comments: AdminComment[];
   contact: ContactSubmission[];
+  dailyMetrics?: DailyMetric[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("overview");
@@ -110,6 +193,30 @@ export function AdminClient({
         return;
       }
       router.refresh();
+    });
+  }
+
+  const [exporting, setExporting] = useState(false);
+  function exportCsv() {
+    setExporting(true);
+    setError(null);
+    startTransition(async () => {
+      const res = await adminExportCompData();
+      setExporting(false);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      const csv = toCsv(res.rows);
+      const blob = new Blob(["﻿" + csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `xborderhub-compensation-anonymized-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     });
   }
 
@@ -185,6 +292,79 @@ export function AdminClient({
                   </p>
                 </div>
               ))}
+            </section>
+          )}
+
+          {/* ===== KPI DATA ROOM ===== */}
+          {tab === "kpi" && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-[12px] text-ink-soft font-bold">
+                  日次推移(直近30日)— 累計データ数: 年収{" "}
+                  {stats.salaries ?? "—"} 件 / 会員 {stats.members ?? "—"} 人
+                </p>
+                <button
+                  type="button"
+                  onClick={exportCsv}
+                  disabled={exporting}
+                  className="px-3 py-1.5 bg-ink text-cream rounded-full font-bold text-[11px] disabled:opacity-50"
+                >
+                  {exporting ? "生成中…" : "⬇ 匿名化CSVエクスポート(DD用)"}
+                </button>
+              </div>
+
+              {dailyMetrics.length === 0 ? (
+                <p className="text-[12px] text-ink-faint">
+                  KPI データがありません(migration 0015 を実行してください)。
+                </p>
+              ) : (
+                <>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {KPI_SERIES.map((s) => (
+                      <KpiChart
+                        key={s.key}
+                        metrics={dailyMetrics}
+                        seriesKey={s.key}
+                        label={s.label}
+                        color={s.color}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Numeric table — last 14 days (accessibility relief) */}
+                  <div className="overflow-x-auto border border-ink/10 rounded-2xl">
+                    <table className="w-full text-[11px] min-w-[560px]">
+                      <thead>
+                        <tr className="bg-paper text-ink-soft text-[10px] uppercase tracking-wider">
+                          <th className="text-left font-bold p-2">日付</th>
+                          {KPI_SERIES.map((s) => (
+                            <th key={s.key} className="text-right font-bold p-2">
+                              {s.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyMetrics.slice(-14).reverse().map((m) => (
+                          <tr key={m.day} className="border-t border-ink/8">
+                            <td className="p-2 text-ink-faint whitespace-nowrap">
+                              {m.day}
+                            </td>
+                            {KPI_SERIES.map((s) => (
+                              <td
+                                key={s.key}
+                                className="p-2 text-right text-ink tabular-nums"
+                              >
+                                {Number(m[s.key] ?? 0)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </section>
           )}
 

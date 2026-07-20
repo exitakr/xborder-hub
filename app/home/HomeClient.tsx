@@ -100,8 +100,11 @@ export function HomeClient({
             {/* MOVE TREND (top annual flows) */}
             <section className="rise" style={{ animationDelay: "0.08s" }}>
               <div className="flex items-end justify-between mb-2">
-                <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink">
+                <h2 className="display font-bold text-[16px] lg:text-[18px] leading-tight text-ink flex items-center gap-2">
                   移動トレンド
+                  <span className="text-[9px] uppercase tracking-wider bg-ink/5 text-ink-faint px-2 py-0.5 rounded-full font-bold border border-ink/10">
+                    β デモ集計
+                  </span>
                 </h2>
                 <Link
                   href="/search"

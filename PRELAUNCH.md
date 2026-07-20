@@ -100,6 +100,17 @@
 - [ ] **`supabase/migrations/0014_community_request_notify.sql` を SQL Editor で実行**
   - コミュニティ申請の承認/却下時に、申請者へアプリ内通知を送るトリガー。
     未実行でも承認/却下自体は動く(申請者に通知が届かないだけ)
+- [ ] **`supabase/migrations/0015_seo_stats_metrics.sql` を SQL Editor で実行(資産化の基盤)**
+  - `salary_page_stats`: 公開SEOページ(/salaries/シンガポール等 315ページ)の匿名集計。
+    **n>=5 のときだけ分布を公開**(n<5 は「データ募集中」表示)。anon にも grant 済み
+  - `admin_daily_metrics`: /admin「KPI」タブの日次推移(新規登録/投稿/CC申請)。
+    **これがそのまま買い手向けデータルームになる**
+  - `admin_export_comp`: /admin から匿名化CSVエクスポート(買い手DD用・user_id なし)
+- [ ] **Google Search Console 登録**(SEOループの起点・0015 デプロイ後)
+  - https://search.google.com/search-console で `xbordercareer.com` を追加
+    (DNS TXT レコードで所有権確認 — Xserver の DNS 設定に追加)
+  - サイトマップ `https://xbordercareer.com/sitemap.xml` を送信
+    (国×職種 315 ページが自動で載っている)
 - [ ] **管理者アカウントを設定** — SQL Editor で:
   ```sql
   update public.profiles set is_admin = true
@@ -242,7 +253,7 @@
 
 ## G. 動作確認(あなたが手動で)
 
-実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 → 0013 → 0014)を流したあとログイン → 下記をひと通り
+実行: SQL(0001 → 0002 → 0003 → 0004 → 0005 → 0006 → 0007 → 0008 → 0009 → 0010 → 0011 → 0012 → 0013 → 0014 → 0015)を流したあとログイン → 下記をひと通り
 
 - [ ] **新規登録 → 強制オンボーディング** — 確認メールリンク → `/welcome` ウィザード
   に着地(名前欄は **空**、メアド由来の自動補完が無いこと)。途中で URL バーから

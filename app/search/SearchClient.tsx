@@ -182,6 +182,7 @@ export function SearchClient({
   function applyFilter<T>(setter: (v: T) => void, value: T) {
     setter(value);
     setDisplayCount(PAGE_SIZE);
+    track("search_execute", { from, to, industry, role });
   }
 
   function reset() {

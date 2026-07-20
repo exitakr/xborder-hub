@@ -148,6 +148,31 @@ export async function updateContactStatus(input: {
   }
 }
 
+export type CompExportRow = Record<string, string | number | boolean | null>;
+
+/**
+ * Anonymized compensation dataset for due-diligence export (migration 0015,
+ * is_admin-gated RPC — no user_id, month-level dates only). The client turns
+ * this into a CSV download.
+ */
+export async function adminExportCompData(): Promise<
+  { ok: true; rows: CompExportRow[] } | { ok: false; error: string }
+> {
+  try {
+    const { supabase, user } = await requireAdmin();
+    if (!user) return { ok: false, error: "管理者権限がありません。" };
+    const { data, error } = await supabase.rpc("admin_export_comp");
+    if (error) {
+      console.error("[admin] exportComp", error);
+      return { ok: false, error: "エクスポートに失敗しました。" };
+    }
+    return { ok: true, rows: (data ?? []) as CompExportRow[] };
+  } catch (err) {
+    console.error("[admin] exportComp (catch)", err);
+    return { ok: false, error: "通信エラーが発生しました。" };
+  }
+}
+
 export async function rejectCommunityRequest(input: {
   requestId: string;
   note?: string;
