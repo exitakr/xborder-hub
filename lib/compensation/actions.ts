@@ -34,6 +34,54 @@ export type CompSubmission = {
 
 export type CompActionResult = { ok: true } | { ok: false; error: string };
 
+export type CompShareStats = {
+  sampleN: number;
+  scope: "country_role" | "country";
+  /** % of contributors whose comp bucket is <= yours; null when n<5. */
+  percentile: number | null;
+  /** Convenience: max(1, 100 - percentile) — the "top X%" headline. */
+  topPct: number | null;
+};
+
+/**
+ * Approximate percentile for the post-completion share card (migration
+ * 0016). Bucketed comp so it's a coarse "top X%", gated at n>=5 to protect
+ * anonymity and avoid meaningless stats. Never returns row-level data.
+ */
+export async function getCompShareStats(input: {
+  country: string;
+  role: string;
+  range: string;
+}): Promise<CompShareStats | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .rpc("comp_percentile", {
+        p_country: input.country,
+        p_role: input.role,
+        p_range: input.range,
+      })
+      .maybeSingle();
+    if (error || !data) {
+      if (error && !SCHEMA_MISSING.test(error.message)) {
+        console.error("[comp] getCompShareStats", error);
+      }
+      return null;
+    }
+    const r = data as { sample_n: number; scope: string; percentile: number | null };
+    const pct = r.percentile == null ? null : Number(r.percentile);
+    return {
+      sampleN: Number(r.sample_n ?? 0),
+      scope: r.scope === "country" ? "country" : "country_role",
+      percentile: pct,
+      topPct: pct == null ? null : Math.max(1, 100 - pct),
+    };
+  } catch (err) {
+    console.error("[comp] getCompShareStats (catch)", err);
+    return null;
+  }
+}
+
 function clampRating(v: number | null | undefined, max: number): number | null {
   if (v == null || Number.isNaN(v)) return null;
   return Math.min(max, Math.max(1, Math.round(v)));

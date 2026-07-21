@@ -58,36 +58,10 @@ const PREFS_KEY = "xbh.push_prefs.v1";
 
 /* ──────────────── Seed (for the empty demo state) ──────────────── */
 
-const seed: AppNotification[] = [
-  {
-    id: "n-seed-1",
-    kind: "thread_post",
-    group: "テックラウンジ",
-    title: "外資 PM の評価制度、日系と何がどう違うか",
-    body: "OKR や 360 レビューの実際の運用、昇進判定のリアル…",
-    href: "/thread?id=6",
-    read: false,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "n-seed-2",
-    kind: "thread_reply",
-    group: "雑談",
-    title: "あなたのコメントに返信があります",
-    body: "「ItalkiでフィリピンTeacherと…」",
-    href: "/thread?id=1",
-    read: false,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "n-seed-3",
-    kind: "system",
-    title: "Coffee Chat の受付を有効化しました",
-    body: "プロフィールに「⚡ 相談可」バッジが表示されています。",
-    read: true,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+// Real notifications come from the DB (migrations 0002/0003 triggers) and
+// are merged in on mount via mergeServerNotifications. The feed starts empty
+// so it never shows fabricated activity to a brand-new member.
+const seed: AppNotification[] = [];
 
 /* ──────────────── Notification store ──────────────── */
 

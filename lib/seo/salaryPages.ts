@@ -69,3 +69,10 @@ export function findCountry(slug: string): SeoCountry | undefined {
 export function findRole(slug: string): SeoRole | undefined {
   return SEO_ROLES.find((r) => r.slug === slug);
 }
+/** Reverse lookups by the value stored in compensation_data. */
+export function findCountryByDb(db: string): SeoCountry | undefined {
+  return SEO_COUNTRIES.find((c) => c.db === db);
+}
+export function findRoleByDb(db: string): SeoRole | undefined {
+  return SEO_ROLES.find((r) => r.db === db);
+}

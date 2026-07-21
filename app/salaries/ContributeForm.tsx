@@ -15,8 +15,13 @@ import {
   WEEKLY_HOURS_OPTS,
 } from "@/lib/profile/options";
 import type { CompensationData } from "@/lib/supabase/database.types";
-import { submitCompensation } from "@/lib/compensation/actions";
+import {
+  getCompShareStats,
+  submitCompensation,
+  type CompShareStats,
+} from "@/lib/compensation/actions";
 import { track } from "@/lib/analytics/track";
+import { ResultCard } from "./ResultCard";
 
 export function ContributeForm({
   own,
@@ -64,6 +69,10 @@ export function ContributeForm({
 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // After a successful FIRST contribution we show a shareable result card
+  // (the reward for contributing + the top of the share loop). Editing an
+  // existing row skips straight to onDone().
+  const [result, setResult] = useState<CompShareStats | null>(null);
 
   const valid = Boolean(country && industry && role && totalComp);
 
@@ -93,12 +102,35 @@ export function ContributeForm({
       });
       if (res.ok) {
         track("comp_contribution", { country, industry, role });
-        onDone();
         router.refresh();
+        if (own) {
+          // Editing — no need for the celebratory card.
+          onDone();
+          return;
+        }
+        const stats = await getCompShareStats({
+          country,
+          role,
+          range: totalComp,
+        });
+        setResult(
+          stats ?? { sampleN: 0, scope: "country_role", percentile: null, topPct: null },
+        );
       } else {
         setError(res.error);
       }
     });
+  }
+
+  if (result) {
+    return (
+      <ResultCard
+        country={country}
+        role={role}
+        stats={result}
+        onDone={onDone}
+      />
+    );
   }
 
   return (
