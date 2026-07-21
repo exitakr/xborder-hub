@@ -22,6 +22,7 @@ const PUBLIC_PREFIXES = [
   "/reset-password",
   "/welcome",
   "/api",
+  "/check", // top-of-funnel diagnostic — usable before onboarding
 ];
 
 export async function middleware(req: NextRequest) {

@@ -273,6 +273,27 @@ export function HomeClient({
             </section>
             )}
 
+            {/* DIAGNOSTIC CTA */}
+            <section className="rise" style={{ animationDelay: "0.18s" }}>
+              <Link
+                href="/check"
+                className="flex items-center gap-3 bg-ink text-cream rounded-2xl px-4 py-3 shadow-pop hover:bg-blue-deep transition-colors"
+              >
+                <span className="text-2xl flex-none">🧭</span>
+                <div className="min-w-0 flex-1">
+                  <p className="display font-bold text-[14px] leading-tight">
+                    海外転職 準備度チェック(1分)
+                  </p>
+                  <p className="text-[11px] text-cream/70 leading-snug">
+                    英語・資金・ビザをスコア化。結果はプロフィールに反映されます。
+                  </p>
+                </div>
+                <span className="flex-none text-mustard font-bold text-[13px]">
+                  診断する →
+                </span>
+              </Link>
+            </section>
+
             {/* RECENT MOVES — sample feed, hidden until real move data exists */}
             {SHOW_DEMO_CONTENT && (
             <section className="rise" style={{ animationDelay: "0.2s" }}>

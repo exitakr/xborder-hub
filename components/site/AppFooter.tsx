@@ -33,6 +33,13 @@ export function AppFooter() {
               </Link>
             </span>
           ))}
+          <span className="text-ink-faint/40">·</span>
+          <Link
+            href="/check"
+            className="hover:text-ink underline-offset-2 hover:underline"
+          >
+            海外転職 準備度チェック
+          </Link>
         </p>
         <p className="text-[10px] text-ink-faint font-semibold flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <Link href="/legal/terms" className="hover:text-ink underline-offset-2 hover:underline">
