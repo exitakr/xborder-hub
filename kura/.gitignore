@@ -1,0 +1,14 @@
+# The repo-root .gitignore anchors /.next/ and /out/ to the root, so this app
+# needs its own entries for the same build artefacts.
+/.next/
+/out/
+/build
+.vercel
+
+# Env files (also covered at the root, repeated here so this directory is
+# self-contained if it is ever extracted into its own repository).
+.env
+.env*.local
+
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,164 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import { getDict } from "@/lib/i18n/dict";
+import { requireProfile } from "@/lib/profile";
+import { createClient } from "@/lib/supabase/server";
+import { loadFxRates } from "@/lib/portfolio";
+import { convert, formatMoney } from "@/lib/money";
+import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory, type MarketItem } from "@/lib/types";
+import { CategoryGlyph } from "@/components/CategoryGlyph";
+import { addHolding } from "./actions";
+
+export const metadata: Metadata = { title: "Browse" };
+
+export default async function MarketPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; c?: string }>;
+}) {
+  const profile = await requireProfile();
+  const t = getDict(profile.locale);
+  const { q, c } = await searchParams;
+
+  const category = isCategory(c) ? c : null;
+  const term = (q ?? "").trim().slice(0, 80);
+
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("market_items")
+    .select(
+      "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence",
+    )
+    .order("name")
+    .limit(60);
+
+  if (category) query = query.eq("category", category);
+  if (term) {
+    // Escape PostgREST's `or` delimiters so a comma or paren in the search box
+    // cannot alter the filter expression.
+    const safe = term.replace(/[,()]/g, " ");
+    query = query.or(`name.ilike.%${safe}%,detail.ilike.%${safe}%,identifier.ilike.%${safe}%`);
+  }
+
+  const [{ data }, held, fx] = await Promise.all([
+    query,
+    heldItemIds(profile.userId),
+    loadFxRates(),
+  ]);
+
+  const items = (data ?? []) as MarketItem[];
+
+  return (
+    <div className="space-y-5">
+      <h1 className="text-2xl font-semibold tracking-tight">{t.mkTitle}</h1>
+
+      <form method="get" role="search" className="flex gap-2">
+        {category && <input type="hidden" name="c" value={category} />}
+        <input
+          type="search"
+          name="q"
+          defaultValue={term}
+          placeholder={t.mkSearch}
+          aria-label={t.mkSearch}
+          className="field"
+        />
+        <button type="submit" className="btn-secondary shrink-0">
+          {t.mkTitle}
+        </button>
+      </form>
+
+      <nav aria-label={t.mkAll} className="flex flex-wrap gap-2">
+        <FilterChip href={term ? `/market?q=${encodeURIComponent(term)}` : "/market"} active={!category}>
+          {t.mkAll}
+        </FilterChip>
+        {CATEGORIES.map((cat) => (
+          <FilterChip
+            key={cat}
+            href={`/market?c=${cat}${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+            active={category === cat}
+          >
+            <CategoryGlyph category={cat} className="mr-1.5 h-3.5 w-3.5" />
+            {t[CATEGORY_LABEL_KEY[cat]]}
+          </FilterChip>
+        ))}
+      </nav>
+
+      {items.length === 0 ? (
+        <p className="py-12 text-center text-sm text-muted">{t.mkNoResults}</p>
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {items.map((item) => {
+            const price = convert(item.current_price, item.currency, profile.currency, fx);
+            const owned = held.has(item.id);
+
+            return (
+              <li key={item.id} className="card flex items-center gap-3 p-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-muted">
+                  <CategoryGlyph category={item.category} className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/items/${item.id}`}
+                    className="block truncate rounded text-sm font-medium hover:underline"
+                  >
+                    {item.name}
+                  </Link>
+                  <p className="truncate text-xs text-muted">{item.detail ?? item.identifier}</p>
+                  <p className="tnum mt-0.5 text-sm">
+                    {price === null ? (
+                      <span className="text-muted">{t.mkNoPrice}</span>
+                    ) : (
+                      formatMoney(price, profile.currency, profile.locale)
+                    )}
+                  </p>
+                </div>
+
+                {owned ? (
+                  <span className="chip shrink-0">{t.mkAdded}</span>
+                ) : (
+                  <form action={addHolding} className="shrink-0">
+                    <input type="hidden" name="marketItemId" value={item.id} />
+                    <button type="submit" className="btn-secondary px-3 py-1.5 text-xs">
+                      {t.mkAdd}
+                    </button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+async function heldItemIds(userId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("holdings")
+    .select("market_item_id")
+    .eq("user_id", userId);
+  return new Set((data ?? []).map((r) => r.market_item_id as string));
+}
+
+function FilterChip({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`chip ${active ? "chip-active" : "hover:border-ink hover:text-ink"}`}
+    >
+      {children}
+    </Link>
+  );
+}
