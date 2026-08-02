@@ -24,6 +24,13 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       銘柄マスタ 約50件（時計 / スニーカー / カード / バッグ）
 - [ ] `supabase/migrations/0003_admin_curation.sql`
       管理者による価格登録用の関数
+- [ ] `supabase/migrations/0004_transaction_integrity.sql`
+      **保有数が負になる取引を DB 側で拒否するトリガー。**
+      モバイルアプリは PostgREST に直接書き込むため、これがないと
+      アプリ側の検証を迂回して不整合なデータを作れてしまいます
+- [ ] `supabase/migrations/0005_price_sources.sql`
+      MTG を Scryfall、ポケモンカードを Pokémon TCG API に切り替え
+      （どちらも無料で**市場価格**を返すため eBay の出品価格より高品質）
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration
@@ -53,9 +60,10 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 
 ---
 
-## B. Vercel
+## B. Vercel（Web 版）
 
-- [ ] リポジトリを接続し、**Root Directory を `kura` に設定**（重要）
+- [ ] リポジトリを接続し、**Root Directory を `kura/apps/web` に設定**（重要）
+- [ ] Install Command は既定のままで可（workspaces のルートから解決されます）
 - [ ] 環境変数を設定（すべて Production / Preview 両方に）
 
 | 変数 | 値 | Sensitive |
@@ -65,6 +73,7 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role キー | ✅ **必ずチェック** |
 | `EBAY_CLIENT_ID` | eBay App ID | ✅ |
 | `EBAY_CLIENT_SECRET` | eBay Cert ID | ✅ |
+| `POKEMONTCG_API_KEY` | pokemontcg.io の API キー（任意だが推奨） | ✅ |
 | `CRON_SECRET` | `openssl rand -hex 32` の出力 | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | `https://<本番ドメイン>` | — |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | 問い合わせ先アドレス | — |
@@ -76,6 +85,21 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cron/refresh-prices
 # {"ok":true,"updated":N,...} が返ればOK
 ```
+
+---
+
+## B-2. モバイルアプリ（App Store / Google Play）
+
+手順とストア掲載文は **[`docs/STORE.md`](./docs/STORE.md)** にまとめてあります。
+最低限、以下は着手前に把握してください。
+
+- [ ] `eas init` で `app.json` の `projectId` を実 ID に置き換える（現在はダミー）
+- [ ] `eas.json` の `submit.production` に App Store Connect の ID 類を記入
+- [ ] ⚠️ **審査用デモアカウントを用意する**（保有データを数件入れた状態で）。
+      未提出だとログイン必須アプリはほぼ確実に差し戻されます
+- [ ] ⚠️ **バンドル ID `com.kuraapp.kura` は登録後に変更できません。**
+      商標調査（§D）を先に済ませてください
+- [ ] 価格が実際に入った状態で提出する（「データ不足」だらけだと機能不全と見なされます）
 
 ---
 

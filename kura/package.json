@@ -1,39 +1,24 @@
 {
-  "name": "kura",
+  "name": "kura-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types \"lib/**/*.test.ts\""
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.46.1",
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "recharts": "^2.13.3",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.16.0",
-    "eslint-config-next": "^15.1.0",
-    "postcss": "^8.5.25",
-    "tailwindcss": "^3.4.16",
-    "typescript": "^5.7.2"
+    "dev": "npm run dev --workspace @kura/web",
+    "build": "npm run build --workspace @kura/web",
+    "mobile": "npm run start --workspace @kura/mobile",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspace @kura/core",
+    "lint": "npm run lint --workspace @kura/web"
   },
   "engines": {
     "node": ">=20"
   },
   "//overrides": "Transitive dependencies pinned to patched releases. next 15.5.x bundles postcss 8.4.31 and sharp 0.34.x, and the eslint toolchain pulls brace-expansion <=5.0.7 — all carry high-severity advisories. `npm audit fix --force` would instead downgrade next to v9 and eslint to v10, which is not a fix. Revisit when next ships updated bundled deps.",
+  "//audit-uuid": "`npm audit` reports a MODERATE advisory for uuid@7 (GHSA-w5hq-g745-h8pq, bounds check in v3/v5/v6 when an explicit buf is passed). It is NOT overridden on purpose: the only dependent is `xcode`, a .pbxproj parser used by @expo/config-plugins during `expo prebuild`. It is build tooling and never ships in the app bundle, and the affected code path is not reached. Forcing uuid@11 is a major-version jump across a package we cannot exercise in CI, so the risk of breaking prebuild outweighs an advisory with no runtime exposure. Remove this note once Expo ships an updated xcode.",
   "overrides": {
     "postcss": "^8.5.25",
     "sharp": "^0.35.3",
