@@ -25,10 +25,16 @@ import { fetchFxRates, type FxSnapshot } from "@/lib/fx";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-/** Items held by at least one user are refreshed first, then the rest. */
-const MAX_ITEMS_PER_RUN = 40;
-/** Courtesy pacing. Scryfall asks for <10 req/s; one per second is well inside. */
-const REQUEST_INTERVAL_MS = 1000;
+/**
+ * Items held by at least one user are refreshed first, then the rest.
+ *
+ * The ceiling exists to fit inside `maxDuration`, so it has to be read together
+ * with the pacing below: every item costs one interval plus its fetch. At 300ms
+ * a full run of 50 lands near 30s, which leaves headroom for a slow upstream.
+ */
+const MAX_ITEMS_PER_RUN = 50;
+/** Courtesy pacing. Scryfall asks for <10 req/s; 300ms is comfortably inside. */
+const REQUEST_INTERVAL_MS = 300;
 
 type SourceType = "ebay" | "scryfall" | "pokemontcg" | "curated";
 
@@ -63,12 +69,22 @@ export async function GET(request: NextRequest) {
     await supabase.from("fx_rates").upsert(fx.rows, { onConflict: "currency" });
   }
 
+  // eBay is the only source that needs credentials. Without them every eBay item
+  // would throw, and — because each attempt still costs its pacing interval —
+  // roughly two thirds of the catalogue would burn the run's time budget before
+  // Scryfall and pokemontcg items were ever reached. Excluding them up front is
+  // what makes a key-less deployment still produce the prices it CAN produce.
+  const ebayConfigured = Boolean(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET);
+  const sources: SourceType[] = ebayConfigured
+    ? ["ebay", "scryfall", "pokemontcg"]
+    : ["scryfall", "pokemontcg"];
+
   const [held, listed] = await Promise.all([
     heldItemIds(supabase),
     supabase
       .from("market_items")
       .select("id, source_type, search_query")
-      .in("source_type", ["ebay", "scryfall", "pokemontcg"])
+      .in("source_type", sources)
       .not("search_query", "is", null)
       .order("price_updated_at", { ascending: true, nullsFirst: true })
       .limit(MAX_ITEMS_PER_RUN * 2),
@@ -94,6 +110,15 @@ export async function GET(request: NextRequest) {
   let failed = 0;
   let backfilled = 0;
 
+  // Per-source tally. A run that returns all-zero totals is otherwise silent
+  // about which upstream is at fault, and item-level logging is not an option
+  // here (SPEC §8 keeps holdings out of the logs).
+  const bySource: Record<string, { updated: number; insufficient: number; failed: number }> = {};
+  const tally = (source: SourceType, key: "updated" | "insufficient" | "failed") => {
+    bySource[source] ??= { updated: 0, insufficient: 0, failed: 0 };
+    bySource[source][key] += 1;
+  };
+
   for (const id of queue) {
     if (seen.has(id)) continue;
     seen.add(id);
@@ -115,6 +140,7 @@ export async function GET(request: NextRequest) {
           })
           .eq("id", id);
         insufficient += 1;
+        tally(candidate.sourceType, "insufficient");
         continue;
       }
 
@@ -139,10 +165,12 @@ export async function GET(request: NextRequest) {
         .eq("id", id);
 
       updated += 1;
+      tally(candidate.sourceType, "updated");
     } catch {
       // One bad item must not abort the run. Nothing about the item is logged:
       // holdings are sensitive and logs are not (SPEC §8).
       failed += 1;
+      tally(candidate.sourceType, "failed");
     }
 
     await sleep(REQUEST_INTERVAL_MS);
@@ -154,7 +182,14 @@ export async function GET(request: NextRequest) {
     insufficient,
     failed,
     backfilled,
+    bySource,
+    // Surfaced because they are the two settings that silently halve what a
+    // deployment can price: no eBay key removes watches, sneakers and Yu-Gi-Oh;
+    // no EUR rate removes the Cardmarket history behind every Pokémon chart.
+    ebayConfigured,
     fx: fx.rows.length > 0 ? "ok" : "failed",
+    eurRate: fx.eurToUsd ? "ok" : "unavailable",
+    candidates: byId.size,
   });
 }
 
