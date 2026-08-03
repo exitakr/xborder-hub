@@ -124,6 +124,20 @@ export function PriceChart({
             />
             <Path d={path} fill="none" stroke={theme.color.accent} strokeWidth={2} />
 
+            {/* A short series has to show its points: one observation draws a
+                zero-length path, which renders as an empty chart and reads as a
+                bug rather than as "we have one day of data so far". */}
+            {points.length <= 8 &&
+              points.map((p) => (
+                <Circle
+                  key={p.ts}
+                  cx={x(p.ts)}
+                  cy={y(p.price)}
+                  r={3}
+                  fill={theme.color.accent}
+                />
+              ))}
+
             {snapped.map((m, i) => (
               <React.Fragment key={`${m.cx}-${i}`}>
                 <Circle

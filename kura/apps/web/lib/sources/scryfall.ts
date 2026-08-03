@@ -14,6 +14,10 @@
  *    docs/RESEARCH.md §7 — this constrains monetisation and matters for a sale.
  *
  * Prices refresh once a day upstream, which matches our daily cron exactly.
+ * Scryfall publishes no price history, so a Magic card's chart can only build
+ * forward from the first cron run. MTGJSON carries 90 days but only as a
+ * multi-gigabyte bulk export, which does not fit a serverless refresh; see
+ * docs/RESEARCH.md §7.2.
  *
  * §要検証: the response shape below could not be confirmed against the live API
  * from the build sandbox (outbound access to api.scryfall.com is blocked by the
@@ -21,16 +25,12 @@
  * ("no data") rather than an exception or a wrong number.
  */
 
+import type { SourcePrice } from "./types";
+
+export type { SourcePrice };
+
 const ENDPOINT = "https://api.scryfall.com/cards/named";
 const USER_AGENT = "KURA/1.0 (collectible portfolio tracker)";
-
-export interface SourcePrice {
-  price: number;
-  currency: "USD" | "JPY" | "SGD";
-  /** Observations behind the figure. Scryfall reports one aggregate value. */
-  sampleSize: number;
-  source: string;
-}
 
 export async function fetchScryfallPrice(cardName: string): Promise<SourcePrice | null> {
   const url = new URL(ENDPOINT);

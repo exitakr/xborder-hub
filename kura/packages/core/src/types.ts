@@ -38,10 +38,12 @@ export function sourceLabel(sourceType: SourceType, locale: "ja" | "en"): string
       return locale === "ja" ? "eBay 出品価格（Browse API）" : "eBay listings (Browse API)";
     case "scryfall":
       return locale === "ja" ? "Scryfall（市場価格）" : "Scryfall (market price)";
+    // Cardmarket is named first because it is what the chart is normally built
+    // from; TCGplayer answers only for cards Cardmarket does not cover.
     case "pokemontcg":
       return locale === "ja"
-        ? "Pokémon TCG API / TCGplayer"
-        : "Pokémon TCG API / TCGplayer";
+        ? "Pokémon TCG API（Cardmarket / TCGplayer）"
+        : "Pokémon TCG API (Cardmarket / TCGplayer)";
     case "curated":
       return locale === "ja" ? "運営による手動登録" : "Recorded manually by the operator";
   }

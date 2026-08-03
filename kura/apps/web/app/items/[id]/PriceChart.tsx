@@ -102,7 +102,10 @@ export function PriceChart({ points, markers, currency, locale, labels }: Props)
             dataKey="price"
             stroke="#1F6FEB"
             strokeWidth={2}
-            dot={false}
+            // A short series has to show its points: one observation draws a
+            // zero-length line, which renders as an empty chart and reads as a
+            // bug rather than as "we have one day of data so far".
+            dot={points.length <= 8 ? { r: 3, fill: "#1F6FEB" } : false}
             isAnimationActive={!prefersReducedMotion}
           />
 

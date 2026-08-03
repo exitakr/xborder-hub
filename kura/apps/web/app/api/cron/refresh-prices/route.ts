@@ -2,8 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { confidenceFor } from "@kura/core";
 import { fetchPrice, sleep } from "@/lib/ebay";
-import { fetchScryfallPrice, type SourcePrice } from "@/lib/sources/scryfall";
-import { fetchPokemonTcgPrice } from "@/lib/sources/pokemontcg";
+import { fetchScryfallPrice } from "@/lib/sources/scryfall";
+import { fetchPokemonTcgSeries } from "@/lib/sources/pokemontcg";
+import type { SourceSeries } from "@/lib/sources/types";
+import { fetchFxRates, type FxSnapshot } from "@/lib/fx";
 
 /**
  * Daily price refresh (SPEC §3.3).
@@ -13,6 +15,11 @@ import { fetchPokemonTcgPrice } from "@/lib/sources/pokemontcg";
  * whole design assumes daily granularity rather than intraday quotes.
  *
  * Snapshots are INSERTed, never UPDATEd — the price history is the product.
+ *
+ * The first time an item is seen, any history its source can supply is written
+ * too. Without that, a newly seeded catalogue draws nothing for weeks: one
+ * point a day is not a chart, and "add an item, see an empty graph" reads as a
+ * broken feature rather than as an honest absence of data.
  */
 
 export const dynamic = "force-dynamic";
@@ -49,6 +56,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "service role key not configured" }, { status: 500 });
   }
 
+  // Rates are fetched before the item loop, not after: Cardmarket quotes in EUR
+  // and cannot be stored until there is a rate to bring it onto the USD axis.
+  const fx = await fetchFxRates();
+  if (fx.rows.length > 0) {
+    await supabase.from("fx_rates").upsert(fx.rows, { onConflict: "currency" });
+  }
+
   const [held, listed] = await Promise.all([
     heldItemIds(supabase),
     supabase
@@ -78,6 +92,7 @@ export async function GET(request: NextRequest) {
   let updated = 0;
   let insufficient = 0;
   let failed = 0;
+  let backfilled = 0;
 
   for (const id of queue) {
     if (seen.has(id)) continue;
@@ -88,9 +103,9 @@ export async function GET(request: NextRequest) {
     if (!candidate) continue;
 
     try {
-      const observation = await fetchFor(candidate);
+      const series = await fetchFor(candidate, fx);
 
-      if (!observation) {
+      if (!series) {
         // Not an error: we refuse to publish a price we cannot support.
         await supabase
           .from("market_items")
@@ -103,20 +118,22 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      backfilled += await writeHistory(supabase, id, series);
+
       await supabase.from("price_snapshots").insert({
         market_item_id: id,
-        price: observation.price,
-        currency: observation.currency,
-        sample_size: observation.sampleSize,
-        source: observation.source,
+        price: series.current.price,
+        currency: series.current.currency,
+        sample_size: series.current.sampleSize,
+        source: series.current.source,
       });
 
       await supabase
         .from("market_items")
         .update({
-          current_price: observation.price,
-          currency: observation.currency,
-          data_confidence: confidenceOf(candidate.sourceType, observation),
+          current_price: series.current.price,
+          currency: series.current.currency,
+          data_confidence: confidenceOf(candidate.sourceType, series.current.sampleSize),
           price_updated_at: new Date().toISOString(),
         })
         .eq("id", id);
@@ -131,28 +148,73 @@ export async function GET(request: NextRequest) {
     await sleep(REQUEST_INTERVAL_MS);
   }
 
-  const fx = await refreshFxRates(supabase);
+  return NextResponse.json({
+    ok: true,
+    updated,
+    insufficient,
+    failed,
+    backfilled,
+    fx: fx.rows.length > 0 ? "ok" : "failed",
+  });
+}
 
-  return NextResponse.json({ ok: true, updated, insufficient, failed, fx });
+/**
+ * Seed an item's chart with whatever history its source publishes, once.
+ *
+ * Guarded on the item having no snapshots at all rather than on a date range:
+ * these anchors are timestamped relative to the run, so re-running would lay
+ * down a second, slightly shifted copy of the same three points.
+ */
+async function writeHistory(
+  supabase: ReturnType<typeof createAdminClient>,
+  itemId: string,
+  series: SourceSeries,
+): Promise<number> {
+  if (series.history.length === 0) return 0;
+
+  const { count } = await supabase
+    .from("price_snapshots")
+    .select("id", { count: "exact", head: true })
+    .eq("market_item_id", itemId);
+
+  if ((count ?? 0) > 0) return 0;
+
+  const { error } = await supabase.from("price_snapshots").insert(
+    series.history.map((point) => ({
+      market_item_id: itemId,
+      price: point.price,
+      currency: point.currency,
+      sample_size: 1,
+      source: point.source,
+      observed_at: point.observedAt.toISOString(),
+    })),
+  );
+
+  return error ? 0 : series.history.length;
 }
 
 /** Dispatch to whichever source this item is configured for. */
-async function fetchFor(candidate: Candidate): Promise<SourcePrice | null> {
+async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSeries | null> {
   switch (candidate.sourceType) {
-    case "scryfall":
-      return fetchScryfallPrice(candidate.query);
+    case "scryfall": {
+      const current = await fetchScryfallPrice(candidate.query);
+      return current ? { current, history: [] } : null;
+    }
 
     case "pokemontcg":
-      return fetchPokemonTcgPrice(candidate.query);
+      return fetchPokemonTcgSeries(candidate.query, fx.eurToUsd);
 
     case "ebay": {
       const observation = await fetchPrice(candidate.query);
       if (!observation) return null;
       return {
-        price: observation.price,
-        currency: observation.currency as SourcePrice["currency"],
-        sampleSize: observation.sampleSize,
-        source: "ebay_browse",
+        current: {
+          price: observation.price,
+          currency: observation.currency as SourceSeries["current"]["currency"],
+          sampleSize: observation.sampleSize,
+          source: "ebay_browse",
+        },
+        history: [],
       };
     }
 
@@ -169,8 +231,8 @@ async function fetchFor(candidate: Candidate): Promise<SourcePrice | null> {
  * observations is meaningless there — they are "medium" by construction, which
  * is honest: a real market price, from a single upstream aggregate.
  */
-function confidenceOf(sourceType: SourceType, observation: SourcePrice) {
-  if (sourceType === "ebay") return confidenceFor(observation.sampleSize);
+function confidenceOf(sourceType: SourceType, sampleSize: number) {
+  if (sourceType === "ebay") return confidenceFor(sampleSize);
   return "medium" as const;
 }
 
@@ -180,35 +242,4 @@ async function heldItemIds(
 ): Promise<string[]> {
   const { data } = await supabase.from("holdings").select("market_item_id");
   return [...new Set((data ?? []).map((r) => r.market_item_id as string))];
-}
-
-/**
- * Refresh FX rates so a Singapore user's totals are not stale.
- * Rates are stored as "units of X per 1 JPY" to match @kura/core's money module.
- */
-async function refreshFxRates(
-  supabase: ReturnType<typeof createAdminClient>,
-): Promise<"ok" | "failed"> {
-  const endpoint = process.env.FX_RATES_URL ?? "https://open.er-api.com/v6/latest/JPY";
-
-  try {
-    const res = await fetch(endpoint, { cache: "no-store" });
-    if (!res.ok) return "failed";
-
-    const json = (await res.json()) as { rates?: Record<string, number> };
-    const rates = json.rates;
-    if (!rates) return "failed";
-
-    const rows = (["SGD", "USD"] as const)
-      .filter((c) => Number.isFinite(rates[c]) && rates[c] > 0)
-      .map((c) => ({ currency: c, rate: rates[c], updated_at: new Date().toISOString() }));
-
-    if (rows.length === 0) return "failed";
-
-    await supabase.from("fx_rates").upsert(rows, { onConflict: "currency" });
-    return "ok";
-  } catch {
-    // Stale rates are better than no app; the previous values stay in place.
-    return "failed";
-  }
 }
