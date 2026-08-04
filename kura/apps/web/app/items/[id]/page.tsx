@@ -11,7 +11,9 @@ import { PriceChart, type ChartPoint, type TradeMarker } from "./PriceChart";
 import { TransactionForm } from "./TransactionForm";
 import { PhotoUploader } from "./PhotoUploader";
 import { TransactionList } from "./TransactionList";
+import { PriceReportForm } from "./PriceReportForm";
 import { addHolding } from "../../market/actions";
+import { communityConfidence } from "@kura/core";
 
 export const metadata: Metadata = { title: "Item" };
 
@@ -25,7 +27,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const detail = await loadItemDetail(supabase, id, profile.userId, currency);
   if (!detail) notFound();
 
-  const { item, price, holdingId, transactions, summary } = detail;
+  const { item, price, holdingId, transactions, summary, community } = detail;
 
   const points: ChartPoint[] = detail.snapshots;
 
@@ -105,11 +107,61 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         <h2 className="mb-2 text-sm font-semibold">{t.itChart}</h2>
         <PriceChart
           points={points}
+          community={detail.communitySeries}
           markers={markers}
           currency={currency}
           locale={profile.locale}
-          labels={{ buy: t.itMarkerBuy, sell: t.itMarkerSell, empty: t.itNoChart }}
+          labels={{
+            buy: t.itMarkerBuy,
+            sell: t.itMarkerSell,
+            empty: t.itNoChart,
+            asking: t.cmAsking,
+            realised: t.cmRealised,
+          }}
         />
+      </section>
+
+      {/* Realised prices sit in their own card rather than beside the asking
+          price: they answer a different question, from a different source, and
+          blending the two would imply a single figure nobody actually quoted. */}
+      <section className="card space-y-3 p-4">
+        <div>
+          <h2 className="text-sm font-semibold">{t.cmTitle}</h2>
+          <p className="mt-1 text-xs text-muted">{t.cmLead}</p>
+        </div>
+
+        {community ? (
+          <>
+            <p className="tnum text-2xl font-semibold">
+              {formatMoney(community.price, currency, profile.locale)}
+            </p>
+            <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
+              <div className="flex gap-1.5">
+                <dt>{t.cmContributors}</dt>
+                <dd className="tnum font-medium text-ink">{community.contributors}</dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt>{t.cmReports}</dt>
+                <dd className="tnum font-medium text-ink">{community.reports}</dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt>{t.itConfidence}</dt>
+                <dd className="font-medium text-ink">
+                  {communityConfidence(community.contributors) === "medium"
+                    ? t.confidenceMedium
+                    : t.confidenceLow}
+                </dd>
+              </div>
+            </dl>
+          </>
+        ) : (
+          <div className="space-y-1.5 text-sm text-muted">
+            <p>{t.cmNone}</p>
+            <p className="text-xs">{t.cmWhyThreshold}</p>
+          </div>
+        )}
+
+        <PriceReportForm t={t} marketItemId={item.id} defaultCurrency={currency} />
       </section>
 
       {holdingId ? (

@@ -25,6 +25,7 @@ export interface TradeMarker {
  */
 export function PriceChart({
   points,
+  community = [],
   markers,
   currency,
   locale,
@@ -32,15 +33,22 @@ export function PriceChart({
   height = 200,
 }: {
   points: ChartPoint[];
+  /**
+   * Monthly medians of what users reported selling for. Drawn as its own dashed
+   * series rather than merged into `points`: those are asking prices from a
+   * venue, these are realised prices from the crowd, and one line through both
+   * would show a figure neither source ever quoted.
+   */
+  community?: ChartPoint[];
   markers: TradeMarker[];
   currency: Currency;
   locale: Locale;
-  labels: { buy: string; sell: string; empty: string };
+  labels: { buy: string; sell: string; empty: string; asking: string; realised: string };
   height?: number;
 }) {
   const [width, setWidth] = useState(0);
 
-  if (points.length === 0) {
+  if (points.length === 0 && community.length === 0) {
     return (
       <View style={{ height, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: theme.color.muted, fontSize: 13, textAlign: "center" }}>
@@ -57,8 +65,10 @@ export function PriceChart({
   const plotW = Math.max(width - padLeft - padRight, 1);
   const plotH = height - padTop - padBottom;
 
-  const times = points.map((p) => p.ts);
-  const prices = points.map((p) => p.price);
+  // Both axes span both series, or whichever one sits lower gets clipped.
+  const all = [...points, ...community];
+  const times = all.map((p) => p.ts);
+  const prices = all.map((p) => p.price);
   const tMin = Math.min(...times);
   const tMax = Math.max(...times);
   const pMin = Math.min(...prices);
@@ -74,26 +84,36 @@ export function PriceChart({
   const y = (price: number) =>
     padTop + plotH - ((price - yMin) / (yMax - yMin || 1)) * plotH;
 
-  const path = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${x(p.ts).toFixed(1)},${y(p.price).toFixed(1)}`)
-    .join(" ");
+  const toPath = (series: readonly ChartPoint[]) =>
+    series
+      .map((p, i) => `${i === 0 ? "M" : "L"}${x(p.ts).toFixed(1)},${y(p.price).toFixed(1)}`)
+      .join(" ");
+
+  const path = toPath(points);
+  const communityPath = toPath(community);
 
   // Snap each trade to the nearest observation so no marker floats off the line.
-  const snapped = markers.map((m) => {
-    let nearest = points[0];
-    let best = Math.abs(points[0].ts - m.ts);
-    for (const p of points) {
-      const d = Math.abs(p.ts - m.ts);
-      if (d < best) {
-        best = d;
-        nearest = p;
-      }
-    }
-    return { cx: x(nearest.ts), cy: y(nearest.price), type: m.type };
-  });
+  // Markers belong to the asking series; with no asking points there is nothing
+  // to snap to and they are omitted rather than placed arbitrarily.
+  const snapped =
+    points.length === 0
+      ? []
+      : markers.map((m) => {
+          let nearest = points[0];
+          let best = Math.abs(points[0].ts - m.ts);
+          for (const p of points) {
+            const d = Math.abs(p.ts - m.ts);
+            if (d < best) {
+              best = d;
+              nearest = p;
+            }
+          }
+          return { cx: x(nearest.ts), cy: y(nearest.price), type: m.type };
+        });
 
-  const first = points[0];
-  const last = points[points.length - 1];
+  const ordered = [...all].sort((a, b) => a.ts - b.ts);
+  const first = ordered[0];
+  const last = ordered[ordered.length - 1];
 
   return (
     <View>
@@ -138,6 +158,30 @@ export function PriceChart({
                 />
               ))}
 
+            {/* Dashed, and always dotted: monthly aggregates are sparse by
+                construction, so a solid line between two of them would imply
+                observations on the days in between that nobody reported. */}
+            {community.length > 0 && (
+              <>
+                <Path
+                  d={communityPath}
+                  fill="none"
+                  stroke={theme.color.gain}
+                  strokeWidth={2}
+                  strokeDasharray="5,3"
+                />
+                {community.map((p) => (
+                  <Circle
+                    key={`c-${p.ts}`}
+                    cx={x(p.ts)}
+                    cy={y(p.price)}
+                    r={3}
+                    fill={theme.color.gain}
+                  />
+                ))}
+              </>
+            )}
+
             {snapped.map((m, i) => (
               <React.Fragment key={`${m.cx}-${i}`}>
                 <Circle
@@ -176,14 +220,50 @@ export function PriceChart({
       <View
         style={{
           flexDirection: "row",
+          flexWrap: "wrap",
           justifyContent: "center",
-          gap: 16,
+          columnGap: 16,
+          rowGap: 6,
           marginTop: theme.space(2),
         }}
       >
+        <LegendLine color={theme.color.accent} label={labels.asking} />
+        {community.length > 0 && (
+          <LegendLine color={theme.color.gain} label={labels.realised} dashed />
+        )}
         <LegendDot color={theme.color.buy} letter="B" label={labels.buy} />
         <LegendDot color={theme.color.sell} letter="S" label={labels.sell} />
       </View>
+    </View>
+  );
+}
+
+/**
+ * Key for a plotted series. The dashed variant is drawn as three short segments
+ * rather than with a border style, which React Native does not offer per-edge in
+ * a way that survives a 20px-wide view.
+ */
+function LegendLine({
+  color,
+  label,
+  dashed = false,
+}: {
+  color: string;
+  label: string;
+  dashed?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      {dashed ? (
+        <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={{ width: 5, height: 2, backgroundColor: color }} />
+          ))}
+        </View>
+      ) : (
+        <View style={{ width: 20, height: 2, backgroundColor: color }} />
+      )}
+      <Text style={{ fontSize: 11, color: theme.color.muted }}>{label}</Text>
     </View>
   );
 }

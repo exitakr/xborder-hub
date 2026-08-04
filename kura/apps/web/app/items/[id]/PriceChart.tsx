@@ -29,11 +29,21 @@ export interface TradeMarker {
 
 interface Props {
   points: ChartPoint[];
+  /**
+   * Monthly medians of what users reported selling for. Kept as its own series
+   * rather than merged into `points`: these are realised prices from the crowd,
+   * where `points` are asking prices from a venue, and averaging the two
+   * together would produce a figure neither source ever quoted.
+   */
+  community?: ChartPoint[];
   markers: TradeMarker[];
   currency: Currency;
   locale: Locale;
-  labels: { buy: string; sell: string; empty: string };
+  labels: { buy: string; sell: string; empty: string; asking: string; realised: string };
 }
+
+const ASKING = "#1F6FEB";
+const REALISED = "#10B981";
 
 /**
  * Price history with the user's own trades overlaid (SPEC §6.3).
@@ -43,14 +53,22 @@ interface Props {
  * nearest snapshot, since a trade on a day we have no observation for still has
  * to land somewhere sensible on the line.
  */
-export function PriceChart({ points, markers, currency, locale, labels }: Props) {
+export function PriceChart({
+  points,
+  community = [],
+  markers,
+  currency,
+  locale,
+  labels,
+}: Props) {
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   const snapped = useMemo(() => snapMarkers(points, markers), [points, markers]);
+  const data = useMemo(() => mergeSeries(points, community), [points, community]);
 
-  if (points.length === 0) {
+  if (data.length === 0) {
     return (
       <p className="flex h-56 items-center justify-center text-center text-sm text-muted">
         {labels.empty}
@@ -58,7 +76,8 @@ export function PriceChart({ points, markers, currency, locale, labels }: Props)
     );
   }
 
-  const prices = points.map((p) => p.price);
+  // The axis has to span both series, or whichever one is lower gets clipped.
+  const prices = [...points, ...community].map((p) => p.price);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const pad = (max - min || max || 1) * 0.12;
@@ -66,7 +85,7 @@ export function PriceChart({ points, markers, currency, locale, labels }: Props)
   return (
     <div className="h-56 w-full sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 12, right: 12, bottom: 4, left: 4 }}>
+        <LineChart data={data} margin={{ top: 12, right: 12, bottom: 4, left: 4 }}>
           <CartesianGrid stroke="#E4E7EC" vertical={false} />
           <XAxis
             dataKey="ts"
@@ -92,22 +111,38 @@ export function PriceChart({ points, markers, currency, locale, labels }: Props)
               fontSize: 12,
             }}
             labelFormatter={(ts) => shortDate(Number(ts), locale)}
-            formatter={(value: number | string) => [
+            formatter={(value: number | string, key: number | string) => [
               formatMoney(Number(value), currency, locale),
-              "",
+              key === "community" ? labels.realised : labels.asking,
             ]}
           />
           <Line
             type="monotone"
             dataKey="price"
-            stroke="#1F6FEB"
+            stroke={ASKING}
             strokeWidth={2}
             // A short series has to show its points: one observation draws a
             // zero-length line, which renders as an empty chart and reads as a
             // bug rather than as "we have one day of data so far".
-            dot={points.length <= 8 ? { r: 3, fill: "#1F6FEB" } : false}
+            dot={points.length <= 8 ? { r: 3, fill: ASKING } : false}
+            connectNulls
             isAnimationActive={!prefersReducedMotion}
           />
+          {community.length > 0 && (
+            <Line
+              type="monotone"
+              dataKey="community"
+              stroke={REALISED}
+              strokeWidth={2}
+              // Dashed and always dotted: monthly aggregates are sparse by
+              // construction, and a solid line between two of them would imply
+              // observations on the days in between that nobody reported.
+              strokeDasharray="5 3"
+              dot={{ r: 3, fill: REALISED }}
+              connectNulls
+              isAnimationActive={!prefersReducedMotion}
+            />
+          )}
 
           {snapped.map((m, i) => (
             <ReferenceDot
@@ -131,12 +166,63 @@ export function PriceChart({ points, markers, currency, locale, labels }: Props)
         </LineChart>
       </ResponsiveContainer>
 
-      <div className="mt-2 flex items-center justify-center gap-4 text-xs text-muted">
-        <Legend color="#1F6FEB" letter="B" label={labels.buy} />
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-muted">
+        <SeriesKey color={ASKING} label={labels.asking} />
+        {community.length > 0 && <SeriesKey color={REALISED} label={labels.realised} dashed />}
+        <Legend color={ASKING} letter="B" label={labels.buy} />
         <Legend color="#F59E0B" letter="S" label={labels.sell} />
       </div>
     </div>
   );
+}
+
+function SeriesKey({
+  color,
+  label,
+  dashed = false,
+}: {
+  color: string;
+  label: string;
+  dashed?: boolean;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        className="h-0.5 w-5 rounded-full"
+        style={
+          dashed
+            ? { backgroundImage: `repeating-linear-gradient(to right, ${color} 0 5px, transparent 5px 8px)` }
+            : { background: color }
+        }
+        aria-hidden="true"
+      />
+      {label}
+    </span>
+  );
+}
+
+/**
+ * One row per timestamp across both series.
+ *
+ * Recharts needs a single dataset, and the two series rarely share dates: the
+ * asking price lands daily, community medians land monthly. Missing values stay
+ * `undefined` so `connectNulls` bridges them instead of a gap being read as a
+ * price of zero.
+ */
+function mergeSeries(
+  points: readonly ChartPoint[],
+  community: readonly ChartPoint[],
+): Array<{ ts: number; price?: number; community?: number }> {
+  const byTs = new Map<number, { ts: number; price?: number; community?: number }>();
+
+  for (const p of points) {
+    byTs.set(p.ts, { ...(byTs.get(p.ts) ?? { ts: p.ts }), price: p.price });
+  }
+  for (const c of community) {
+    byTs.set(c.ts, { ...(byTs.get(c.ts) ?? { ts: c.ts }), community: c.price });
+  }
+
+  return [...byTs.values()].sort((a, b) => a.ts - b.ts);
 }
 
 function Legend({ color, letter, label }: { color: string; letter: string; label: string }) {

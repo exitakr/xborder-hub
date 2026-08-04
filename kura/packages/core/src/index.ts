@@ -39,9 +39,12 @@ export {
   CATEGORIES,
   CATEGORY_LABEL_KEY,
   SOURCE_TYPES,
+  communityConfidence,
   isCategory,
   sourceLabel,
   type Category,
+  type CommunityPoint,
+  type CommunityPrice,
   type SourceType,
   type HoldingRow,
   type MarketItem,
@@ -59,10 +62,14 @@ export {
 } from "./i18n/dict.ts";
 
 export {
+  CONDITIONS,
+  VENUES,
   curatedPriceSchema,
   newItemSchema,
+  priceReportSchema,
   profileSchema,
   transactionSchema,
+  type PriceReportInput,
   type TransactionInput,
 } from "./validation.ts";
 

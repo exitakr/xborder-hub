@@ -17,6 +17,7 @@ import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer, Thumb } from "../../src/components/ui";
 import { PriceChart, type TradeMarker } from "../../src/components/PriceChart";
 import { TransactionSheet } from "../../src/components/TransactionSheet";
+import { PriceReportSheet } from "../../src/components/PriceReportSheet";
 import { usePhotoUrls } from "../../src/usePhotoUrls";
 import { numericFont, theme, toneColor } from "../../src/theme";
 import { intlLocale } from "../../src/i18n";
@@ -28,6 +29,7 @@ export default function ItemScreen() {
 
   const [detail, setDetail] = useState<ItemDetail | null>(null);
   const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
+  const [reporting, setReporting] = useState(false);
   const [editing, setEditing] = useState<ItemDetail["transactions"][number] | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -204,10 +206,60 @@ export default function ItemScreen() {
           </Text>
           <PriceChart
             points={detail.snapshots}
+            community={detail.communitySeries}
             markers={markers}
             currency={profile.currency}
             locale={profile.locale}
-            labels={{ buy: t.itMarkerBuy, sell: t.itMarkerSell, empty: t.itNoChart }}
+            labels={{
+              buy: t.itMarkerBuy,
+              sell: t.itMarkerSell,
+              empty: t.itNoChart,
+              asking: t.cmAsking,
+              realised: t.cmRealised,
+            }}
+          />
+        </Card>
+
+        {/* Realised prices get their own card rather than sitting beside the
+            asking price: different question, different source, and merging the
+            two would imply a single figure nobody actually quoted. */}
+        <Card>
+          <Text style={{ fontSize: 13, fontWeight: "600" }}>{t.cmTitle}</Text>
+          <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>{t.cmLead}</Text>
+
+          {detail.community ? (
+            <>
+              <Text
+                style={[
+                  { fontSize: 22, fontWeight: "600", marginTop: theme.space(3) },
+                  numericFont,
+                ]}
+              >
+                {formatMoney(detail.community.price, profile.currency, profile.locale)}
+              </Text>
+              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+                {t.cmContributors}: {detail.community.contributors} · {t.cmReports}:{" "}
+                {detail.community.reports}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text
+                style={{ fontSize: 13, color: theme.color.muted, marginTop: theme.space(3) }}
+              >
+                {t.cmNone}
+              </Text>
+              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+                {t.cmWhyThreshold}
+              </Text>
+            </>
+          )}
+
+          <Button
+            label={t.cmReport}
+            variant="secondary"
+            onPress={() => setReporting(true)}
+            style={{ marginTop: theme.space(3) }}
           />
         </Card>
 
@@ -354,6 +406,21 @@ export default function ItemScreen() {
           onSaved={async () => {
             setSheet(null);
             setEditing(null);
+            await load();
+          }}
+        />
+      )}
+
+      {reporting && (
+        <PriceReportSheet
+          t={t}
+          marketItemId={id}
+          defaultCurrency={profile.currency}
+          onClose={() => setReporting(false)}
+          onSaved={async () => {
+            setReporting(false);
+            // Reload rather than patch state: this report may be the third one,
+            // which is what makes the published figure appear at all.
             await load();
           }}
         />

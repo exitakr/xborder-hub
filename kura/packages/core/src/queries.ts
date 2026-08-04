@@ -182,6 +182,14 @@ export interface ItemDetail {
   transactions: TransactionRow[];
   snapshots: Array<{ ts: number; price: number }>;
   summary: HoldingSummary;
+  /**
+   * What users reported selling this for, converted to the display currency.
+   * Null until three separate people have reported inside the window — the
+   * floor lives in the database so both apps inherit it.
+   */
+  community: { price: number; contributors: number; reports: number } | null;
+  /** Monthly community points for the chart. Empty when none clear the floor. */
+  communitySeries: Array<{ ts: number; price: number }>;
 }
 
 /** Everything the item-detail screen needs, in one round of queries. */
@@ -200,21 +208,27 @@ export async function loadItemDetail(
   if (!itemRow) return null;
   const item = itemRow as MarketItem;
 
-  const [{ data: holding }, { data: snapshotRows }, fx] = await Promise.all([
-    supabase
-      .from("holdings")
-      .select("id, photo_path")
-      .eq("user_id", userId)
-      .eq("market_item_id", itemId)
-      .maybeSingle(),
-    supabase
-      .from("price_snapshots")
-      .select("price, currency, observed_at")
-      .eq("market_item_id", itemId)
-      .order("observed_at", { ascending: true })
-      .limit(400),
-    loadFxRates(supabase),
-  ]);
+  const [{ data: holding }, { data: snapshotRows }, fx, { data: crowd }, { data: crowdSeries }] =
+    await Promise.all([
+      supabase
+        .from("holdings")
+        .select("id, photo_path")
+        .eq("user_id", userId)
+        .eq("market_item_id", itemId)
+        .maybeSingle(),
+      supabase
+        .from("price_snapshots")
+        .select("price, currency, observed_at")
+        .eq("market_item_id", itemId)
+        .order("observed_at", { ascending: true })
+        .limit(400),
+      loadFxRates(supabase),
+      // Both functions apply the contributor floor themselves and return no rows
+      // when it is not met, so "too thin to publish" arrives here as an empty
+      // result rather than as something this layer has to re-check.
+      supabase.rpc("community_price", { item: itemId }),
+      supabase.rpc("community_price_series", { item: itemId }),
+    ]);
 
   let transactions: TransactionRow[] = [];
   if (holding) {
@@ -242,6 +256,11 @@ export async function loadItemDetail(
   const price = convert(item.current_price, item.currency, displayCurrency, fx);
   const raw = summarize(converted, complete ? price : null);
 
+  const crowdRow = Array.isArray(crowd) ? crowd[0] : null;
+  const crowdPrice = crowdRow
+    ? convert(Number(crowdRow.price_jpy), "JPY", displayCurrency, fx)
+    : null;
+
   return {
     item,
     price,
@@ -250,6 +269,20 @@ export async function loadItemDetail(
     transactions,
     snapshots,
     summary: complete ? raw : unknownValueSummary(raw),
+    community:
+      crowdRow && crowdPrice !== null
+        ? {
+            price: crowdPrice,
+            contributors: Number(crowdRow.contributors),
+            reports: Number(crowdRow.reports),
+          }
+        : null,
+    communitySeries: (Array.isArray(crowdSeries) ? crowdSeries : [])
+      .map((row) => ({
+        ts: new Date(`${row.month}T00:00:00Z`).getTime(),
+        price: convert(Number(row.price_jpy), "JPY", displayCurrency, fx),
+      }))
+      .filter((p): p is { ts: number; price: number } => p.price !== null),
   };
 }
 

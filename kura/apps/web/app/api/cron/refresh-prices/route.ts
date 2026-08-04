@@ -4,6 +4,7 @@ import { confidenceFor } from "@kura/core";
 import { fetchPrice, sleep } from "@/lib/ebay";
 import { fetchScryfallPrice } from "@/lib/sources/scryfall";
 import { fetchPokemonTcgSeries } from "@/lib/sources/pokemontcg";
+import { fetchRakutenPrice } from "@/lib/sources/rakuten";
 import type { SourceSeries } from "@/lib/sources/types";
 import { fetchFxRates, type FxSnapshot } from "@/lib/fx";
 
@@ -36,7 +37,7 @@ const MAX_ITEMS_PER_RUN = 50;
 /** Courtesy pacing. Scryfall asks for <10 req/s; 300ms is comfortably inside. */
 const REQUEST_INTERVAL_MS = 300;
 
-type SourceType = "ebay" | "scryfall" | "pokemontcg" | "curated";
+type SourceType = "ebay" | "scryfall" | "pokemontcg" | "rakuten" | "curated";
 
 interface Candidate {
   id: string;
@@ -75,9 +76,10 @@ export async function GET(request: NextRequest) {
   // Scryfall and pokemontcg items were ever reached. Excluding them up front is
   // what makes a key-less deployment still produce the prices it CAN produce.
   const ebayConfigured = Boolean(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET);
-  const sources: SourceType[] = ebayConfigured
-    ? ["ebay", "scryfall", "pokemontcg"]
-    : ["scryfall", "pokemontcg"];
+  const rakutenConfigured = Boolean(process.env.RAKUTEN_APPLICATION_ID);
+  const sources: SourceType[] = ["scryfall", "pokemontcg"];
+  if (ebayConfigured) sources.push("ebay");
+  if (rakutenConfigured) sources.push("rakuten");
 
   const [held, listed] = await Promise.all([
     heldItemIds(supabase),
@@ -187,6 +189,7 @@ export async function GET(request: NextRequest) {
     // deployment can price: no eBay key removes watches, sneakers and Yu-Gi-Oh;
     // no EUR rate removes the Cardmarket history behind every Pokémon chart.
     ebayConfigured,
+    rakutenConfigured,
     fx: fx.rows.length > 0 ? "ok" : "failed",
     eurRate: fx.eurToUsd ? "ok" : "unavailable",
     candidates: byId.size,
@@ -239,6 +242,11 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSer
     case "pokemontcg":
       return fetchPokemonTcgSeries(candidate.query, fx.eurToUsd);
 
+    case "rakuten": {
+      const current = await fetchRakutenPrice(candidate.query);
+      return current ? { current, history: [] } : null;
+    }
+
     case "ebay": {
       const observation = await fetchPrice(candidate.query);
       if (!observation) return null;
@@ -267,7 +275,10 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSer
  * is honest: a real market price, from a single upstream aggregate.
  */
 function confidenceOf(sourceType: SourceType, sampleSize: number) {
-  if (sourceType === "ebay") return confidenceFor(sampleSize);
+  // eBay and Rakuten both reduce many listings to a median, so the number of
+  // listings behind it is meaningful. The card APIs return one already-aggregated
+  // figure, where counting observations would say nothing.
+  if (sourceType === "ebay" || sourceType === "rakuten") return confidenceFor(sampleSize);
   return "medium" as const;
 }
 

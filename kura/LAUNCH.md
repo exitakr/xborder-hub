@@ -31,6 +31,11 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
 - [ ] `supabase/migrations/0005_price_sources.sql`
       MTG を Scryfall、ポケモンカードを Pokémon TCG API に切り替え
       （どちらも無料で**市場価格**を返すため eBay の出品価格より高品質）
+- [ ] `supabase/migrations/0006_community_prices.sql`
+      利用者が投稿した**実売価格**の集計基盤と、楽天市場ソースの追加。
+      時計・バッグ・スニーカーには無料の実売価格 API が存在しないため、
+      **投稿者3人以上**が集まった銘柄でのみ相場を公開します
+      （1〜2件は相場ではなく個別事例のため非公開。詳細は `docs/RESEARCH.md` §8）
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration
@@ -74,6 +79,7 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 | `EBAY_CLIENT_ID` | eBay App ID | ✅ |
 | `EBAY_CLIENT_SECRET` | eBay Cert ID | ✅ |
 | `POKEMONTCG_API_KEY` | pokemontcg.io の API キー（任意だが推奨） | ✅ |
+| `RAKUTEN_APPLICATION_ID` | 楽天ウェブサービスのアプリ ID（時計/バッグ/スニーカーの JPY 相場） | ✅ |
 | `CRON_SECRET` | `openssl rand -hex 32` の出力 | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | `https://<本番ドメイン>` | — |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | 問い合わせ先アドレス | — |
@@ -100,6 +106,34 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cr
 - [ ] ⚠️ **バンドル ID `com.kuraapp.kura` は登録後に変更できません。**
       商標調査（§D）を先に済ませてください
 - [ ] 価格が実際に入った状態で提出する（「データ不足」だらけだと機能不全と見なされます）
+
+---
+
+## B-3. 楽天ウェブサービス（時計・バッグ・スニーカーの日本相場）
+
+eBay より取得が速く、**JPY 建て**なので日本の相場に近い数字が出ます。
+eBay キーの取得を待っている間でも、これだけで該当カテゴリに価格が入ります。
+
+- [ ] https://webservice.rakuten.co.jp で楽天アカウントでログイン
+- [ ] 「アプリ ID 発行」からアプリを登録（審査なし・即時発行）
+- [ ] 発行された **applicationId** を Vercel の `RAKUTEN_APPLICATION_ID` に設定
+- [ ] ⚠️ 規約により**出典表示が必須**です。銘柄詳細画面に自動表示されます（削除しないこと）
+- [ ] ⚠️ これも**出品価格**であり落札価格ではありません。実売価格は §B-4 で扱います
+
+---
+
+## B-4. 実売価格（コミュニティ投稿）の立ち上げ
+
+時計・バッグ・スニーカーに**無料の実売価格 API は存在しません**（調査結果は
+`docs/RESEARCH.md` §8）。そのため利用者の投稿から相場を作る設計にしています。
+
+- [ ] マイグレーション `0006` が適用済みであることを確認
+- [ ] ⚠️ **投稿者が3人集まるまで、その銘柄の相場は表示されません。**
+      1〜2件は相場ではなく個別事例のため、意図的に非公開にしています
+- [ ] クローズドベータで**主要銘柄に3人以上の投稿を集める**ことを最初の目標にする
+      （これが埋まらないと、この機能は利用者から見て存在しないのと同じです）
+- [ ] 投稿インセンティブはマイページの貢献度表示です。
+      「相場公開に貢献した銘柄数」が伸びることが投稿の動機になります
 
 ---
 

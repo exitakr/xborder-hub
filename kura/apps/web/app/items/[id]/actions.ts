@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { transactionSchema } from "@kura/core";
+import { priceReportSchema, transactionSchema } from "@kura/core";
 import { netQuantity } from "@kura/core";
 
 export interface TxState {
@@ -118,6 +118,80 @@ export async function deleteTransaction(formData: FormData) {
 
   if (itemId.success) revalidatePath(`/items/${itemId.data}`);
   revalidatePath("/portfolio");
+}
+
+export interface ReportState {
+  error?: "future_date" | "price" | "generic";
+  ok?: boolean;
+}
+
+/**
+ * File a realised trade as evidence for the community price.
+ *
+ * Deliberately not derived from the user's transactions: those are private
+ * bookkeeping, and turning them into a public signal without being asked would
+ * publish something the user never offered. This is the explicit act instead.
+ */
+export async function submitPriceReport(
+  _prev: ReportState,
+  formData: FormData,
+): Promise<ReportState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "generic" };
+
+  const parsed = priceReportSchema.safeParse({
+    marketItemId: formData.get("marketItemId"),
+    kind: formData.get("kind"),
+    price: formData.get("price"),
+    currency: formData.get("currency"),
+    tradedOn: formData.get("tradedOn"),
+    venue: formData.get("venue"),
+    condition: formData.get("condition"),
+  });
+
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    if (issue?.message === "future_date") return { error: "future_date" };
+    if (issue?.path.includes("price")) return { error: "price" };
+    return { error: "generic" };
+  }
+
+  const input = parsed.data;
+
+  const { error } = await supabase.from("price_reports").insert({
+    market_item_id: input.marketItemId,
+    user_id: user.id,
+    kind: input.kind,
+    price: input.price,
+    currency: input.currency,
+    traded_on: input.tradedOn,
+    venue: input.venue,
+    condition: input.condition,
+  });
+
+  if (error) return { error: "generic" };
+
+  revalidatePath(`/items/${input.marketItemId}`);
+  return { ok: true };
+}
+
+export async function deletePriceReport(formData: FormData) {
+  const id = z.string().uuid().safeParse(formData.get("reportId"));
+  const itemId = z.string().uuid().safeParse(formData.get("marketItemId"));
+  if (!id.success) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("price_reports").delete().eq("id", id.data).eq("user_id", user.id);
+
+  if (itemId.success) revalidatePath(`/items/${itemId.data}`);
 }
 
 /** Record the storage path of a photo the browser has already uploaded. */
