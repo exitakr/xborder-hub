@@ -50,10 +50,15 @@ comment on column public.market_items.aliases is
 -- ---------------------------------------------------------------------------
 -- identifier is unique in practice already (every seed row uses a distinct
 -- model code), but nothing enforced it. Making that real is what lets a seed
--- migration use `on conflict (identifier) do nothing` and become genuinely
--- safe to paste twice — every migration file up to and including 0007 only
--- had the toothless conflict-target-free form, which silently duplicated
--- rows on a second run instead of skipping them.
+-- migration name a conflict target and become genuinely safe to paste twice —
+-- every migration up to and including 0007 only had the toothless
+-- target-free `on conflict do nothing`, which silently duplicated rows on a
+-- second run instead of skipping them.
+--
+-- Partial, because `identifier` is nullable and only the non-null ones are
+-- meaningfully unique. The cost is that inserts must repeat the predicate —
+-- `on conflict (identifier) where identifier is not null` — since Postgres
+-- cannot infer a partial index from the column list alone.
 -- ---------------------------------------------------------------------------
 create unique index if not exists market_items_identifier_key
   on public.market_items (identifier)

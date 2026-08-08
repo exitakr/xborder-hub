@@ -49,7 +49,12 @@ values
   ('bag','Loewe Puzzle Bag Small','Calfskin','LOEWE-PUZZLE-S','Loewe Puzzle bag small','ebay','USD','ロエベ パズルバッグ Loewe Puzzle'),
   ('bag','Fendi Baguette Medium','FF canvas','FENDI-BAGUETTE-M','Fendi Baguette bag medium','ebay','USD','フェンディ バゲット Fendi Baguette'),
   ('bag','Prada Re-Edition 2005','Nylon','PRADA-2005','Prada Re-Edition 2005 nylon bag','ebay','USD','プラダ リエディション Prada Re-Edition')
-on conflict (identifier) do nothing;
+-- The `where` is not a filter on the rows being inserted: it is how Postgres is
+-- told which index to infer. `market_items_identifier_key` (0008) is a PARTIAL
+-- unique index, and a bare `on conflict (identifier)` cannot match one —
+-- inference needs the index predicate repeated verbatim, or the statement fails
+-- with 42P10 before inserting anything.
+on conflict (identifier) where identifier is not null do nothing;
 
 -- ---------------------------------------------------------------------------
 -- Cars. Same eBay Browse mechanism as watches and sneakers, which is the one
@@ -77,4 +82,9 @@ values
   ('car','Range Rover Autobiography','SUV','RR-AUTOBIOGRAPHY','Range Rover Autobiography SUV','ebay','USD','レンジローバー オートバイオグラフィー'),
   ('car','Toyota Land Cruiser 300','SUV','TOYOTA-LC300','Toyota Land Cruiser 300 SUV','ebay','USD','トヨタ ランドクルーザー ランクル300'),
   ('car','Audi RS6 Avant','Wagon','AUDI-RS6-AVANT','Audi RS6 Avant wagon','ebay','USD','アウディ RS6 アバント')
-on conflict (identifier) do nothing;
+-- The `where` is not a filter on the rows being inserted: it is how Postgres is
+-- told which index to infer. `market_items_identifier_key` (0008) is a PARTIAL
+-- unique index, and a bare `on conflict (identifier)` cannot match one —
+-- inference needs the index predicate repeated verbatim, or the statement fails
+-- with 42P10 before inserting anything.
+on conflict (identifier) where identifier is not null do nothing;
