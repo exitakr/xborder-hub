@@ -18,6 +18,8 @@ const PATHS: Record<Category, string> = {
   bag: "M4 8h16l-1.2 12H5.2L4 8Zm4 0V6a4 4 0 0 1 8 0v2",
   // sneaker profile
   sneaker: "M3 15h12l4-2.5a3 3 0 0 1 2 2.8V18H3v-3Zm0 0V9l3 1 2 3m2-1.6 2 1.2",
+  // car silhouette with two wheels
+  car: "M4 16v-3.5L6 8h12l2 4.5V16M4 16h16M4 16a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm13 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM7 8l1-2h8l1 2",
 };
 
 export function CategoryGlyph({

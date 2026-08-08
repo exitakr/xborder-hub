@@ -20,17 +20,27 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
 
   return (
     <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex h-14 max-w-app items-center gap-4 px-4">
+      <div className="mx-auto flex h-14 max-w-app items-center gap-2 px-3 sm:gap-4 sm:px-4">
         <Link
           href={signedIn ? "/portfolio" : "/"}
-          className="rounded text-base font-semibold tracking-tight"
+          className="shrink-0 rounded text-base font-semibold tracking-tight"
         >
           {wordmark(locale)}
           <span className="sr-only"> — {brand.tagline[locale]}</span>
         </Link>
 
         {signedIn ? (
-          <nav aria-label={t.navPortfolio} className="ml-auto flex items-center gap-1">
+          /*
+           * `overflow-x-auto` + `whitespace-nowrap` rather than `flex-wrap`: a
+           * wrapped second row of links reads as indented body text sitting
+           * under the logo, since nothing on this row lines up with it. A
+           * horizontal scroll keeps every link on the one row it belongs to,
+           * at the cost of a scroll gesture on the narrowest phones.
+           */
+          <nav
+            aria-label={t.navPortfolio}
+            className="scrollbar-none ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap sm:gap-1"
+          >
             <NavLink href="/portfolio">{t.navPortfolio}</NavLink>
             <NavLink href="/market">{t.navMarket}</NavLink>
             <NavLink href="/mypage">{t.navMypage}</NavLink>
@@ -38,11 +48,11 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             <LogoutButton label={t.navLogout} />
           </nav>
         ) : (
-          <nav className="ml-auto flex items-center gap-2">
-            <Link href="/login" className="btn-secondary">
+          <nav className="ml-auto flex shrink-0 items-center gap-2">
+            <Link href="/login" className="btn-secondary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
               {t.navLogin}
             </Link>
-            <Link href="/signup" className="btn-primary">
+            <Link href="/signup" className="btn-primary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
               {t.navSignup}
             </Link>
           </nav>
@@ -56,7 +66,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink"
+      className="shrink-0 rounded-lg px-2 py-2 text-xs text-muted transition-colors hover:bg-canvas hover:text-ink sm:px-3 sm:text-sm"
     >
       {children}
     </Link>

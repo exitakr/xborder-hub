@@ -52,6 +52,7 @@ const ja = {
   // --- portfolio ---
   pfTitle: "ポートフォリオ",
   pfTotalValue: "評価額合計",
+  pfValueChart: "評価額の推移",
   pfUnrealized: "評価損益",
   pfCost: "取得額合計",
   pfRealized: "実現損益",
@@ -71,6 +72,21 @@ const ja = {
   mkSearch: "銘柄名・型番で検索",
   mkAll: "すべて",
   mkNoResults: "該当する銘柄がありません。",
+
+  // --- add-your-own item ---
+  mkAddOwn: "自分でアイテムを追加",
+  mkAddOwnTitle: "アイテムを追加",
+  mkAddOwnLead:
+    "一覧にない銘柄は、ここから追加できます。市場価格が取得できるものは自動で表示され、取得できない場合は自分で評価額を登録できます。",
+  mkAddOwnErrName: "名称を入力してください。",
+  mkCategory: "カテゴリ",
+  mkAddOwnName: "名称",
+  mkAddOwnDetail: "詳細（任意）",
+  mkAddOwnDetailPlaceholder: "例: レザー、カラー、サイズなど",
+  mkAddOwnIdentifier: "型番・リファレンス（任意）",
+  mkAddOwnNote:
+    "追加すると同時にあなたの保有リストに加わります。市場価格は次回の自動更新（1日1回）で反映されます。",
+  mkAddOwnSubmit: "追加して保有に加える",
   mkAdd: "保有に追加",
   mkAdded: "保有中",
   mkUpdated: "更新",
@@ -215,6 +231,7 @@ const ja = {
   catWatch: "時計",
   catBag: "バッグ",
   catSneaker: "スニーカー",
+  catCar: "高級車",
 
   // --- legal (SPEC §1.3 — must appear on every screen) ---
   disclaimer:
@@ -269,6 +286,7 @@ const en: Dict = {
 
   pfTitle: "Portfolio",
   pfTotalValue: "Total value",
+  pfValueChart: "Value over time",
   pfUnrealized: "Unrealised P/L",
   pfCost: "Total cost",
   pfRealized: "Realised P/L",
@@ -287,6 +305,21 @@ const en: Dict = {
   mkSearch: "Search by name or reference",
   mkAll: "All",
   mkNoResults: "No items match your search.",
+
+  // --- add-your-own item ---
+  mkAddOwn: "Add your own item",
+  mkAddOwnTitle: "Add an item",
+  mkAddOwnLead:
+    "Not in the list? Add it here. If a market price is available it will show automatically; if not, you can record your own valuation.",
+  mkAddOwnErrName: "Please enter a name.",
+  mkCategory: "Category",
+  mkAddOwnName: "Name",
+  mkAddOwnDetail: "Detail (optional)",
+  mkAddOwnDetailPlaceholder: "e.g. leather, colour, size",
+  mkAddOwnIdentifier: "Reference number (optional)",
+  mkAddOwnNote:
+    "Adding it also adds it to your holdings. A market price, if one is available, appears after the next daily refresh.",
+  mkAddOwnSubmit: "Add and hold it",
   mkAdd: "Add to holdings",
   mkAdded: "In holdings",
   mkUpdated: "Updated",
@@ -427,6 +460,7 @@ const en: Dict = {
   catWatch: "Watches",
   catBag: "Bags",
   catSneaker: "Sneakers",
+  catCar: "Cars",
 
   disclaimer:
     "Prices shown are reference values derived from past transaction data and do not guarantee any sale price. This app is not an investment advisory or financial instruments business.",

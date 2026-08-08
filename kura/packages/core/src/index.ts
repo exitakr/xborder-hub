@@ -81,9 +81,11 @@ export {
   loadFxRates,
   loadItemDetail,
   loadPortfolio,
+  loadPortfolioSeries,
   searchItems,
   type HoldingView,
   type ItemDetail,
+  type PortfolioPoint,
   type PortfolioView,
   type SelfReportedPrice,
 } from "./queries.ts";

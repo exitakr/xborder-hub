@@ -229,6 +229,125 @@ async function loadSparklines(
   return out;
 }
 
+export interface PortfolioPoint {
+  ts: number;
+  value: number;
+}
+
+/**
+ * Total portfolio value over time, reconstructed from the same two ledgers the
+ * rest of the app trusts: how many units were held on a given day, and the
+ * price observed on a given day. Both are day-granular already (transactions
+ * carry a date, the cron writes one snapshot a day), so state is advanced one
+ * calendar day at a time rather than to an arbitrary timestamp.
+ *
+ * A day is only plotted once at least one held item has a known price — an
+ * item with no snapshot yet is left out of that day's sum rather than priced
+ * at 0, the same rule ./calc.ts applies to a single holding. Early in a
+ * deployment's life, before the daily cron has run more than a few times, this
+ * draws a short and mostly flat line; it lengthens as history accumulates.
+ *
+ * Every snapshot converts through TODAY's FX rate, not the rate on the day it
+ * was observed — historical rates are not something this product stores. For a
+ * JPY-denominated holding viewed in JPY this is exact; for a converted holding
+ * it is the same approximation the rest of the app makes (see the Cardmarket
+ * EUR note in docs/RESEARCH.md §8.2) and is small next to how much collectible
+ * prices themselves move.
+ */
+export async function loadPortfolioSeries(
+  supabase: SupabaseClient,
+  userId: string,
+  displayCurrency: Currency,
+): Promise<PortfolioPoint[]> {
+  const { data: holdingRows } = await supabase
+    .from("holdings")
+    .select("id, market_item_id")
+    .eq("user_id", userId);
+
+  const holdings = (holdingRows ?? []) as Array<{ id: string; market_item_id: string }>;
+  if (holdings.length === 0) return [];
+
+  const holdingToItem = new Map(holdings.map((h) => [h.id, h.market_item_id]));
+  const itemIds = [...new Set(holdings.map((h) => h.market_item_id))];
+
+  const [{ data: txRows }, { data: snapRows }, fx] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("holding_id, type, traded_on, quantity")
+      .eq("user_id", userId),
+    supabase
+      .from("price_snapshots")
+      .select("market_item_id, price, currency, observed_at")
+      .in("market_item_id", itemIds)
+      .order("observed_at", { ascending: true })
+      .limit(20_000),
+    loadFxRates(supabase),
+  ]);
+
+  interface DayBucket {
+    deltas: Array<[itemId: string, delta: number]>;
+    prices: Map<string, number>;
+  }
+  const days = new Map<string, DayBucket>();
+  const bucket = (day: string): DayBucket => {
+    let b = days.get(day);
+    if (!b) {
+      b = { deltas: [], prices: new Map() };
+      days.set(day, b);
+    }
+    return b;
+  };
+
+  for (const tx of (txRows ?? []) as Array<{
+    holding_id: string;
+    type: "buy" | "sell";
+    traded_on: string;
+    quantity: number;
+  }>) {
+    const itemId = holdingToItem.get(tx.holding_id);
+    if (!itemId) continue;
+    bucket(tx.traded_on).deltas.push([itemId, tx.type === "buy" ? tx.quantity : -tx.quantity]);
+  }
+
+  for (const snap of (snapRows ?? []) as Array<{
+    market_item_id: string;
+    price: number;
+    currency: string;
+    observed_at: string;
+  }>) {
+    if (!isCurrency(snap.currency)) continue;
+    const price = convert(Number(snap.price), snap.currency, displayCurrency, fx);
+    if (price === null) continue;
+    // Ascending input order means a later snapshot the same day simply
+    // overwrites an earlier one — the day's closing observation wins.
+    bucket(snap.observed_at.slice(0, 10)).prices.set(snap.market_item_id, price);
+  }
+
+  const qty = new Map<string, number>();
+  const lastPrice = new Map<string, number>();
+  const series: PortfolioPoint[] = [];
+
+  for (const day of [...days.keys()].sort()) {
+    const b = days.get(day)!;
+    for (const [itemId, delta] of b.deltas) qty.set(itemId, (qty.get(itemId) ?? 0) + delta);
+    for (const [itemId, price] of b.prices) lastPrice.set(itemId, price);
+
+    let value = 0;
+    let priced = false;
+    for (const [itemId, q] of qty) {
+      if (q <= 0) continue;
+      const p = lastPrice.get(itemId);
+      if (p === undefined) continue;
+      value += p * q;
+      priced = true;
+    }
+
+    if (priced) series.push({ ts: new Date(`${day}T00:00:00Z`).getTime(), value });
+  }
+
+  return series;
+}
+
 /** FX rates as "units of X per 1 JPY". */
 export async function loadFxRates(supabase: SupabaseClient): Promise<FxTable> {
   const { data } = await supabase.from("fx_rates").select("currency, rate");
@@ -391,7 +510,7 @@ export async function loadItemDetail(
 /** Catalogue search, shared by the web market page and the native Browse tab. */
 export async function searchItems(
   supabase: SupabaseClient,
-  { term, category, limit = 60 }: { term?: string; category?: Category | null; limit?: number },
+  { term, category, limit = 200 }: { term?: string; category?: Category | null; limit?: number },
 ): Promise<MarketItem[]> {
   let query = supabase.from("market_items").select(ITEM_COLUMNS).order("name").limit(limit);
 
@@ -402,7 +521,11 @@ export async function searchItems(
     // Escape PostgREST's `or` delimiters so a comma or paren in the search box
     // cannot alter the filter expression.
     const safe = trimmed.replace(/[,()]/g, " ");
-    query = query.or(`name.ilike.%${safe}%,detail.ilike.%${safe}%,identifier.ilike.%${safe}%`);
+    // `aliases` is what makes a Japanese-language search match a catalogue
+    // named in English (エルメス against Hermès) — see migration 0008/0009.
+    query = query.or(
+      `name.ilike.%${safe}%,detail.ilike.%${safe}%,identifier.ilike.%${safe}%,aliases.ilike.%${safe}%`,
+    );
   }
 
   const { data } = await query;

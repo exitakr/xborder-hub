@@ -7,11 +7,14 @@ import {
   formatMoney,
   formatPercent,
   loadPortfolio,
+  loadPortfolioSeries,
+  type PortfolioPoint,
   type PortfolioView,
 } from "@kura/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer, Sparkline, Thumb } from "../../src/components/ui";
+import { PriceChart } from "../../src/components/PriceChart";
 import { numericFont, theme, toneColor } from "../../src/theme";
 import { usePhotoUrls } from "../../src/usePhotoUrls";
 
@@ -20,6 +23,7 @@ export default function PortfolioScreen() {
   const router = useRouter();
 
   const [view, setView] = useState<PortfolioView | null>(null);
+  const [series, setSeries] = useState<PortfolioPoint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -27,7 +31,12 @@ export default function PortfolioScreen() {
     if (!userId) return;
     try {
       setFailed(false);
-      setView(await loadPortfolio(supabase, userId, profile.currency));
+      const [portfolio, points] = await Promise.all([
+        loadPortfolio(supabase, userId, profile.currency),
+        loadPortfolioSeries(supabase, userId, profile.currency),
+      ]);
+      setView(portfolio);
+      setSeries(points);
     } catch {
       // A failed load must not blank the screen or crash; show a retry instead.
       setFailed(true);
@@ -159,6 +168,28 @@ export default function PortfolioScreen() {
               </Text>
             )}
           </Card>
+
+          {series.length > 0 && (
+            <Card>
+              <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: theme.space(2) }}>
+                {t.pfValueChart}
+              </Text>
+              <PriceChart
+                points={series.map((p) => ({ ts: p.ts, price: p.value }))}
+                markers={[]}
+                currency={profile.currency}
+                locale={profile.locale}
+                labels={{
+                  buy: t.itMarkerBuy,
+                  sell: t.itMarkerSell,
+                  empty: t.itNoChart,
+                  asking: t.pfValueChart,
+                  realised: t.cmRealised,
+                }}
+                height={160}
+              />
+            </Card>
+          )}
 
           {view && view.byCategory.length > 0 && (
             <Card>

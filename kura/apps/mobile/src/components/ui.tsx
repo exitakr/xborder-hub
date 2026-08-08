@@ -123,6 +123,7 @@ const GLYPHS: Record<Category, string> = {
   watch: "M12 8v4l2.5 1.5M9 3h6l-.5 3.2M9 21h6l-.5-3.2M12 6.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Z",
   bag: "M4 8h16l-1.2 12H5.2L4 8Zm4 0V6a4 4 0 0 1 8 0v2",
   sneaker: "M3 15h12l4-2.5a3 3 0 0 1 2 2.8V18H3v-3Zm0 0V9l3 1 2 3m2-1.6 2 1.2",
+  car: "M4 16v-3.5L6 8h12l2 4.5V16M4 16h16M4 16a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm13 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM7 8l1-2h8l1 2",
 };
 
 export function CategoryGlyph({

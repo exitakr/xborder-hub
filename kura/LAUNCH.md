@@ -41,6 +41,16 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       **登録内容は本人のポートフォリオにのみ反映され、他の利用者には見えません**
       （0006 のコミュニティ集計とは別物です）。合計評価額に自己申告値が
       含まれる場合は、その旨がポートフォリオ画面に表示されます
+- [ ] `supabase/migrations/0008_user_added_items.sql`
+      利用者が Browse からカタログに無い銘柄を自分で追加できるようにする
+      `create_market_item` 関数、`car`（高級車）カテゴリ、日英バイリンガル
+      検索用の `aliases` 列を追加します
+- [ ] `supabase/migrations/0009_bags_cars_and_aliases.sql`
+      バッグ16件・高級車14件をカタログに追加し、既存バッグにも日本語の
+      別名（エルメス／ルイヴィトン／シャネル 等）を設定します。
+      **高級車は eBay Motors の出品価格を使うため、ノイズが多くなります**
+      （中古車情報サイトの公開 API は存在しないため、この App が持つ
+      唯一の無料手段です。詳細は `docs/RESEARCH.md` §9）
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration

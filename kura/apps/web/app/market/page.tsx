@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { convert, formatMoney, heldItemIds, loadFxRates, searchItems } from "@kura/core";
 import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory } from "@kura/core";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
+import { AddItemForm } from "./AddItemForm";
 import { addHolding } from "./actions";
 
 export const metadata: Metadata = { title: "Browse" };
@@ -49,6 +50,11 @@ export default async function MarketPage({
         </button>
       </form>
 
+      {/* Above the search box: someone who already knows they own something
+          Browse does not have should not have to search for it first, find
+          nothing, and only then discover this is where to add it. */}
+      <AddItemForm t={t} defaultCategory={category ?? undefined} />
+
       <nav aria-label={t.mkAll} className="flex flex-wrap gap-2">
         <FilterChip href={term ? `/market?q=${encodeURIComponent(term)}` : "/market"} active={!category}>
           {t.mkAll}
@@ -66,7 +72,19 @@ export default async function MarketPage({
       </nav>
 
       {items.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted">{t.mkNoResults}</p>
+        <div className="space-y-4 py-8 text-center">
+          <p className="text-sm text-muted">{t.mkNoResults}</p>
+          {term && (
+            <div className="mx-auto max-w-sm text-left">
+              <AddItemForm
+                t={t}
+                defaultName={term}
+                defaultCategory={category ?? undefined}
+                open
+              />
+            </div>
+          )}
+        </div>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
           {items.map((item) => {

@@ -15,7 +15,8 @@ import {
 } from "@kura/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
-import { Card, CategoryGlyph, Disclaimer } from "../../src/components/ui";
+import { Button, Card, CategoryGlyph, Disclaimer } from "../../src/components/ui";
+import { AddItemSheet } from "../../src/components/AddItemSheet";
 import { numericFont, theme } from "../../src/theme";
 
 export default function MarketScreen() {
@@ -28,6 +29,7 @@ export default function MarketScreen() {
   const [held, setHeld] = useState<Set<string>>(new Set());
   const [fx, setFx] = useState<FxTable>({});
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -76,6 +78,14 @@ export default function MarketScreen() {
       contentContainerStyle={{ padding: theme.space(4), gap: theme.space(3) }}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Above the search box: someone who already knows Browse is missing
+          something should not have to search first and find nothing. */}
+      <Button
+        label={t.mkAddOwn}
+        variant="secondary"
+        onPress={() => setAdding(true)}
+      />
+
       <TextInput
         value={term}
         onChangeText={setTerm}
@@ -119,9 +129,14 @@ export default function MarketScreen() {
           {t.loading}
         </Text>
       ) : items.length === 0 ? (
-        <Text style={{ color: theme.color.muted, fontSize: 13, paddingVertical: theme.space(8), textAlign: "center" }}>
-          {t.mkNoResults}
-        </Text>
+        <View style={{ paddingVertical: theme.space(4), gap: theme.space(3) }}>
+          <Text style={{ color: theme.color.muted, fontSize: 13, textAlign: "center" }}>
+            {t.mkNoResults}
+          </Text>
+          {term.trim().length > 0 && (
+            <Button label={t.mkAddOwnSubmit} onPress={() => setAdding(true)} />
+          )}
+        </View>
       ) : (
         items.map((item) => {
           const price = convert(item.current_price, item.currency, profile.currency, fx);
@@ -195,6 +210,20 @@ export default function MarketScreen() {
       )}
 
       <Disclaimer text={t.disclaimer} />
+
+      {adding && userId && (
+        <AddItemSheet
+          t={t}
+          userId={userId}
+          defaultName={term}
+          defaultCategory={category}
+          onClose={() => setAdding(false)}
+          onAdded={(itemId) => {
+            setAdding(false);
+            router.push(`/item/${itemId}`);
+          }}
+        />
+      )}
     </ScrollView>
   );
 }

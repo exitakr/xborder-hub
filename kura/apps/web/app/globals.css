@@ -63,6 +63,17 @@
   .chip-active {
     @apply border-accent bg-accent text-white;
   }
+
+  /* Cross-browser scrollbar hiding for horizontally-scrolling strips (the
+     header nav, category chips): the scroll gesture is the affordance on
+     touch devices, and a bar is desktop-only clutter on the same element. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* SPEC DoD: honour prefers-reduced-motion. Recharts animations are disabled

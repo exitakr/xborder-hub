@@ -1,7 +1,7 @@
 import type { Currency } from "./money.ts";
 import type { Confidence } from "./calc.ts";
 
-export const CATEGORIES = ["pokemon", "tcg", "watch", "bag", "sneaker"] as const;
+export const CATEGORIES = ["pokemon", "tcg", "watch", "bag", "sneaker", "car"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export function isCategory(v: string | null | undefined): v is Category {
@@ -123,4 +123,5 @@ export const CATEGORY_LABEL_KEY = {
   watch: "catWatch",
   bag: "catBag",
   sneaker: "catSneaker",
+  car: "catCar",
 } as const;

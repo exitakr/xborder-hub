@@ -2,7 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getDict } from "@kura/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
-import { loadPortfolio } from "@kura/core";
+import { loadPortfolio, loadPortfolioSeries } from "@kura/core";
+// Reused rather than duplicated: a portfolio total over time and an item's
+// price over time are the same shape (a value against a date), and the trade
+// markers / second series it also supports simply go unused here.
+import { PriceChart, type ChartPoint } from "../items/[id]/PriceChart";
 import { createClient } from "@/lib/supabase/server";
 import { fill, formatMoney, formatPercent } from "@kura/core";
 import { CATEGORY_LABEL_KEY } from "@kura/core";
@@ -15,7 +19,11 @@ export const metadata: Metadata = { title: "Portfolio" };
 export default async function PortfolioPage() {
   const profile = await requireProfile();
   const t = getDict(profile.locale);
-  const view = await loadPortfolio(await createClient(), profile.userId, profile.currency);
+  const supabase = await createClient();
+  const [view, series] = await Promise.all([
+    loadPortfolio(supabase, profile.userId, profile.currency),
+    loadPortfolioSeries(supabase, profile.userId, profile.currency),
+  ]);
 
   const photos = await Promise.all(
     view.holdings.map((h) => signedPhotoUrl(h.photoPath)),
@@ -73,6 +81,25 @@ export default async function PortfolioPage() {
           </div>
         )}
       </section>
+
+      {series.length > 0 && (
+        <section className="card p-4">
+          <h2 className="mb-2 text-sm font-semibold">{t.pfValueChart}</h2>
+          <PriceChart
+            points={series.map((p): ChartPoint => ({ ts: p.ts, price: p.value }))}
+            markers={[]}
+            currency={view.currency}
+            locale={profile.locale}
+            labels={{
+              buy: t.itMarkerBuy,
+              sell: t.itMarkerSell,
+              empty: t.itNoChart,
+              asking: t.pfValueChart,
+              realised: t.cmRealised,
+            }}
+          />
+        </section>
+      )}
 
       {view.byCategory.length > 0 && (
         <section className="card p-5">
