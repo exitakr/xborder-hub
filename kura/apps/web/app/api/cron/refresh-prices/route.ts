@@ -92,6 +92,17 @@ export async function GET(request: NextRequest) {
       .limit(MAX_ITEMS_PER_RUN * 2),
   ]);
 
+  // A failed catalogue read used to fall through `?? []` and report a clean run
+  // over zero items, which is indistinguishable from an empty catalogue and sent
+  // the last diagnosis in entirely the wrong direction. If we cannot read the
+  // list, say so instead of claiming there was nothing to do.
+  if (listed.error) {
+    return NextResponse.json(
+      { error: "could not read the catalogue", detail: listed.error.message },
+      { status: 500 },
+    );
+  }
+
   const byId = new Map<string, Candidate>();
   for (const row of listed.data ?? []) {
     if (!row.search_query) continue;
@@ -99,6 +110,27 @@ export async function GET(request: NextRequest) {
       id: row.id as string,
       sourceType: row.source_type as SourceType,
       query: row.search_query as string,
+    });
+  }
+
+  // Nothing to price is a legitimate state, but it has several distinct causes —
+  // an empty catalogue, rows whose source this deployment has no key for, rows
+  // with no query to send — and the bare count cannot tell them apart. Pay for
+  // one extra read only on the path where the answer is actually needed.
+  if (byId.size === 0) {
+    return NextResponse.json({
+      ok: true,
+      updated: 0,
+      insufficient: 0,
+      failed: 0,
+      backfilled: 0,
+      bySource: {},
+      ebayConfigured,
+      rakutenConfigured,
+      fx: fx.rows.length > 0 ? "ok" : "failed",
+      eurRate: fx.eurToUsd ? "ok" : "unavailable",
+      candidates: 0,
+      catalogue: await catalogueBreakdown(supabase),
     });
   }
 
@@ -280,6 +312,28 @@ function confidenceOf(sourceType: SourceType, sampleSize: number) {
   // figure, where counting observations would say nothing.
   if (sourceType === "ebay" || sourceType === "rakuten") return confidenceFor(sampleSize);
   return "medium" as const;
+}
+
+/**
+ * Why the candidate list came back empty, in the shape that distinguishes the
+ * causes: how many rows exist at all, how many carry a query to send, and which
+ * sources they are assigned to. A catalogue that is seeded but sitting entirely
+ * on `curated`, or seeded with null queries, looks identical from the count
+ * alone and needs a different fix in each case.
+ */
+async function catalogueBreakdown(supabase: ReturnType<typeof createAdminClient>) {
+  const { data, error } = await supabase.from("market_items").select("source_type, search_query");
+  if (error) return { error: error.message };
+
+  const bySource: Record<string, { items: number; withQuery: number }> = {};
+  for (const row of data ?? []) {
+    const key = (row.source_type as string) ?? "(null)";
+    bySource[key] ??= { items: 0, withQuery: 0 };
+    bySource[key].items += 1;
+    if (row.search_query) bySource[key].withQuery += 1;
+  }
+
+  return { total: data?.length ?? 0, bySource };
 }
 
 /** IDs of catalogue items at least one user actually holds. */
