@@ -3,6 +3,7 @@ import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native"
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   CATEGORY_LABEL_KEY,
+  fill,
   formatMoney,
   formatPercent,
   loadPortfolio,
@@ -148,6 +149,15 @@ export default function PortfolioScreen() {
                 {t.pfExcluded}
               </Text>
             )}
+
+            {/* The total is one number built from more than one kind of evidence.
+                Saying so where the number is, rather than in a footer nobody
+                reads, is the difference between a caveat and a disclosure. */}
+            {(view?.selfReportedCount ?? 0) > 0 && (
+              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: theme.space(2) }}>
+                {fill(t.srPortfolioNotice, { count: view?.selfReportedCount ?? 0 })}
+              </Text>
+            )}
           </Card>
 
           {view && view.byCategory.length > 0 && (
@@ -229,6 +239,11 @@ export default function PortfolioScreen() {
                   <Text style={[{ fontSize: 14, fontWeight: "600" }, numericFont]}>
                     {formatMoney(h.summary.marketValue, profile.currency, profile.locale)}
                   </Text>
+                  {/* Marked per row so the notice above resolves to specific
+                      holdings rather than leaving the reader to guess which. */}
+                  {h.selfReported && (
+                    <Text style={{ fontSize: 10, color: theme.color.muted }}>{t.srBadge}</Text>
+                  )}
                   <Text
                     style={[
                       { fontSize: 11, color: toneColor(h.summary.unrealized) },

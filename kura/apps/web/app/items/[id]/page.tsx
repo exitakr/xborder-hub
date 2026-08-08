@@ -12,8 +12,9 @@ import { TransactionForm } from "./TransactionForm";
 import { PhotoUploader } from "./PhotoUploader";
 import { TransactionList } from "./TransactionList";
 import { PriceReportForm } from "./PriceReportForm";
+import { ValuationForm } from "./ValuationForm";
 import { addHolding } from "../../market/actions";
-import { communityConfidence } from "@kura/core";
+import { communityConfidence, fill } from "@kura/core";
 
 export const metadata: Metadata = { title: "Item" };
 
@@ -31,12 +32,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
 
   const points: ChartPoint[] = detail.snapshots;
 
-  const markers: TradeMarker[] = transactions.map((tx) => ({
-    ts: new Date(`${tx.traded_on}T00:00:00Z`).getTime(),
-    type: tx.type,
-    quantity: tx.quantity,
-    unitPrice: tx.unit_price,
-  }));
+  const markers: TradeMarker[] = detail.trades;
 
   const photoUrl = await signedPhotoUrl(detail.photoPath);
 
@@ -63,6 +59,19 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               formatMoney(price, currency, profile.locale)
             )}
           </p>
+          {/* A self-reported figure is labelled at the number itself, not only in
+              a footnote: the badge is what stops it being read as a market quote. */}
+          {detail.selfReported && (
+            <p className="mt-1 text-xs text-muted">
+              <span className="mr-1.5 rounded bg-line px-1.5 py-0.5 text-[10px]">
+                {t.srBadge}
+              </span>
+              {fill(t.srNote, {
+                asOf: detail.selfReported.asOf,
+                source: detail.selfReported.source,
+              })}
+            </p>
+          )}
         </div>
       </header>
 
@@ -163,6 +172,25 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
 
         <PriceReportForm t={t} marketItemId={item.id} defaultCurrency={currency} />
       </section>
+
+      {/* Offered only where no feed answers. An item that already has a market
+          price does not need a second one, and two figures side by side would
+          just raise the question of which the portfolio total used. */}
+      {item.current_price === null && (
+        <section className="card space-y-3 p-4">
+          <div>
+            <h2 className="text-sm font-semibold">{t.srTitle}</h2>
+            <p className="mt-1 text-xs text-muted">{t.srLead}</p>
+          </div>
+          <ValuationForm
+            t={t}
+            marketItemId={item.id}
+            defaultCurrency={currency}
+            locale={profile.locale}
+            existing={detail.selfReported}
+          />
+        </section>
+      )}
 
       {holdingId ? (
         <>

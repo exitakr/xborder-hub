@@ -5,6 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import {
   CATEGORY_LABEL_KEY,
+  fill,
   formatMoney,
   formatPercent,
   loadItemDetail,
@@ -18,6 +19,7 @@ import { Button, Card, Disclaimer, Thumb } from "../../src/components/ui";
 import { PriceChart, type TradeMarker } from "../../src/components/PriceChart";
 import { TransactionSheet } from "../../src/components/TransactionSheet";
 import { PriceReportSheet } from "../../src/components/PriceReportSheet";
+import { ValuationSheet } from "../../src/components/ValuationSheet";
 import { usePhotoUrls } from "../../src/usePhotoUrls";
 import { numericFont, theme, toneColor } from "../../src/theme";
 import { intlLocale } from "../../src/i18n";
@@ -30,6 +32,7 @@ export default function ItemScreen() {
   const [detail, setDetail] = useState<ItemDetail | null>(null);
   const [sheet, setSheet] = useState<"buy" | "sell" | null>(null);
   const [reporting, setReporting] = useState(false);
+  const [valuing, setValuing] = useState(false);
   const [editing, setEditing] = useState<ItemDetail["transactions"][number] | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -58,10 +61,7 @@ export default function ItemScreen() {
 
   const { item, price, holdingId, transactions, summary } = detail;
 
-  const markers: TradeMarker[] = transactions.map((tx) => ({
-    ts: new Date(`${tx.traded_on}T00:00:00Z`).getTime(),
-    type: tx.type,
-  }));
+  const markers: TradeMarker[] = detail.trades;
 
   async function addToHoldings() {
     if (!userId || !id) return;
@@ -166,6 +166,17 @@ export default function ItemScreen() {
                 formatMoney(price, profile.currency, profile.locale)
               )}
             </Text>
+            {/* Labelled at the number itself, not only in a footnote: the badge
+                is what stops a self-reported figure reading as a market quote. */}
+            {detail.selfReported && (
+              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+                {t.srBadge} ·{" "}
+                {fill(t.srNote, {
+                  asOf: detail.selfReported.asOf,
+                  source: detail.selfReported.source,
+                })}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -262,6 +273,24 @@ export default function ItemScreen() {
             style={{ marginTop: theme.space(3) }}
           />
         </Card>
+
+        {/* Offered only where no feed answers. An item that already has a market
+            price does not need a second one, and two figures side by side would
+            just raise the question of which the portfolio total used. */}
+        {item.current_price === null && (
+          <Card>
+            <Text style={{ fontSize: 13, fontWeight: "600" }}>{t.srTitle}</Text>
+            <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+              {t.srLead}
+            </Text>
+            <Button
+              label={detail.selfReported ? t.srEdit : t.srAdd}
+              variant="secondary"
+              onPress={() => setValuing(true)}
+              style={{ marginTop: theme.space(3) }}
+            />
+          </Card>
+        )}
 
         {holdingId ? (
           <>
@@ -421,6 +450,20 @@ export default function ItemScreen() {
             setReporting(false);
             // Reload rather than patch state: this report may be the third one,
             // which is what makes the published figure appear at all.
+            await load();
+          }}
+        />
+      )}
+
+      {valuing && (
+        <ValuationSheet
+          t={t}
+          marketItemId={id}
+          defaultCurrency={profile.currency}
+          existing={detail.selfReported}
+          onClose={() => setValuing(false)}
+          onSaved={async () => {
+            setValuing(false);
             await load();
           }}
         />

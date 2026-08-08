@@ -17,6 +17,17 @@ import type { Category, HoldingRow, MarketItem, TransactionRow } from "./types.t
 const ITEM_COLUMNS =
   "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence";
 
+/**
+ * A valuation the holder entered themselves, for an item with no automatic
+ * feed. Private to its author and never aggregated — see migration 0007.
+ */
+export interface SelfReportedPrice {
+  /** In the display currency, like every other figure that leaves this module. */
+  price: number;
+  source: string;
+  asOf: string;
+}
+
 export interface HoldingView {
   holdingId: string;
   item: MarketItem;
@@ -24,6 +35,12 @@ export interface HoldingView {
   summary: HoldingSummary;
   /** Recent price points for the row sparkline, in the display currency. */
   spark: number[];
+  /**
+   * Set when this holding's value came from the user rather than from a feed.
+   * Carried per row so the UI can mark exactly which figures are self-reported
+   * instead of disclaiming the whole screen.
+   */
+  selfReported: SelfReportedPrice | null;
 }
 
 export interface PortfolioView {
@@ -31,6 +48,12 @@ export interface PortfolioView {
   holdings: HoldingView[];
   totals: ReturnType<typeof totals>;
   byCategory: Array<{ category: Category; value: number; share: number }>;
+  /**
+   * How many open holdings are valued from the user's own figures. Non-zero
+   * means the total is not entirely market-derived, which the screen has to say
+   * out loud rather than presenting one number as if it had one provenance.
+   */
+  selfReportedCount: number;
 }
 
 /**
@@ -45,7 +68,7 @@ export async function loadPortfolio(
   userId: string,
   displayCurrency: Currency,
 ): Promise<PortfolioView> {
-  const [holdingsRes, txRes, fx] = await Promise.all([
+  const [holdingsRes, txRes, fx, ownRes] = await Promise.all([
     supabase
       .from("holdings")
       .select(`id, market_item_id, photo_path, note, market_items(${ITEM_COLUMNS})`)
@@ -55,10 +78,15 @@ export async function loadPortfolio(
       .select("id, holding_id, type, traded_on, quantity, unit_price, currency")
       .eq("user_id", userId),
     loadFxRates(supabase),
+    supabase
+      .from("self_reported_prices")
+      .select("market_item_id, price, currency, source, as_of")
+      .eq("user_id", userId),
   ]);
 
   const holdingRows = (holdingsRes.data ?? []) as unknown as HoldingRow[];
   const txRows = (txRes.data ?? []) as TransactionRow[];
+  const ownPrices = ownPriceMap(ownRes.data, displayCurrency, fx);
 
   const txByHolding = new Map<string, TransactionRow[]>();
   for (const tx of txRows) {
@@ -81,7 +109,15 @@ export async function loadPortfolio(
       fx,
     );
 
-    const price = convert(item.current_price, item.currency, displayCurrency, fx);
+    // The feed wins where it exists. A user's own figure is a fallback for items
+    // nothing prices automatically, not an override of a live quote — otherwise
+    // a stale entry would quietly outrank today's market and the total would
+    // drift without anyone touching it.
+    const feedPrice = convert(item.current_price, item.currency, displayCurrency, fx);
+    const own = ownPrices.get(row.market_item_id) ?? null;
+    const usingOwn = feedPrice === null && own !== null;
+    const price = feedPrice ?? own?.price ?? null;
+
     const summary = summarize(transactions, complete ? price : null);
 
     return {
@@ -92,6 +128,7 @@ export async function loadPortfolio(
       spark: (sparks.get(row.market_item_id) ?? [])
         .map((p) => convert(p.price, p.currency, displayCurrency, fx))
         .filter((n): n is number => n !== null),
+      selfReported: usingOwn ? own : null,
     };
   });
 
@@ -102,7 +139,35 @@ export async function loadPortfolio(
     holdings: open.sort(byValueDesc),
     totals: totals(views.map((v) => v.summary)),
     byCategory: categoryBreakdown(open),
+    selfReportedCount: open.filter((v) => v.selfReported !== null).length,
   };
+}
+
+/**
+ * Self-reported prices by item, normalised into the display currency.
+ *
+ * A row whose currency has no rate is dropped rather than carried at its face
+ * value — the same rule the rest of this module applies to money it cannot
+ * convert.
+ */
+function ownPriceMap(
+  rows: unknown,
+  displayCurrency: Currency,
+  fx: FxTable,
+): Map<string, SelfReportedPrice> {
+  const map = new Map<string, SelfReportedPrice>();
+  if (!Array.isArray(rows)) return map;
+
+  for (const row of rows) {
+    const price = convert(Number(row.price), row.currency as Currency, displayCurrency, fx);
+    if (price === null) continue;
+    map.set(row.market_item_id as string, {
+      price,
+      source: row.source as string,
+      asOf: row.as_of as string,
+    });
+  }
+  return map;
 }
 
 function byValueDesc(a: HoldingView, b: HoldingView): number {
@@ -190,6 +255,16 @@ export interface ItemDetail {
   community: { price: number; contributors: number; reports: number } | null;
   /** Monthly community points for the chart. Empty when none clear the floor. */
   communitySeries: Array<{ ts: number; price: number }>;
+  /**
+   * The user's own trades, ready to plot: real date, real price paid, in the
+   * display currency. Converting here rather than in each chart is what stops
+   * a JPY purchase from being drawn against a USD axis — the two apps would
+   * otherwise each have to remember, and one of them eventually would not.
+   * A trade whose currency has no rate is dropped rather than shown wrong.
+   */
+  trades: Array<{ ts: number; type: "buy" | "sell"; quantity: number; unitPrice: number }>;
+  /** Set when `price` came from the user's own entry rather than from a feed. */
+  selfReported: SelfReportedPrice | null;
 }
 
 /** Everything the item-detail screen needs, in one round of queries. */
@@ -208,8 +283,14 @@ export async function loadItemDetail(
   if (!itemRow) return null;
   const item = itemRow as MarketItem;
 
-  const [{ data: holding }, { data: snapshotRows }, fx, { data: crowd }, { data: crowdSeries }] =
-    await Promise.all([
+  const [
+    { data: holding },
+    { data: snapshotRows },
+    fx,
+    { data: crowd },
+    { data: crowdSeries },
+    { data: ownRows },
+  ] = await Promise.all([
       supabase
         .from("holdings")
         .select("id, photo_path")
@@ -228,6 +309,11 @@ export async function loadItemDetail(
       // result rather than as something this layer has to re-check.
       supabase.rpc("community_price", { item: itemId }),
       supabase.rpc("community_price_series", { item: itemId }),
+      supabase
+        .from("self_reported_prices")
+        .select("market_item_id, price, currency, source, as_of")
+        .eq("user_id", userId)
+        .eq("market_item_id", itemId),
     ]);
 
   let transactions: TransactionRow[] = [];
@@ -253,7 +339,13 @@ export async function loadItemDetail(
     displayCurrency,
     fx,
   );
-  const price = convert(item.current_price, item.currency, displayCurrency, fx);
+  // Same precedence as the portfolio: the feed wins where it exists, and the
+  // user's own figure fills in only for items nothing prices automatically.
+  const feedPrice = convert(item.current_price, item.currency, displayCurrency, fx);
+  const own = ownPriceMap(ownRows, displayCurrency, fx).get(itemId) ?? null;
+  const usingOwn = feedPrice === null && own !== null;
+  const price = feedPrice ?? own?.price ?? null;
+
   const raw = summarize(converted, complete ? price : null);
 
   const crowdRow = Array.isArray(crowd) ? crowd[0] : null;
@@ -277,6 +369,16 @@ export async function loadItemDetail(
             reports: Number(crowdRow.reports),
           }
         : null,
+    selfReported: usingOwn ? own : null,
+    trades: transactions
+      .map((tx) => ({
+        ts: new Date(`${tx.traded_on}T00:00:00Z`).getTime(),
+        type: tx.type,
+        quantity: tx.quantity,
+        unitPrice: convert(tx.unit_price, tx.currency, displayCurrency, fx),
+      }))
+      .filter((t): t is (typeof t & { unitPrice: number }) => t.unitPrice !== null)
+      .sort((a, b) => a.ts - b.ts),
     communitySeries: (Array.isArray(crowdSeries) ? crowdSeries : [])
       .map((row) => ({
         ts: new Date(`${row.month}T00:00:00Z`).getTime(),

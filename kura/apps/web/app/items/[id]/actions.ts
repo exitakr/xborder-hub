@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { priceReportSchema, transactionSchema } from "@kura/core";
+import { priceReportSchema, selfReportedPriceSchema, transactionSchema } from "@kura/core";
 import { netQuantity } from "@kura/core";
 
 export interface TxState {
@@ -192,6 +192,85 @@ export async function deletePriceReport(formData: FormData) {
   await supabase.from("price_reports").delete().eq("id", id.data).eq("user_id", user.id);
 
   if (itemId.success) revalidatePath(`/items/${itemId.data}`);
+}
+
+export interface ValuationState {
+  error?: "future_date" | "price" | "source" | "generic";
+  ok?: boolean;
+}
+
+/**
+ * Save the user's own valuation for an item nothing prices automatically.
+ *
+ * Upserted on (user, item): this is a standing figure that gets revised, not a
+ * log of what someone used to think it was worth.
+ */
+export async function saveSelfReportedPrice(
+  _prev: ValuationState,
+  formData: FormData,
+): Promise<ValuationState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "generic" };
+
+  const parsed = selfReportedPriceSchema.safeParse({
+    marketItemId: formData.get("marketItemId"),
+    price: formData.get("price"),
+    currency: formData.get("currency"),
+    source: formData.get("source"),
+    asOf: formData.get("asOf"),
+  });
+
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    if (issue?.message === "future_date") return { error: "future_date" };
+    if (issue?.path.includes("price")) return { error: "price" };
+    if (issue?.path.includes("source")) return { error: "source" };
+    return { error: "generic" };
+  }
+
+  const input = parsed.data;
+
+  const { error } = await supabase.from("self_reported_prices").upsert(
+    {
+      user_id: user.id,
+      market_item_id: input.marketItemId,
+      price: input.price,
+      currency: input.currency,
+      source: input.source,
+      as_of: input.asOf,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,market_item_id" },
+  );
+
+  if (error) return { error: "generic" };
+
+  revalidatePath(`/items/${input.marketItemId}`);
+  revalidatePath("/portfolio");
+  return { ok: true };
+}
+
+export async function deleteSelfReportedPrice(formData: FormData) {
+  const itemId = z.string().uuid().safeParse(formData.get("marketItemId"));
+  if (!itemId.success) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("self_reported_prices")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("market_item_id", itemId.data);
+
+  revalidatePath(`/items/${itemId.data}`);
+  revalidatePath("/portfolio");
 }
 
 /** Record the storage path of a photo the browser has already uploaded. */

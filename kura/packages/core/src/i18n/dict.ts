@@ -130,6 +130,31 @@ const ja = {
   cmStatsUnlocked: "相場公開に貢献した銘柄数",
   cmStatsLead: "あなたの投稿は、同じ銘柄を見ている人の判断材料になっています。",
   cmDelete: "削除",
+
+  // --- self-reported valuation ---
+  srTitle: "自分で登録した評価額",
+  srLead:
+    "自動取得できない銘柄は、買取査定や販売店の相場など、ご自身が確認した金額を登録できます。任意です。",
+  srAdd: "評価額を登録",
+  srEdit: "評価額を変更",
+  srPrice: "評価額",
+  srSource: "情報源",
+  srSourcePlaceholder: "例: ◯◯買取 査定額、店頭表示価格",
+  srSourceHelp: "どこで確認した金額かを書いてください。あとで見返すときの判断材料になります。",
+  srAsOf: "その金額を確認した日",
+  srSave: "保存",
+  srRemove: "登録を削除",
+  srRemoveConfirm: "この評価額を削除しますか？",
+  srErrSource: "情報源を入力してください。",
+  srBadge: "自己申告",
+  srUsedFor: "この銘柄の評価額は自己申告値です",
+  // {asOf} / {source} / {count} are substituted by `fill()`. Kept as plain
+  // strings so the dictionary stays one flat, type-checked shape.
+  srNote: "{asOf} 時点・出典: {source}",
+  srPrivate: "登録した金額はあなたのポートフォリオにのみ反映され、他の利用者には表示されません。",
+  srPortfolioNotice:
+    "合計評価額のうち {count} 件は、あなたが登録した自己申告値を使っています。" +
+    "登録時点の情報に基づくため、現在の市場価格をそのまま反映しているとは限りません。",
   itAddToHoldings: "保有に追加",
 
   // --- transaction form ---
@@ -321,6 +346,31 @@ const en: Dict = {
   cmStatsUnlocked: "Items whose published price you helped build",
   cmStatsLead: "Your reports are part of what other holders of these items see.",
   cmDelete: "Delete",
+
+  // --- self-reported valuation ---
+  srTitle: "Your own valuation",
+  srLead:
+    "For items with no automatic price, you can record a figure you have seen yourself — a buyback quote, a dealer's asking price. Optional.",
+  srAdd: "Add a valuation",
+  srEdit: "Change valuation",
+  srPrice: "Valuation",
+  srSource: "Source",
+  srSourcePlaceholder: "e.g. buyback quote, shop price tag",
+  srSourceHelp: "Where you saw this figure. It is what makes the number judgeable later.",
+  srAsOf: "Date you saw it",
+  srSave: "Save",
+  srRemove: "Remove valuation",
+  srRemoveConfirm: "Remove this valuation?",
+  srErrSource: "Please enter where the figure came from.",
+  srBadge: "Self-reported",
+  srUsedFor: "This item is valued from your own figure",
+  srNote: "As of {asOf} · source: {source}",
+  srPrivate: "Your figure affects only your own portfolio and is never shown to other users.",
+  // Deliberately phrased to read correctly at any count, rather than carrying a
+  // plural rule the dictionary has no machinery for.
+  srPortfolioNotice:
+    "{count} of your holdings are valued from figures you entered yourself. Those reflect the " +
+    "information available when you recorded them, not necessarily the current market price.",
   itAddToHoldings: "Add to holdings",
 
   txType: "Type",
@@ -391,4 +441,17 @@ export type TranslationKey = keyof Dict;
 
 export function getDict(locale: Locale): Dict {
   return dicts[locale];
+}
+
+/**
+ * Substitute `{name}` placeholders in a translated string.
+ *
+ * The dictionary stays a flat map of strings — that is what lets the `Dict` type
+ * catch a missing translation at compile time — so the few entries needing a
+ * value interpolate at the call site instead of being functions.
+ */
+export function fill(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match,
+  );
 }

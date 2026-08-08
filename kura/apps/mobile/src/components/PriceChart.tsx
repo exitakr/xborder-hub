@@ -13,6 +13,8 @@ export interface ChartPoint {
 export interface TradeMarker {
   ts: number;
   type: "buy" | "sell";
+  /** What was actually paid. Markers are plotted here, not on the price line. */
+  unitPrice: number;
 }
 
 /**
@@ -48,7 +50,7 @@ export function PriceChart({
 }) {
   const [width, setWidth] = useState(0);
 
-  if (points.length === 0 && community.length === 0) {
+  if (points.length === 0 && community.length === 0 && markers.length === 0) {
     return (
       <View style={{ height, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: theme.color.muted, fontSize: 13, textAlign: "center" }}>
@@ -65,10 +67,11 @@ export function PriceChart({
   const plotW = Math.max(width - padLeft - padRight, 1);
   const plotH = height - padTop - padBottom;
 
-  // Both axes span both series, or whichever one sits lower gets clipped.
+  // Every plotted thing has to fit on both axes: the two price series and every
+  // trade. Leaving trades out silently clips them off the edge.
   const all = [...points, ...community];
-  const times = all.map((p) => p.ts);
-  const prices = all.map((p) => p.price);
+  const times = [...all.map((p) => p.ts), ...markers.map((m) => m.ts)];
+  const prices = [...all.map((p) => p.price), ...markers.map((m) => m.unitPrice)];
   const tMin = Math.min(...times);
   const tMax = Math.max(...times);
   const pMin = Math.min(...prices);
@@ -92,26 +95,23 @@ export function PriceChart({
   const path = toPath(points);
   const communityPath = toPath(community);
 
-  // Snap each trade to the nearest observation so no marker floats off the line.
-  // Markers belong to the asking series; with no asking points there is nothing
-  // to snap to and they are omitted rather than placed arbitrarily.
-  const snapped =
-    points.length === 0
-      ? []
-      : markers.map((m) => {
-          let nearest = points[0];
-          let best = Math.abs(points[0].ts - m.ts);
-          for (const p of points) {
-            const d = Math.abs(p.ts - m.ts);
-            if (d < best) {
-              best = d;
-              nearest = p;
-            }
-          }
-          return { cx: x(nearest.ts), cy: y(nearest.price), type: m.type };
-        });
+  // Each trade sits at the date it happened and the price that was paid — both
+  // facts we hold exactly. Snapping them onto the nearest observation instead
+  // put a trade from two years ago on last week's price, and with only days of
+  // history every marker collapsed onto the same point.
+  const snapped = markers.map((m) => ({
+    cx: x(m.ts),
+    cy: y(m.unitPrice),
+    type: m.type,
+  }));
 
-  const ordered = [...all].sort((a, b) => a.ts - b.ts);
+  // The end labels describe the window actually drawn, which includes trades —
+  // a holding with recorded trades but no observations yet has nothing in `all`
+  // and would otherwise read these off an empty array.
+  const ordered = [
+    ...all,
+    ...markers.map((m) => ({ ts: m.ts, price: m.unitPrice })),
+  ].sort((a, b) => a.ts - b.ts);
   const first = ordered[0];
   const last = ordered[ordered.length - 1];
 

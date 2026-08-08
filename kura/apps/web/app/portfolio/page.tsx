@@ -4,7 +4,7 @@ import { getDict } from "@kura/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
 import { loadPortfolio } from "@kura/core";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoney, formatPercent } from "@kura/core";
+import { fill, formatMoney, formatPercent } from "@kura/core";
 import { CATEGORY_LABEL_KEY } from "@kura/core";
 import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { Sparkline } from "@/components/Sparkline";
@@ -61,10 +61,16 @@ export default async function PortfolioPage() {
           <Stat label={t.myItemCount}>{view.holdings.length}</Stat>
         </dl>
 
-        {totals.excludedCount > 0 && (
-          <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
-            {t.pfExcluded}
-          </p>
+        {(totals.excludedCount > 0 || view.selfReportedCount > 0) && (
+          <div className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs text-muted">
+            {totals.excludedCount > 0 && <p>{t.pfExcluded}</p>}
+            {/* The total is one number built from more than one kind of evidence.
+                Saying so where the number is, rather than in a footer nobody
+                reads, is the difference between a caveat and a disclosure. */}
+            {view.selfReportedCount > 0 && (
+              <p>{fill(t.srPortfolioNotice, { count: view.selfReportedCount })}</p>
+            )}
+          </div>
         )}
       </section>
 
@@ -133,6 +139,11 @@ export default async function PortfolioPage() {
                   <p className="tnum text-sm font-medium">
                     {formatMoney(h.summary.marketValue, view.currency, profile.locale)}
                   </p>
+                  {/* Marked per row so the notice above resolves to specific
+                      holdings rather than leaving the reader to guess which. */}
+                  {h.selfReported && (
+                    <p className="text-[10px] text-muted">{t.srBadge}</p>
+                  )}
                   <p className={`tnum text-xs ${toneFor(h.summary.unrealized)}`}>
                     {h.summary.unrealizedPct === null
                       ? t.mkNoPrice

@@ -55,6 +55,7 @@ export {
 export {
   DEFAULT_LOCALE,
   LOCALES,
+  fill,
   getDict,
   isLocale,
   type Locale,
@@ -68,8 +69,10 @@ export {
   newItemSchema,
   priceReportSchema,
   profileSchema,
+  selfReportedPriceSchema,
   transactionSchema,
   type PriceReportInput,
+  type SelfReportedPriceInput,
   type TransactionInput,
 } from "./validation.ts";
 
@@ -82,4 +85,5 @@ export {
   type HoldingView,
   type ItemDetail,
   type PortfolioView,
+  type SelfReportedPrice,
 } from "./queries.ts";

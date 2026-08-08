@@ -49,9 +49,17 @@ const REALISED = "#10B981";
  * Price history with the user's own trades overlaid (SPEC §6.3).
  *
  * The markers are the point of this screen: seeing where you bought against
- * where the price went is the reason to come back. Each trade snaps to the
- * nearest snapshot, since a trade on a day we have no observation for still has
- * to land somewhere sensible on the line.
+ * where the price went is the reason to come back. Each one is plotted at the
+ * date it happened and the price that was paid — both facts we hold exactly.
+ * They used to be snapped onto the nearest snapshot instead, which put a trade
+ * from two years ago on last week's price; with the catalogue only days old,
+ * every marker collapsed onto the same point and the timing they exist to show
+ * was the one thing they could not show.
+ *
+ * The axis therefore spans the trades as well as the observations. Market
+ * history that predates this deployment cannot be bought back (docs/RESEARCH.md
+ * §7.2.1), but the user's own history goes back as far as they have recorded,
+ * and the window has to reach it for the position to be legible.
  */
 export function PriceChart({
   points,
@@ -65,10 +73,9 @@ export function PriceChart({
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-  const snapped = useMemo(() => snapMarkers(points, markers), [points, markers]);
   const data = useMemo(() => mergeSeries(points, community), [points, community]);
 
-  if (data.length === 0) {
+  if (data.length === 0 && markers.length === 0) {
     return (
       <p className="flex h-56 items-center justify-center text-center text-sm text-muted">
         {labels.empty}
@@ -76,11 +83,28 @@ export function PriceChart({
     );
   }
 
-  // The axis has to span both series, or whichever one is lower gets clipped.
-  const prices = [...points, ...community].map((p) => p.price);
+  // Every plotted thing has to fit: both price series and every trade, on both
+  // axes. Leaving trades out of the domain silently clips them off the edge.
+  const prices = [
+    ...points.map((p) => p.price),
+    ...community.map((p) => p.price),
+    ...markers.map((m) => m.unitPrice),
+  ];
+  const times = [
+    ...points.map((p) => p.ts),
+    ...community.map((p) => p.ts),
+    ...markers.map((m) => m.ts),
+  ];
+
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const pad = (max - min || max || 1) * 0.12;
+
+  // A single instant gives a zero-width axis, which Recharts renders as an empty
+  // plot. Widen it to a day so the point has somewhere to sit.
+  const tMin = Math.min(...times);
+  const tMax = Math.max(...times);
+  const tPad = tMax === tMin ? 43_200_000 : 0;
 
   return (
     <div className="h-56 w-full sm:h-72">
@@ -91,7 +115,7 @@ export function PriceChart({
             dataKey="ts"
             type="number"
             scale="time"
-            domain={["dataMin", "dataMax"]}
+            domain={[tMin - tPad, tMax + tPad]}
             tickFormatter={(ts) => shortDate(ts, locale)}
             tick={{ fill: "#6B7480", fontSize: 11 }}
             stroke="#E4E7EC"
@@ -144,11 +168,11 @@ export function PriceChart({
             />
           )}
 
-          {snapped.map((m, i) => (
+          {markers.map((m, i) => (
             <ReferenceDot
               key={`${m.ts}-${i}`}
               x={m.ts}
-              y={m.y}
+              y={m.unitPrice}
               r={9}
               fill={m.type === "buy" ? "#1F6FEB" : "#F59E0B"}
               stroke="#FFFFFF"
@@ -238,28 +262,6 @@ function Legend({ color, letter, label }: { color: string; letter: string; label
       {label}
     </span>
   );
-}
-
-/** Place each trade on the nearest snapshot so no marker floats off the line. */
-function snapMarkers(
-  points: readonly ChartPoint[],
-  markers: readonly TradeMarker[],
-): Array<{ ts: number; y: number; type: "buy" | "sell" }> {
-  if (points.length === 0) return [];
-
-  return markers.map((m) => {
-    let nearest = points[0];
-    let best = Math.abs(points[0].ts - m.ts);
-
-    for (const p of points) {
-      const distance = Math.abs(p.ts - m.ts);
-      if (distance < best) {
-        best = distance;
-        nearest = p;
-      }
-    }
-    return { ts: nearest.ts, y: nearest.price, type: m.type };
-  });
 }
 
 function shortDate(ts: number, locale: Locale): string {

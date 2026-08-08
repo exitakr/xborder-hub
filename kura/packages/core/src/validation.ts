@@ -65,6 +65,23 @@ export const priceReportSchema = z.object({
 
 export type PriceReportInput = z.infer<typeof priceReportSchema>;
 
+/**
+ * A valuation the holder supplies for an item nothing prices automatically.
+ *
+ * `source` is required and not merely encouraged: an unattributed number cannot
+ * be judged later, and the portfolio disclaimer that explains where the total
+ * came from has nothing to name without it.
+ */
+export const selfReportedPriceSchema = z.object({
+  marketItemId: z.string().uuid(),
+  price: z.coerce.number().positive().max(1_000_000_000),
+  currency: z.enum(CURRENCIES),
+  source: z.string().trim().min(1).max(120),
+  asOf: isoDate.refine((d) => d <= todayUtc(), { message: "future_date" }),
+});
+
+export type SelfReportedPriceInput = z.infer<typeof selfReportedPriceSchema>;
+
 export const newItemSchema = z.object({
   category: z.enum(CATEGORIES),
   name: z.string().trim().min(1).max(120),
