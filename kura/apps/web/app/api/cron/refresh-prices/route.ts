@@ -36,6 +36,19 @@ export const maxDuration = 60;
 const MAX_ITEMS_PER_RUN = 50;
 /** Courtesy pacing. Scryfall asks for <10 req/s; 300ms is comfortably inside. */
 const REQUEST_INTERVAL_MS = 300;
+/**
+ * Ceiling on the catalogue read. The whole table is fetched and narrowed in
+ * code, so this only exists to keep the request bounded if the catalogue ever
+ * grows far beyond the tens of rows it holds today.
+ */
+const CATALOGUE_READ_LIMIT = 2000;
+
+interface CatalogueRow {
+  id: string;
+  source_type: string | null;
+  search_query: string | null;
+  price_updated_at: string | null;
+}
 
 type SourceType = "ebay" | "scryfall" | "pokemontcg" | "rakuten" | "curated";
 
@@ -81,21 +94,22 @@ export async function GET(request: NextRequest) {
   if (ebayConfigured) sources.push("ebay");
   if (rakutenConfigured) sources.push("rakuten");
 
+  // The whole catalogue is read and then narrowed in code, rather than asking
+  // PostgREST to filter and sort. It is a table of tens of rows, so the transfer
+  // costs nothing — and a run that reported zero candidates against a catalogue
+  // that demonstrably had rows left no way to tell a filter that matched nothing
+  // from a request that never returned them. Selecting plainly removes that
+  // whole class of failure instead of adding more instrumentation around it.
   const [held, listed] = await Promise.all([
     heldItemIds(supabase),
     supabase
       .from("market_items")
-      .select("id, source_type, search_query")
-      .in("source_type", sources)
-      .not("search_query", "is", null)
-      .order("price_updated_at", { ascending: true, nullsFirst: true })
-      .limit(MAX_ITEMS_PER_RUN * 2),
+      .select("id, source_type, search_query, price_updated_at")
+      .limit(CATALOGUE_READ_LIMIT),
   ]);
 
-  // A failed catalogue read used to fall through `?? []` and report a clean run
-  // over zero items, which is indistinguishable from an empty catalogue and sent
-  // the last diagnosis in entirely the wrong direction. If we cannot read the
-  // list, say so instead of claiming there was nothing to do.
+  // A failed read used to fall through `?? []` into a clean report over zero
+  // items, which is indistinguishable from an empty catalogue.
   if (listed.error) {
     return NextResponse.json(
       { error: "could not read the catalogue", detail: listed.error.message },
@@ -103,11 +117,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const catalogue = (listed.data ?? []) as CatalogueRow[];
+
   const byId = new Map<string, Candidate>();
-  for (const row of listed.data ?? []) {
-    if (!row.search_query) continue;
-    byId.set(row.id as string, {
-      id: row.id as string,
+  for (const row of eligible(catalogue, sources)) {
+    byId.set(row.id, {
+      id: row.id,
       sourceType: row.source_type as SourceType,
       query: row.search_query as string,
     });
@@ -115,8 +130,8 @@ export async function GET(request: NextRequest) {
 
   // Nothing to price is a legitimate state, but it has several distinct causes —
   // an empty catalogue, rows whose source this deployment has no key for, rows
-  // with no query to send — and the bare count cannot tell them apart. Pay for
-  // one extra read only on the path where the answer is actually needed.
+  // with no query to send — and the bare count cannot tell them apart. The rows
+  // are already in hand, so the breakdown costs nothing extra.
   if (byId.size === 0) {
     return NextResponse.json({
       ok: true,
@@ -130,7 +145,8 @@ export async function GET(request: NextRequest) {
       fx: fx.rows.length > 0 ? "ok" : "failed",
       eurRate: fx.eurToUsd ? "ok" : "unavailable",
       candidates: 0,
-      catalogue: await catalogueBreakdown(supabase),
+      commit: commitRef(),
+      catalogue: breakdown(catalogue),
     });
   }
 
@@ -225,6 +241,7 @@ export async function GET(request: NextRequest) {
     fx: fx.rows.length > 0 ? "ok" : "failed",
     eurRate: fx.eurToUsd ? "ok" : "unavailable",
     candidates: byId.size,
+    commit: commitRef(),
   });
 }
 
@@ -315,25 +332,55 @@ function confidenceOf(sourceType: SourceType, sampleSize: number) {
 }
 
 /**
+ * Items this deployment can actually price, most out-of-date first.
+ *
+ * `curated` rows are excluded by carrying no `search_query`; eBay and Rakuten
+ * rows are excluded when their credentials are absent, so a run spends its time
+ * budget only on items that can return something.
+ */
+function eligible(catalogue: readonly CatalogueRow[], sources: readonly SourceType[]) {
+  return catalogue
+    .filter(
+      (row): row is CatalogueRow & { search_query: string } =>
+        typeof row.search_query === "string" &&
+        row.search_query.length > 0 &&
+        sources.includes(row.source_type as SourceType),
+    )
+    .sort((a, b) => staleness(a) - staleness(b));
+}
+
+/** Never-fetched items sort first; after that, oldest fetch first. */
+function staleness(row: CatalogueRow): number {
+  if (!row.price_updated_at) return 0;
+  const parsed = Date.parse(row.price_updated_at);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/**
  * Why the candidate list came back empty, in the shape that distinguishes the
  * causes: how many rows exist at all, how many carry a query to send, and which
- * sources they are assigned to. A catalogue that is seeded but sitting entirely
- * on `curated`, or seeded with null queries, looks identical from the count
- * alone and needs a different fix in each case.
+ * sources they are assigned to. A catalogue seeded entirely onto `curated`, or
+ * seeded with null queries, looks identical from the count alone and needs a
+ * different fix in each case.
  */
-async function catalogueBreakdown(supabase: ReturnType<typeof createAdminClient>) {
-  const { data, error } = await supabase.from("market_items").select("source_type, search_query");
-  if (error) return { error: error.message };
-
+function breakdown(catalogue: readonly CatalogueRow[]) {
   const bySource: Record<string, { items: number; withQuery: number }> = {};
-  for (const row of data ?? []) {
-    const key = (row.source_type as string) ?? "(null)";
+  for (const row of catalogue) {
+    const key = row.source_type ?? "(null)";
     bySource[key] ??= { items: 0, withQuery: 0 };
     bySource[key].items += 1;
     if (row.search_query) bySource[key].withQuery += 1;
   }
+  return { total: catalogue.length, bySource };
+}
 
-  return { total: data?.length ?? 0, bySource };
+/**
+ * Which build answered. Vercel injects the commit; without it there is no way to
+ * tell a deployment that has not picked up a change from one where the change
+ * did not work, and the two were confused for a full round of debugging.
+ */
+function commitRef(): string {
+  return (process.env.VERCEL_GIT_COMMIT_SHA ?? "unknown").slice(0, 7);
 }
 
 /** IDs of catalogue items at least one user actually holds. */
