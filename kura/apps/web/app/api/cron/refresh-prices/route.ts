@@ -34,8 +34,48 @@ export const maxDuration = 60;
  * a full run of 50 lands near 30s, which leaves headroom for a slow upstream.
  */
 const MAX_ITEMS_PER_RUN = 50;
-/** Courtesy pacing. Scryfall asks for <10 req/s; 300ms is comfortably inside. */
-const REQUEST_INTERVAL_MS = 300;
+
+/**
+ * Gap between requests, per source, applied within that source's lane only.
+ *
+ * Rakuten's terms ask for no more than one request a second and that number is
+ * theirs, not a guess. Scryfall asks to stay under ten a second. eBay publishes
+ * a daily quota rather than a rate, so the gap there is ordinary courtesy.
+ */
+const REQUEST_INTERVAL_MS: Record<SourceType, number> = {
+  rakuten: 1000,
+  scryfall: 150,
+  pokemontcg: 150,
+  ebay: 100,
+  curated: 0,
+};
+
+/**
+ * How many requests a source will take at once.
+ *
+ * Only eBay is opened up, and only because its published limit is a daily quota
+ * rather than a rate — it is also the largest slice of the catalogue, so left
+ * sequential it alone decides whether a run finishes. Scryfall and Rakuten both
+ * state a rate, and a stated rate is not something to reinterpret as a budget.
+ */
+const LANE_CONCURRENCY: Record<SourceType, number> = {
+  ebay: 4,
+  rakuten: 1,
+  scryfall: 1,
+  pokemontcg: 1,
+  curated: 1,
+};
+
+/**
+ * When to stop starting new work.
+ *
+ * `maxDuration` is 60s and Vercel kills the invocation at that line with no
+ * response at all — the caller sees FUNCTION_INVOCATION_TIMEOUT and learns
+ * nothing about what did or did not get written. Stopping early leaves room to
+ * answer, and because items are ordered by staleness the next run resumes with
+ * whatever was dropped.
+ */
+const TIME_BUDGET_MS = 45_000;
 /**
  * Ceiling on the catalogue read. The whole table is fetched and narrowed in
  * code, so this only exists to keep the request bounded if the catalogue ever
@@ -59,6 +99,7 @@ interface Candidate {
 }
 
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 500 });
@@ -169,14 +210,19 @@ export async function GET(request: NextRequest) {
     bySource[source][key] += 1;
   };
 
+  let skipped = 0;
+
+  const planned: Candidate[] = [];
   for (const id of queue) {
     if (seen.has(id)) continue;
     seen.add(id);
     if (seen.size > MAX_ITEMS_PER_RUN) break;
-
     const candidate = byId.get(id);
-    if (!candidate) continue;
+    if (candidate) planned.push(candidate);
+  }
 
+  async function priceOne(candidate: Candidate) {
+    const id = candidate.id;
     try {
       const series = await fetchFor(candidate, fx);
 
@@ -191,7 +237,7 @@ export async function GET(request: NextRequest) {
           .eq("id", id);
         insufficient += 1;
         tally(candidate.sourceType, "insufficient");
-        continue;
+        return;
       }
 
       backfilled += await writeHistory(supabase, id, series);
@@ -222,9 +268,51 @@ export async function GET(request: NextRequest) {
       failed += 1;
       tally(candidate.sourceType, "failed");
     }
-
-    await sleep(REQUEST_INTERVAL_MS);
   }
+
+  /**
+   * One source, worked through sequentially at that source's own pace.
+   *
+   * Lanes run concurrently because the rate limits are per-service: pacing eBay
+   * against Rakuten's one-request-a-second only made the run longer without
+   * being kinder to anyone. Sequential within a lane keeps each service's limit
+   * intact.
+   */
+  async function runLane(source: SourceType, items: readonly Candidate[]) {
+    const interval = REQUEST_INTERVAL_MS[source];
+
+    async function worker(share: readonly Candidate[]) {
+      for (const candidate of share) {
+        // Returning a partial result beats being killed mid-write. Items are
+        // ordered by staleness and held items come first, so whatever is dropped
+        // here is the least urgent, and the next run starts with it.
+        if (Date.now() - startedAt > TIME_BUDGET_MS) {
+          skipped += 1;
+          continue;
+        }
+        await priceOne(candidate);
+        await sleep(interval);
+      }
+    }
+
+    // Dealt round-robin so each worker gets a slice spanning the whole staleness
+    // order; handing one worker the first third would make the budget cut fall
+    // on an arbitrary source rather than on the freshest items.
+    const width = Math.min(LANE_CONCURRENCY[source], items.length);
+    const shares: Candidate[][] = Array.from({ length: width }, () => []);
+    items.forEach((candidate, i) => shares[i % width].push(candidate));
+
+    await Promise.all(shares.map(worker));
+  }
+
+  const lanes = new Map<SourceType, Candidate[]>();
+  for (const candidate of planned) {
+    const lane = lanes.get(candidate.sourceType);
+    if (lane) lane.push(candidate);
+    else lanes.set(candidate.sourceType, [candidate]);
+  }
+
+  await Promise.all([...lanes].map(([source, items]) => runLane(source, items)));
 
   return NextResponse.json({
     ok: true,
@@ -241,6 +329,11 @@ export async function GET(request: NextRequest) {
     fx: fx.rows.length > 0 ? "ok" : "failed",
     eurRate: fx.eurToUsd ? "ok" : "unavailable",
     candidates: byId.size,
+    // Non-zero means the run ran out of time. Not a failure — the dropped items
+    // are the least stale ones and the next run begins with them — but it does
+    // mean full coverage takes more than one run.
+    skipped,
+    elapsedMs: Date.now() - startedAt,
     commit: commitRef(),
   });
 }

@@ -24,6 +24,15 @@ const SCOPE = "https://api.ebay.com/oauth/api_scope";
 /** Application token, cached in module scope for the life of the invocation. */
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
+/**
+ * The request currently fetching a token, if any.
+ *
+ * The cron now issues eBay searches concurrently, and callers that start
+ * together all miss the cache together — without this they would each open
+ * their own token request against a cache none of them had filled yet.
+ */
+let inFlight: Promise<string> | null = null;
+
 export class EbayError extends Error {
   constructor(
     message: string,
@@ -39,11 +48,21 @@ export class EbayError extends Error {
  * a user, which is all the Browse API needs.
  */
 export async function getAppToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && cachedToken.expiresAt > now + 60_000) {
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
     return cachedToken.value;
   }
 
+  // Cleared on both settle paths so a failed request does not pin every later
+  // caller to the same rejection.
+  inFlight ??= requestToken().finally(() => {
+    inFlight = null;
+  });
+
+  return inFlight;
+}
+
+async function requestToken(): Promise<string> {
+  const now = Date.now();
   const clientId = process.env.EBAY_CLIENT_ID;
   const clientSecret = process.env.EBAY_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
