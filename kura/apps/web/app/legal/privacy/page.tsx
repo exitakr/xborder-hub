@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { wordmark } from "@kura/core";
+import { wordmark } from "@oma/core";
 import { site } from "@/lib/site";
 import { getLocale } from "@/lib/i18n-server";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { LegalBody } from "../LegalBody";
 
 export const metadata: Metadata = { title: "Privacy Policy" };

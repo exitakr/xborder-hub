@@ -2,10 +2,10 @@
 
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import type { getDict } from "@kura/core";
-import { CURRENCIES, formatMoney, type Currency } from "@kura/core";
-import type { Locale } from "@kura/core";
-import type { MarketItem } from "@kura/core";
+import type { getDict } from "@oma/core";
+import { CURRENCIES, formatMoney, type Currency } from "@oma/core";
+import type { Locale } from "@oma/core";
+import type { MarketItem } from "@oma/core";
 import { setCuratedPrice, type CurationState } from "./actions";
 
 export function CurationRow({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { getDict } from "@kura/core";
+import type { getDict } from "@oma/core";
 import { sendMagicLink, signIn, signInWithGoogle, type AuthState } from "./actions";
 
 type Dict = ReturnType<typeof getDict>;

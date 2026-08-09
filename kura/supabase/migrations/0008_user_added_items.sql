@@ -1,4 +1,4 @@
--- KURA — user-added catalogue items, a car category, and bilingual search.
+-- Oh My Asset — user-added catalogue items, a car category, and bilingual search.
 --
 -- WHY THIS EXISTS
 -- The seed catalogue (0002) is ~70 fixed rows. A user whose bag, watch or car

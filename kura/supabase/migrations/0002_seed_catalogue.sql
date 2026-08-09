@@ -1,4 +1,4 @@
--- KURA — starter catalogue.
+-- Oh My Asset — starter catalogue.
 --
 -- Text only. SPEC §1.2: no official product imagery is stored or referenced;
 -- names and reference numbers are descriptive/nominative use, which is what

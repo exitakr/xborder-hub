@@ -1,5 +1,5 @@
 import { getLocales } from "expo-localization";
-import { DEFAULT_LOCALE, getDict, isLocale, type Locale } from "@kura/core";
+import { DEFAULT_LOCALE, getDict, isLocale, type Locale } from "@oma/core";
 
 /**
  * Locale resolution for the native app.

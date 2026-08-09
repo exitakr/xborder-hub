@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { curatedPriceSchema } from "@kura/core";
+import { curatedPriceSchema } from "@oma/core";
 
 export interface CurationState {
   ok?: boolean;

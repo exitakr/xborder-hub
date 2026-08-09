@@ -1,5 +1,5 @@
 {
-  "name": "kura-monorepo",
+  "name": "oma-monorepo",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,12 +7,12 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace @kura/web",
-    "build": "npm run build --workspace @kura/web",
-    "mobile": "npm run start --workspace @kura/mobile",
+    "dev": "npm run dev --workspace @oma/web",
+    "build": "npm run build --workspace @oma/web",
+    "mobile": "npm run start --workspace @oma/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspace @kura/web"
+    "lint": "npm run lint --workspace @oma/web"
   },
   "engines": {
     "node": ">=20"

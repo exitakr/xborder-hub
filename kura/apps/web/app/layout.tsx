@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { brand, wordmark } from "@kura/core";
+import { brand, wordmark } from "@oma/core";
 import { site } from "@/lib/site";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";

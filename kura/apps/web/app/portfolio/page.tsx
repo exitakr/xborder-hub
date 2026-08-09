@@ -1,15 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
-import { loadPortfolio, loadPortfolioSeries } from "@kura/core";
-// Reused rather than duplicated: a portfolio total over time and an item's
-// price over time are the same shape (a value against a date), and the trade
-// markers / second series it also supports simply go unused here.
-import { PriceChart, type ChartPoint } from "../items/[id]/PriceChart";
+import { loadPortfolio, loadPortfolioSeries } from "@oma/core";
+import { PortfolioChart } from "./PortfolioChart";
 import { createClient } from "@/lib/supabase/server";
-import { fill, formatMoney, formatPercent } from "@kura/core";
-import { CATEGORY_LABEL_KEY } from "@kura/core";
+import { fill, formatMoney, formatPercent } from "@oma/core";
+import { CATEGORY_LABEL_KEY } from "@oma/core";
 import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { Sparkline } from "@/components/Sparkline";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
@@ -82,24 +79,18 @@ export default async function PortfolioPage() {
         )}
       </section>
 
-      {series.length > 0 && (
-        <section className="card p-4">
-          <h2 className="mb-2 text-sm font-semibold">{t.pfValueChart}</h2>
-          <PriceChart
-            points={series.map((p): ChartPoint => ({ ts: p.ts, price: p.value }))}
-            markers={[]}
-            currency={view.currency}
-            locale={profile.locale}
-            labels={{
-              buy: t.itMarkerBuy,
-              sell: t.itMarkerSell,
-              empty: t.itNoChart,
-              asking: t.pfValueChart,
-              realised: t.cmRealised,
-            }}
-          />
-        </section>
-      )}
+      {/* Always rendered, even with nothing to draw: hiding the section made a
+          chart that had no history yet indistinguishable from one that was
+          never built. */}
+      <section className="card p-4">
+        <h2 className="mb-2 text-sm font-semibold">{t.pfValueChart}</h2>
+        <PortfolioChart
+          points={series}
+          currency={view.currency}
+          locale={profile.locale}
+          emptyLabel={t.pfValueChartEmpty}
+        />
+      </section>
 
       {view.byCategory.length > 0 && (
         <section className="card p-5">

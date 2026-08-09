@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CATEGORIES, CATEGORY_LABEL_KEY, getDict, newItemSchema, type Category } from "@kura/core";
+import { CATEGORIES, CATEGORY_LABEL_KEY, getDict, newItemSchema, type Category } from "@oma/core";
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { theme } from "../theme";

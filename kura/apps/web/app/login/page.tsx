@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
 import { LoginForm } from "./LoginForm";
 

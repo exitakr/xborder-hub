@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
-import { loadItemDetail } from "@kura/core";
-import { formatMoney, formatPercent } from "@kura/core";
-import { CATEGORY_LABEL_KEY, sourceLabel, type MarketItem } from "@kura/core";
+import { loadItemDetail } from "@oma/core";
+import { formatMoney, formatPercent } from "@oma/core";
+import { CATEGORY_LABEL_KEY, sourceLabel, type MarketItem } from "@oma/core";
 import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { PriceChart, type ChartPoint, type TradeMarker } from "./PriceChart";
 import { TransactionForm } from "./TransactionForm";
@@ -13,8 +13,9 @@ import { PhotoUploader } from "./PhotoUploader";
 import { TransactionList } from "./TransactionList";
 import { PriceReportForm } from "./PriceReportForm";
 import { ValuationForm } from "./ValuationForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { addHolding } from "../../market/actions";
-import { communityConfidence, fill } from "@kura/core";
+import { communityConfidence, fill } from "@oma/core";
 
 export const metadata: Metadata = { title: "Item" };
 
@@ -244,9 +245,9 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       ) : (
         <form action={addHolding}>
           <input type="hidden" name="marketItemId" value={item.id} />
-          <button type="submit" className="btn-primary w-full">
+          <SubmitButton pendingLabel={t.loading} className="btn-primary w-full">
             {t.itAddToHoldings}
-          </button>
+          </SubmitButton>
         </form>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { getDict, isCurrency, isLocale, type Currency, type Locale } from "@kura/core";
+import { getDict, isCurrency, isLocale, type Currency, type Locale } from "@oma/core";
 import { supabase } from "./supabase";
 import { deviceLocale } from "./i18n";
 

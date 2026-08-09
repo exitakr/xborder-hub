@@ -1,4 +1,4 @@
--- KURA — more bags, a car category, and bilingual search aliases.
+-- Oh My Asset — more bags, a car category, and bilingual search aliases.
 --
 -- Two problems this addresses:
 --

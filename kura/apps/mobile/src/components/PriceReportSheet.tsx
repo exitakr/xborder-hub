@@ -8,7 +8,7 @@ import {
   getDict,
   priceReportSchema,
   type Currency,
-} from "@kura/core";
+} from "@oma/core";
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { numericFont, theme } from "../theme";

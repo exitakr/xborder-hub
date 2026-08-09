@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CATEGORIES, CATEGORY_LABEL_KEY, type getDict } from "@kura/core";
+import { CATEGORIES, CATEGORY_LABEL_KEY, type getDict } from "@oma/core";
 import { createAndHoldItem, type NewItemState } from "./actions";
 
 /**

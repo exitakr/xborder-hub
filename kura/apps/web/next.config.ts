@@ -20,9 +20,9 @@ const csp = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // @kura/core ships TypeScript source rather than a build artefact, so Next
+  // @oma/core ships TypeScript source rather than a build artefact, so Next
   // must compile it as part of this app.
-  transpilePackages: ["@kura/core"],
+  transpilePackages: ["@oma/core"],
   // The workspace root holds the lockfile and the shared package; tracing must
   // start there so core's files are included in the deployment bundle.
   outputFileTracingRoot: path.join(__dirname, "../.."),

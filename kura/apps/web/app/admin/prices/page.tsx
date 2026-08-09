@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { requireProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
-import type { MarketItem } from "@kura/core";
+import type { MarketItem } from "@oma/core";
 import { CurationRow } from "./CurationRow";
 
 export const metadata: Metadata = { title: "Price curation" };

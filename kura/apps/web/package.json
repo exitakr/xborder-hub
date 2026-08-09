@@ -1,5 +1,5 @@
 {
-  "name": "@kura/web",
+  "name": "@oma/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "test": "node --test --experimental-strip-types \"lib/**/*.test.ts\""
   },
   "dependencies": {
-    "@kura/core": "*",
+    "@oma/core": "*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.46.1",
     "next": "^15.1.0",

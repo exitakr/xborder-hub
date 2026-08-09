@@ -1,7 +1,7 @@
 /**
  * Foreign exchange rates for the daily refresh.
  *
- * Rates are stored as "units of X per 1 JPY" to match @kura/core's money module.
+ * Rates are stored as "units of X per 1 JPY" to match @oma/core's money module.
  * EUR is fetched but deliberately NOT stored: it is not a display currency, and
  * the only thing that needs it is converting Cardmarket quotes onto the USD axis
  * at ingest time.
@@ -9,7 +9,7 @@
 
 const DEFAULT_ENDPOINT = "https://open.er-api.com/v6/latest/JPY";
 
-/** Currencies users can display totals in. Must match @kura/core's CURRENCIES. */
+/** Currencies users can display totals in. Must match @oma/core's CURRENCIES. */
 const STORED = ["SGD", "USD"] as const;
 
 export interface FxSnapshot {

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { getDict, Locale } from "@kura/core";
-import { formatMoney } from "@kura/core";
-import type { TransactionRow } from "@kura/core";
+import type { getDict, Locale } from "@oma/core";
+import { formatMoney } from "@oma/core";
+import type { TransactionRow } from "@oma/core";
 import { deleteTransaction } from "./actions";
 import { TxFields, type EditingTx } from "./TransactionForm";
 

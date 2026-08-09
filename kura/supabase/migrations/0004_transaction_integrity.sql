@@ -1,4 +1,4 @@
--- KURA — transaction integrity at the database level.
+-- Oh My Asset — transaction integrity at the database level.
 --
 -- WHY THIS EXISTS
 -- The web app validates trades in a Server Action, but the native app writes to

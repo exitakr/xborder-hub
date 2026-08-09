@@ -12,7 +12,7 @@ import {
   netQuantity,
   sourceLabel,
   type ItemDetail,
-} from "@kura/core";
+} from "@oma/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer, Thumb } from "../../src/components/ui";
@@ -492,7 +492,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function confidenceLabel(
-  t: ReturnType<typeof import("@kura/core").getDict>,
+  t: ReturnType<typeof import("@oma/core").getDict>,
   confidence: string | null,
 ): string {
   switch (confidence) {

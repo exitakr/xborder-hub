@@ -1,4 +1,4 @@
--- KURA — admin price curation (SPEC §3.2, Layer 2)
+-- Oh My Asset — admin price curation (SPEC §3.2, Layer 2)
 --
 -- market_items and price_snapshots are writable only by the service role. The
 -- admin UI runs with the caller's anon key, so curation goes through a

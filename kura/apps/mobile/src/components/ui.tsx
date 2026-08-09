@@ -7,7 +7,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import Svg, { Path, Polyline } from "react-native-svg";
-import type { Category } from "@kura/core";
+import type { Category } from "@oma/core";
 import { theme } from "../theme";
 
 /** Card surface, matching the web app's `.card`. */

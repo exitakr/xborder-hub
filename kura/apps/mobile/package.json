@@ -1,5 +1,5 @@
 {
-  "name": "@kura/mobile",
+  "name": "@oma/mobile",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -17,7 +17,7 @@
     "submit:android": "eas submit --platform android --latest"
   },
   "dependencies": {
-    "@kura/core": "*",
+    "@oma/core": "*",
     "@supabase/supabase-js": "^2.46.1",
     "expo": "~57.0.9",
     "expo-constants": "~57.0.8",

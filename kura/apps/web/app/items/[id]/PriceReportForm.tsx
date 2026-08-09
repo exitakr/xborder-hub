@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import type { getDict, Currency } from "@kura/core";
-import { CONDITIONS, VENUES } from "@kura/core";
+import type { getDict, Currency } from "@oma/core";
+import { CONDITIONS, VENUES } from "@oma/core";
 import { submitPriceReport, type ReportState } from "./actions";
 
 const VENUE_KEY = {

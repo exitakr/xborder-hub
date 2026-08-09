@@ -1,4 +1,4 @@
-# KURA / 蔵
+# Oh My Asset
 
 > コレクションを、資産として見る。
 > A portfolio tracker for collectible assets — trading cards, watches, bags, sneakers.
@@ -16,7 +16,7 @@
 npm workspaces の monorepo です。
 
 ```
-kura/
+.
 ├── packages/core/     ★ 計算ロジック・翻訳・データ取得（Web と Mobile が共有）
 ├── apps/web/            Next.js 15。ランディング + Web アプリ + 価格更新 Cron
 ├── apps/mobile/         Expo SDK 57 / React Native。App Store / Google Play 提出用
@@ -34,7 +34,6 @@ Next は `transpilePackages`、Metro は monorepo 設定で取り込みます。
 ## クイックスタート
 
 ```bash
-cd kura
 npm install                      # workspaces 一括インストール
 
 # --- Web ---
@@ -140,13 +139,13 @@ Browse で一覧に無い銘柄は、利用者自身がその場でカタログ�
 
 ## ネーミング
 
-作業名は `KURA / 蔵` ですが **商標調査は未実施** です。
+作業名は `Oh My Asset` ですが **商標調査は未実施** です。
 
 ブランド名は `packages/core/src/brand.ts` の1ファイルに集約し、
 Web・Mobile の全画面がそこを参照します。改名（あるいは買い手によるリブランド）は
 1ファイルの変更で完了します。
 
-⚠️ ただし**アプリのバンドル ID（`com.kuraapp.kura`）はストア登録後に変更できません**。
+⚠️ ただし**アプリのバンドル ID（`com.ohmyasset.app`）はストア登録後に変更できません**。
 公開前に J-PlatPat で第9類（ソフトウェア）・第36類（金融・資産管理）の
 称呼類似検索を行ってください。シンガポール展開時は IPOS でも別途調査が必要です。
 

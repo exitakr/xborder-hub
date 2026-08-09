@@ -2,8 +2,8 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { getDict } from "@kura/core";
-import { CURRENCIES, type Currency } from "@kura/core";
+import type { getDict } from "@oma/core";
+import { CURRENCIES, type Currency } from "@oma/core";
 import { saveTransaction, type TxState } from "./actions";
 
 type Dict = ReturnType<typeof getDict>;

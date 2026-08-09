@@ -12,7 +12,7 @@ import {
   type Category,
   type FxTable,
   type MarketItem,
-} from "@kura/core";
+} from "@oma/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, CategoryGlyph, Disclaimer } from "../../src/components/ui";

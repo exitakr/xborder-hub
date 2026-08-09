@@ -1,4 +1,4 @@
-import type { getDict } from "@kura/core";
+import type { getDict } from "@oma/core";
 
 /**
  * SPEC §1.3: this text must be present on every screen. It is rendered by the

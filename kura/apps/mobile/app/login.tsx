@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Linking from "expo-linking";
-import { brand, wordmark } from "@kura/core";
+import { brand, wordmark } from "@oma/core";
 import { supabase } from "../src/supabase";
 import { useSession } from "../src/session";
 import { Button, Card, Disclaimer } from "../src/components/ui";

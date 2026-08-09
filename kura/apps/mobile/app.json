@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "KURA",
-    "slug": "kura",
+    "name": "Oh My Asset",
+    "slug": "oh-my-asset",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "kura",
+    "scheme": "oma",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -16,7 +16,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kuraapp.kura",
+      "bundleIdentifier": "com.ohmyasset.app",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -27,7 +27,7 @@
       }
     },
     "android": {
-      "package": "com.kuraapp.kura",
+      "package": "com.ohmyasset.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

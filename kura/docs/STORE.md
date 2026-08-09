@@ -58,7 +58,7 @@ App Store Connect の Apple ID / ASC App ID / Team ID を入れてから実行�
 ## 2. バンドル ID / パッケージ名
 
 ```
-com.kuraapp.kura
+com.ohmyasset.app
 ```
 
 ⚠️ **一度ストアに登録すると変更できません。** 独自ドメインを持っているなら
@@ -74,7 +74,7 @@ com.kuraapp.kura
 
 **アプリ名（30字以内）**
 ```
-KURA - コレクション資産管理
+Oh My Asset - コレクション資産管理
 ```
 
 **サブタイトル（30字以内 / iOS）**
@@ -124,7 +124,7 @@ KURA - コレクション資産管理
 
 **App name**
 ```
-KURA - Collection Portfolio
+Oh My Asset - Collection Portfolio
 ```
 
 **Subtitle**

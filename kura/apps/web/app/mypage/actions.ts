@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { profileSchema } from "@kura/core";
+import { profileSchema } from "@oma/core";
 import { LOCALE_COOKIE } from "@/lib/i18n-server";
 
 export interface ProfileState {

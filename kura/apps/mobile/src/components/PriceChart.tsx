@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
-import { formatMoney, type Currency, type Locale } from "@kura/core";
+import { formatMoney, type Currency, type Locale } from "@oma/core";
 import { theme } from "../theme";
 import { intlLocale } from "../i18n";
 

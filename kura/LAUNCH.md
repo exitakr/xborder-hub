@@ -51,6 +51,11 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       **高級車は eBay Motors の出品価格を使うため、ノイズが多くなります**
       （中古車情報サイトの公開 API は存在しないため、この App が持つ
       唯一の無料手段です。詳細は `docs/RESEARCH.md` §9）
+- [ ] `supabase/migrations/0010_route_bags_to_rakuten.sql`
+      **バッグ26件と日本語ポケカ2件を楽天ソースに割り当てます。**
+      0006 は制約に `rakuten` を許可しただけで実際の割り当てが無く、
+      `RAKUTEN_APPLICATION_ID` を設定しても楽天が一度も呼ばれない状態でした。
+      あわせて、`search_query` が空で永久に価格が付かなかった9件も解消します
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration
@@ -82,7 +87,7 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 
 ## B. Vercel（Web 版）
 
-- [ ] リポジトリを接続し、**Root Directory を `kura/apps/web` に設定**（重要）
+- [ ] リポジトリを接続し、**Root Directory を `apps/web` に設定**（重要）
 - [ ] Install Command は既定のままで可（workspaces のルートから解決されます）
 - [ ] 環境変数を設定（すべて Production / Preview 両方に）
 
@@ -118,7 +123,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cr
 - [ ] `eas.json` の `submit.production` に App Store Connect の ID 類を記入
 - [ ] ⚠️ **審査用デモアカウントを用意する**（保有データを数件入れた状態で）。
       未提出だとログイン必須アプリはほぼ確実に差し戻されます
-- [ ] ⚠️ **バンドル ID `com.kuraapp.kura` は登録後に変更できません。**
+- [ ] ⚠️ **バンドル ID `com.ohmyasset.app` は登録後に変更できません。**
       商標調査（§D）を先に済ませてください
 - [ ] 価格が実際に入った状態で提出する（「データ不足」だらけだと機能不全と見なされます）
 
@@ -166,7 +171,7 @@ eBay キーの取得を待っている間でも、これだけで該当カテゴ
 
 ## D. 法務（公開前に必ず）
 
-- [ ] **商標調査** — J-PlatPat で `KURA` / `蔵` の第9類・第36類 称呼類似検索
+- [ ] **商標調査** — J-PlatPat で `Oh My Asset` / `蔵` の第9類・第36類 称呼類似検索
       https://www.j-platpat.inpit.go.jp/
       抵触する場合は `lib/brand.ts` の `name` / `nameJa` を変更するだけで改名できます
 - [ ] シンガポール展開時は IPOS でも別途調査

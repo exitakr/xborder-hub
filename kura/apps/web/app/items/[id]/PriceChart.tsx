@@ -11,8 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoney, type Currency } from "@kura/core";
-import type { Locale } from "@kura/core";
+import { formatMoney, type Currency } from "@oma/core";
+import type { Locale } from "@oma/core";
 
 export interface ChartPoint {
   /** Epoch ms — a numeric axis keeps gaps in the daily series honest. */

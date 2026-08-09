@@ -20,7 +20,7 @@
  *  - An application ID is required; register free at webservice.rakuten.co.jp.
  *  - Stay at or under 1 request/second. The cron paces above this already.
  *  - Attribute Rakuten Web Service wherever its data appears. `sourceLabel` in
- *    @kura/core carries the required wording and the item screen renders it.
+ *    @oma/core carries the required wording and the item screen renders it.
  *
  * §要検証: the response shape below could not be confirmed against the live API
  * from the build sandbox (outbound access is blocked by the network policy).
@@ -28,7 +28,7 @@
  * than an exception or a wrong number.
  */
 
-import { trimmedMedian } from "@kura/core";
+import { trimmedMedian } from "@oma/core";
 import type { SourcePrice } from "./types";
 
 const ENDPOINT = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";

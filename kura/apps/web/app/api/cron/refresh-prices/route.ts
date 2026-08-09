@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { confidenceFor } from "@kura/core";
+import { confidenceFor } from "@oma/core";
 import { fetchPrice, sleep } from "@/lib/ebay";
 import { fetchScryfallPrice } from "@/lib/sources/scryfall";
 import { fetchPokemonTcgSeries } from "@/lib/sources/pokemontcg";

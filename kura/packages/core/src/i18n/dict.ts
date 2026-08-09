@@ -15,8 +15,11 @@ export function isLocale(v: string | undefined): v is Locale {
 
 const ja = {
   // --- navigation ---
-  navPortfolio: "ポートフォリオ",
-  navMarket: "銘柄をさがす",
+  // Nav labels are deliberately shorter than the page headings they lead to
+  // (pfTitle / mkTitle / myTitle). Spelled out in full, the Japanese set is
+  // ~23 characters and cannot share a row with the wordmark on a phone.
+  navPortfolio: "資産",
+  navMarket: "さがす",
   navMypage: "マイページ",
   navAdmin: "価格管理",
   navLogin: "ログイン",
@@ -53,6 +56,8 @@ const ja = {
   pfTitle: "ポートフォリオ",
   pfTotalValue: "評価額合計",
   pfValueChart: "評価額の推移",
+  pfValueChartEmpty:
+    "価格履歴を蓄積中です。1日1回の自動更新で1点ずつ記録され、数日で推移として表示されます。",
   pfUnrealized: "評価損益",
   pfCost: "取得額合計",
   pfRealized: "実現損益",
@@ -287,6 +292,8 @@ const en: Dict = {
   pfTitle: "Portfolio",
   pfTotalValue: "Total value",
   pfValueChart: "Value over time",
+  pfValueChartEmpty:
+    "Building price history. The daily refresh records one point per day, so a trend appears within a few days.",
   pfUnrealized: "Unrealised P/L",
   pfCost: "Total cost",
   pfRealized: "Realised P/L",

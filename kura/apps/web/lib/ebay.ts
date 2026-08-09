@@ -1,4 +1,4 @@
-import { trimmedMedian } from "@kura/core";
+import { trimmedMedian } from "@oma/core";
 
 /**
  * eBay Browse API client.

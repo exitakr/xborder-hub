@@ -1,4 +1,4 @@
--- KURA — additional free price sources.
+-- Oh My Asset — additional free price sources.
 --
 -- eBay Browse reports ASKING prices. Scryfall (MTG) and pokemontcg.io (Pokémon)
 -- both publish MARKET prices for free, under documented public APIs, so for

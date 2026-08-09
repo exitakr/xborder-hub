@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { priceReportSchema, selfReportedPriceSchema, transactionSchema } from "@kura/core";
-import { netQuantity } from "@kura/core";
+import { priceReportSchema, selfReportedPriceSchema, transactionSchema } from "@oma/core";
+import { netQuantity } from "@oma/core";
 
 export interface TxState {
   error?: "future_date" | "quantity" | "price" | "oversell" | "generic";

@@ -1,4 +1,4 @@
--- KURA — community-reported sale prices, plus the Rakuten source type.
+-- Oh My Asset — community-reported sale prices, plus the Rakuten source type.
 --
 -- WHY THIS EXISTS
 -- Watches, bags, sneakers and Yu-Gi-Oh have no free API that reports what they

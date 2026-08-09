@@ -1,19 +1,24 @@
 /**
  * Single source of truth for product identity, shared by the web and native apps.
  *
- * SPEC §1.1: the working name `KURA / 蔵` is NOT trademark-cleared. Everything
- * reads from this file so that a rename (or an acquirer's rebrand) is a one-file
- * change. Never hardcode the product name in a screen.
+ * SPEC §1.1: the name is NOT trademark-cleared. Everything reads from this file
+ * so that a rename (or an acquirer's rebrand) is a one-file change. Never
+ * hardcode the product name in a screen.
  *
  * Deployment-specific values (canonical domain, contact address) are injected by
  * each app instead of being read from `process.env` here: React Native has no
  * `NEXT_PUBLIC_*` and resolves configuration through app.json, not the web env.
  */
 export const brand = {
-  /** Latin wordmark used in headers, titles, and legal text. */
-  name: "KURA",
-  /** Japanese wordmark. Shown only in the ja locale. */
-  nameJa: "蔵",
+  /** Full wordmark, used in headers, titles, and legal text. */
+  name: "Oh My Asset",
+  /**
+   * Compact wordmark. The full name is three words wide, which on a phone
+   * pushes the navigation off the row beside it; screens that are tight on
+   * horizontal space use this instead. Not a separate brand — an abbreviation
+   * of the same one.
+   */
+  shortName: "OMA",
   /** Short tagline. Deliberately factual — no investment-advice framing. */
   tagline: {
     ja: "コレクションを、資産として見る。",
@@ -24,12 +29,17 @@ export const brand = {
    * application id, and the deep-link scheme. Changing it after a store release
    * creates a NEW app listing — it cannot be edited later.
    */
-  applicationId: "com.kuraapp.kura",
-  /** Custom URL scheme for auth deep links (kura://). */
-  scheme: "kura",
+  applicationId: "com.ohmyasset.app",
+  /** Custom URL scheme for auth deep links (oma://). */
+  scheme: "oma",
 } as const;
 
-/** Wordmark for a given locale. */
-export function wordmark(locale: "ja" | "en"): string {
-  return locale === "ja" ? `${brand.name}／${brand.nameJa}` : brand.name;
+/**
+ * Wordmark for a given locale.
+ *
+ * The name is English in both locales: it is a proper noun, and a transliterated
+ * second form would read as a different product rather than the same one.
+ */
+export function wordmark(_locale: "ja" | "en"): string {
+  return brand.name;
 }

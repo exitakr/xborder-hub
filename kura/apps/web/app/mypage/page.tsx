@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { requireProfile } from "@/lib/profile";
-import { loadPortfolio } from "@kura/core";
+import { loadPortfolio } from "@oma/core";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoney } from "@kura/core";
+import { formatMoney } from "@oma/core";
 import { DeleteAccount, ProfileForm } from "./ProfileForm";
 
 export const metadata: Metadata = { title: "Account" };

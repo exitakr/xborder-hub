@@ -1,5 +1,5 @@
 import { CategoryGlyph } from "./CategoryGlyph";
-import type { Category } from "@kura/core";
+import type { Category } from "@oma/core";
 
 /**
  * Thumbnail for a holding: the user's own photo if they uploaded one, otherwise

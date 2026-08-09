@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
-import { DEFAULT_LOCALE, getDict, isLocale, type Locale } from "@kura/core";
+import { DEFAULT_LOCALE, getDict, isLocale, type Locale } from "@oma/core";
 
-export const LOCALE_COOKIE = "kura_locale";
+export const LOCALE_COOKIE = "oma_locale";
 
 /**
  * Resolve the active locale for a server render.

@@ -9,7 +9,7 @@
  *  - Send a descriptive User-Agent and Accept header.
  *  - Stay under ~10 requests/second; we pace at 1/sec in the cron anyway.
  *  - Attribute Scryfall wherever its data is shown (the item screen does).
- *  - Do NOT put Scryfall data behind a paywall. If KURA ever gains a paid tier,
+ *  - Do NOT put Scryfall data behind a paywall. If Oh My Asset ever gains a paid tier,
  *    prices sourced here must remain visible on the free tier. See
  *    docs/RESEARCH.md §7 — this constrains monetisation and matters for a sale.
  *
@@ -30,7 +30,7 @@ import type { SourcePrice } from "./types";
 export type { SourcePrice };
 
 const ENDPOINT = "https://api.scryfall.com/cards/named";
-const USER_AGENT = "KURA/1.0 (collectible portfolio tracker)";
+const USER_AGENT = "OhMyAsset/1.0 (collectible portfolio tracker)";
 
 export async function fetchScryfallPrice(cardName: string): Promise<SourcePrice | null> {
   const url = new URL(ENDPOINT);

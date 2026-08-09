@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
-import { isCurrency, type Currency } from "@kura/core";
-import { isLocale, type Locale, DEFAULT_LOCALE } from "@kura/core";
+import { isCurrency, type Currency } from "@oma/core";
+import { isLocale, type Locale, DEFAULT_LOCALE } from "@oma/core";
 
 export interface SessionProfile {
   userId: string;

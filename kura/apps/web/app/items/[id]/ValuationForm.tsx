@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { fill, formatMoney, type Currency, type getDict, type SelfReportedPrice } from "@kura/core";
+import { fill, formatMoney, type Currency, type getDict, type SelfReportedPrice } from "@oma/core";
 import {
   deleteSelfReportedPrice,
   saveSelfReportedPrice,

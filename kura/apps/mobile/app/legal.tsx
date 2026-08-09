@@ -1,6 +1,6 @@
 import { Linking, ScrollView, Text, View } from "react-native";
 import Constants from "expo-constants";
-import { brand } from "@kura/core";
+import { brand } from "@oma/core";
 import { useSession } from "../src/session";
 import { Button, Disclaimer } from "../src/components/ui";
 import { theme } from "../src/theme";

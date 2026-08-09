@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { getDict } from "@kura/core";
+import type { getDict } from "@oma/core";
 import { signInWithGoogle, signUp, type AuthState } from "../login/actions";
 
 export function SignupForm({ t }: { t: ReturnType<typeof getDict> }) {

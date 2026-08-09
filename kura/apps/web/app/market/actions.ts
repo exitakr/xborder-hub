@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { newItemSchema } from "@kura/core";
+import { newItemSchema } from "@oma/core";
 
 /**
  * Add a catalogue item to the signed-in user's holdings.

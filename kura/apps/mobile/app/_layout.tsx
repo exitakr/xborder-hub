@@ -21,7 +21,7 @@ export default function RootLayout() {
 /**
  * Routes the user based on session state, and completes auth deep links.
  *
- * Magic-link and OAuth flows return to the app via the `kura://` scheme with a
+ * Magic-link and OAuth flows return to the app via the `oma://` scheme with a
  * code in the URL. Supabase's web client picks that up from `window.location`,
  * which does not exist here, so the exchange is done explicitly.
  */

@@ -2,9 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { getDict } from "@kura/core";
-import { LOCALES, type Locale } from "@kura/core";
-import { CURRENCIES, type Currency } from "@kura/core";
+import type { getDict } from "@oma/core";
+import { LOCALES, type Locale } from "@oma/core";
+import { CURRENCIES, type Currency } from "@oma/core";
 import { deleteAccount, saveProfile, type ProfileState } from "./actions";
 
 const LOCALE_NAMES: Record<Locale, string> = { ja: "日本語", en: "English" };

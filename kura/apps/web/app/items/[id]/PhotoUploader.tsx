@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { getDict } from "@kura/core";
+import type { getDict } from "@oma/core";
 import { createClient } from "@/lib/supabase/client";
 import { prepareImage } from "@/lib/image";
 import { savePhotoPath } from "./actions";

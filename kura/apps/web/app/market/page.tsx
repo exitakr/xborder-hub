@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { requireProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
-import { convert, formatMoney, heldItemIds, loadFxRates, searchItems } from "@kura/core";
-import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory } from "@kura/core";
+import { convert, formatMoney, heldItemIds, loadFxRates, searchItems } from "@oma/core";
+import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory } from "@oma/core";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
 import { AddItemForm } from "./AddItemForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { addHolding } from "./actions";
 
 export const metadata: Metadata = { title: "Browse" };
@@ -119,9 +120,12 @@ export default async function MarketPage({
                 ) : (
                   <form action={addHolding} className="shrink-0">
                     <input type="hidden" name="marketItemId" value={item.id} />
-                    <button type="submit" className="btn-secondary px-3 py-1.5 text-xs">
+                    <SubmitButton
+                      pendingLabel={t.loading}
+                      className="btn-secondary px-3 py-1.5 text-xs"
+                    >
                       {t.mkAdd}
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
               </li>

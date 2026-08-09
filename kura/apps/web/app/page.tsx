@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getDict } from "@kura/core";
+import { getDict } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
-import { CATEGORIES, CATEGORY_LABEL_KEY } from "@kura/core";
+import { CATEGORIES, CATEGORY_LABEL_KEY } from "@oma/core";
 
 export default async function LandingPage() {
   const locale = await getLocale();

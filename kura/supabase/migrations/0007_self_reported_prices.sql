@@ -1,4 +1,4 @@
--- KURA — a valuation the holder supplies themselves.
+-- Oh My Asset — a valuation the holder supplies themselves.
 --
 -- WHY THIS EXISTS
 -- Items with no automatic feed — bags, anything the catalogue carries as

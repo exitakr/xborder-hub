@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { CURRENCIES, LOCALES, type Currency, type Locale } from "@kura/core";
+import { CURRENCIES, LOCALES, type Currency, type Locale } from "@oma/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer } from "../../src/components/ui";

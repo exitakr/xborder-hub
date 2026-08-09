@@ -10,7 +10,7 @@ import {
   loadPortfolioSeries,
   type PortfolioPoint,
   type PortfolioView,
-} from "@kura/core";
+} from "@oma/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer, Sparkline, Thumb } from "../../src/components/ui";
@@ -169,27 +169,28 @@ export default function PortfolioScreen() {
             )}
           </Card>
 
-          {series.length > 0 && (
-            <Card>
-              <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: theme.space(2) }}>
-                {t.pfValueChart}
-              </Text>
-              <PriceChart
-                points={series.map((p) => ({ ts: p.ts, price: p.value }))}
-                markers={[]}
-                currency={profile.currency}
-                locale={profile.locale}
-                labels={{
-                  buy: t.itMarkerBuy,
-                  sell: t.itMarkerSell,
-                  empty: t.itNoChart,
-                  asking: t.pfValueChart,
-                  realised: t.cmRealised,
-                }}
-                height={160}
-              />
-            </Card>
-          )}
+          {/* Always rendered, even with nothing to draw: hiding the card made a
+              chart that had no history yet indistinguishable from one that was
+              never built. */}
+          <Card>
+            <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: theme.space(2) }}>
+              {t.pfValueChart}
+            </Text>
+            <PriceChart
+              points={series.map((p) => ({ ts: p.ts, price: p.value }))}
+              markers={[]}
+              currency={profile.currency}
+              locale={profile.locale}
+              labels={{
+                buy: t.itMarkerBuy,
+                sell: t.itMarkerSell,
+                empty: t.pfValueChartEmpty,
+                asking: t.pfValueChart,
+                realised: t.cmRealised,
+              }}
+              height={160}
+            />
+          </Card>
 
           {view && view.byCategory.length > 0 && (
             <Card>

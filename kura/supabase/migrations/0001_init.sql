@@ -1,4 +1,4 @@
--- KURA — initial schema (SPEC §4)
+-- Oh My Asset — initial schema (SPEC §4)
 --
 -- Run this in Supabase Dashboard → SQL Editor. It is idempotent: re-running it
 -- is safe and will not drop data.

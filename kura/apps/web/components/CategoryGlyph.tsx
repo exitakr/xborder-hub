@@ -1,4 +1,4 @@
-import type { Category } from "@kura/core";
+import type { Category } from "@oma/core";
 
 /**
  * Self-drawn category glyphs used as the image fallback.
