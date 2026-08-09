@@ -89,6 +89,12 @@ export default async function PortfolioPage() {
           currency={view.currency}
           locale={profile.locale}
           emptyLabel={t.pfValueChartEmpty}
+          rangeLabels={{
+            "1w": t.pfRange1w,
+            "1m": t.pfRange1m,
+            ytd: t.pfRangeYtd,
+            all: t.pfRangeAll,
+          }}
         />
       </section>
 

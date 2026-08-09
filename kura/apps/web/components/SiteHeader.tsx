@@ -48,7 +48,7 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             <NavLink href="/portfolio">{t.navPortfolio}</NavLink>
             <NavLink href="/market">{t.navMarket}</NavLink>
             <NavLink href="/mypage">{t.navMypage}</NavLink>
-            {isAdmin && <NavLink href="/admin/prices">{t.navAdmin}</NavLink>}
+            {isAdmin && <NavLink href="/admin">{t.navAdmin}</NavLink>}
             <LogoutButton label={t.navLogout} />
           </nav>
         ) : (

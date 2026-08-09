@@ -76,9 +76,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/legal/privacy" className="rounded hover:text-ink">
                 {t.legalPrivacy}
               </Link>
-              <a href={`mailto:${site.contactEmail}`} className="rounded hover:text-ink">
+              {/* A form rather than mailto:, so support does not depend on a
+                  mailbox existing on the domain — and so a message from a
+                  signed-in user arrives already attached to their account. */}
+              <Link href="/contact" className="rounded hover:text-ink">
                 {t.legalContact}
-              </a>
+              </Link>
             </div>
           </div>
         </footer>

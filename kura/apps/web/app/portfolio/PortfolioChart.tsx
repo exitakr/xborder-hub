@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -9,11 +10,34 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoney, type Currency, type Locale } from "@oma/core";
+import { formatMoney, formatPercent, type Currency, type Locale } from "@oma/core";
 
 export interface ValuePoint {
   ts: number;
   value: number;
+}
+
+export const RANGES = ["1w", "1m", "ytd", "all"] as const;
+export type Range = (typeof RANGES)[number];
+
+/**
+ * Earliest timestamp a range admits, or null for "everything".
+ *
+ * Year-to-date is anchored to 1 January in local time rather than "365 days
+ * ago": those are different questions, and the one a brokerage screen answers
+ * is the calendar one.
+ */
+function startOf(range: Range, now: Date): number | null {
+  switch (range) {
+    case "1w":
+      return now.getTime() - 7 * 86_400_000;
+    case "1m":
+      return now.getTime() - 30 * 86_400_000;
+    case "ytd":
+      return new Date(now.getFullYear(), 0, 1).getTime();
+    case "all":
+      return null;
+  }
 }
 
 const GAIN = "#0E9F6E";
@@ -39,25 +63,68 @@ export function PortfolioChart({
   currency,
   locale,
   emptyLabel,
+  rangeLabels,
 }: {
   points: ValuePoint[];
   currency: Currency;
   locale: Locale;
   emptyLabel: string;
+  rangeLabels: Record<Range, string>;
 }) {
-  if (points.length === 0) {
+  const [range, setRange] = useState<Range>("1m");
+
+  /**
+   * The window, plus the last point before it.
+   *
+   * Without that leading point a 1-week view of a series whose most recent
+   * observation is ten days old would be empty, and the reading would be "no
+   * data" rather than "flat" — which is wrong, since the value is known and
+   * simply has not moved.
+   */
+  const shown = useMemo(() => {
+    const from = startOf(range, new Date());
+    if (from === null) return points;
+
+    const inWindow = points.filter((p) => p.ts >= from);
+    const before = points.filter((p) => p.ts < from).at(-1);
+    return before ? [{ ...before, ts: from }, ...inWindow] : inWindow;
+  }, [points, range]);
+
+  const selector = (
+    <div className="mb-3 flex gap-1" role="group">
+      {RANGES.map((r) => (
+        <button
+          key={r}
+          type="button"
+          onClick={() => setRange(r)}
+          aria-pressed={range === r}
+          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+            range === r ? "bg-accent text-white" : "text-muted hover:bg-canvas hover:text-ink"
+          }`}
+        >
+          {rangeLabels[r]}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (shown.length === 0) {
     return (
-      <p className="flex h-48 items-center justify-center px-6 text-center text-sm text-muted">
-        {emptyLabel}
-      </p>
+      <>
+        {selector}
+        <p className="flex h-48 items-center justify-center px-6 text-center text-sm text-muted">
+          {emptyLabel}
+        </p>
+      </>
     );
   }
 
-  const first = points[0].value;
-  const last = points[points.length - 1].value;
+  const first = shown[0].value;
+  const last = shown[shown.length - 1].value;
   const stroke = last > first ? GAIN : last < first ? LOSS : FLAT;
+  const changePct = first > 0 ? (last - first) / first : null;
 
-  const values = points.map((p) => p.value);
+  const values = shown.map((p) => p.value);
   const min = Math.min(...values);
   const max = Math.max(...values);
   // Anchor the fill near the data rather than at zero: a portfolio that moved
@@ -66,12 +133,27 @@ export function PortfolioChart({
 
   // A single observation has no line to draw, so the point itself has to be
   // visible or the chart looks broken rather than new.
-  const dot = points.length <= 8 ? { r: 3, fill: stroke, strokeWidth: 0 } : false;
+  const dot = shown.length <= 8 ? { r: 3, fill: stroke, strokeWidth: 0 } : false;
 
   return (
-    <div className="h-48 w-full sm:h-60">
+    <>
+      {selector}
+
+      {/* The move over the selected window, not over all time — otherwise
+          switching range would change the chart and leave the number stale. */}
+      {changePct !== null && (
+        <p
+          className="tnum mb-1 text-sm font-medium"
+          style={{ color: stroke }}
+        >
+          {last >= first ? "+" : ""}
+          {formatMoney(last - first, currency, locale)} ({formatPercent(changePct, locale)})
+        </p>
+      )}
+
+      <div className="h-48 w-full sm:h-60">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+        <AreaChart data={shown} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="pf-fill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
@@ -117,7 +199,8 @@ export function PortfolioChart({
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+      </div>
+    </>
   );
 }
 

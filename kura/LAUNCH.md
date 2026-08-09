@@ -56,6 +56,10 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       0006 は制約に `rakuten` を許可しただけで実際の割り当てが無く、
       `RAKUTEN_APPLICATION_ID` を設定しても楽天が一度も呼ばれない状態でした。
       あわせて、`search_query` が空で永久に価格が付かなかった9件も解消します
+- [ ] `supabase/migrations/0011_contact_and_admin_kpis.sql`
+      お問い合わせフォームの保存先と、管理ダッシュボードの集計関数
+      （KPI・会員一覧・問い合わせ一覧）を追加します。
+      **集計関数はすべて `is_admin()` を関数内で再チェック**します
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration
@@ -106,11 +110,16 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 
 - [ ] デプロイ後、Cron が登録されていることを確認
       （Settings → Cron Jobs に `/api/cron/refresh-prices` が 20:00 UTC で表示される）
-- [ ] 手動で疎通確認:
-```bash
-curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cron/refresh-prices
-# {"ok":true,"updated":N,...} が返ればOK
-```
+- [ ] 手動で疎通確認: **`/admin` の「価格を今すぐ更新」ボタン**を押す
+      （管理者アカウントでログインした状態。スマホからでも実行できます）
+      結果の JSON がその場に表示され、`updated` が 1 以上なら成功です
+
+> `CRON_SECRET` はサーバー側にしか存在しないため、ボタンは
+> サーバーアクション経由で Cron エンドポイントを呼びます。
+> ターミナルから直接叩くことも引き続き可能です:
+> ```bash
+> curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cron/refresh-prices
+> ```
 
 ---
 
@@ -171,7 +180,7 @@ eBay キーの取得を待っている間でも、これだけで該当カテゴ
 
 ## D. 法務（公開前に必ず）
 
-- [ ] **商標調査** — J-PlatPat で `Oh My Asset` / `蔵` の第9類・第36類 称呼類似検索
+- [ ] **商標調査** — J-PlatPat で `Oh My Asset` / `オーマイアセット` の第9類・第36類 称呼類似検索
       https://www.j-platpat.inpit.go.jp/
       抵触する場合は `lib/brand.ts` の `name` / `nameJa` を変更するだけで改名できます
 - [ ] シンガポール展開時は IPOS でも別途調査

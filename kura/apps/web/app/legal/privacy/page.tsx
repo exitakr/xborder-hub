@@ -78,7 +78,7 @@ export default async function PrivacyPage() {
           </p>
 
           <h2>9. お問い合わせ</h2>
-          <p>{site.contactEmail}</p>
+          <p>お問い合わせは<a href="/contact" className="text-accent hover:underline">お問い合わせフォーム</a>からお願いします。</p>
         </>
       ) : (
         <>
@@ -146,7 +146,7 @@ export default async function PrivacyPage() {
           </p>
 
           <h2>9. Contact</h2>
-          <p>{site.contactEmail}</p>
+          <p>Please use the <a href="/contact" className="text-accent hover:underline">contact form</a>.</p>
         </>
       )}
     </LegalBody>
