@@ -95,6 +95,15 @@ async function requestToken(): Promise<string> {
   return cachedToken.value;
 }
 
+/** Terms that mark a listing as being about the item rather than being it. */
+const EXCLUDE = [
+  "case", "cover", "charm", "keychain", "keyring", "strap", "handle",
+  "replica", "inspired", "style", "organizer", "insert", "protector",
+  "sticker", "decal", "repair", "cleaner", "stand", "dust bag", "box only",
+]
+  .map((t) => `-${t}`)
+  .join(" ");
+
 export interface PriceObservation {
   price: number;
   currency: string;
@@ -117,7 +126,11 @@ export async function fetchPrice(
   const token = await getAppToken();
 
   const url = new URL(BROWSE_URL);
-  url.searchParams.set("q", query);
+  // Browse honours `-term` for exclusion. The same accessory economy that
+  // surrounds a luxury item on a Japanese marketplace surrounds it here, and
+  // those listings are internally consistent in price — so no statistic applied
+  // afterwards can separate them from a genuinely cheap example of the item.
+  url.searchParams.set("q", `${query} ${EXCLUDE}`);
   url.searchParams.set("limit", String(Math.min(limit, 200)));
   // Fixed-price only: auctions in progress are not comparable to a market price.
   url.searchParams.set("filter", "buyingOptions:{FIXED_PRICE}");

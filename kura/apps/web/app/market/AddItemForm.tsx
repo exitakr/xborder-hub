@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { CATEGORIES, CATEGORY_LABEL_KEY, type getDict } from "@oma/core";
 import { createAndHoldItem, type NewItemState } from "./actions";
+import { SuggestField } from "./SuggestField";
 
 /**
  * Add a catalogue item the seed data does not have.
@@ -24,6 +25,9 @@ export function AddItemForm({
 }) {
   const [state, action, pending] = useActionState<NewItemState, FormData>(createAndHoldItem, {});
   const [open, setOpen] = useState(Boolean(openProp));
+  // Held here because the suggestion list is scoped to it: searching every
+  // category would offer a watch to somebody adding a bag.
+  const [category, setCategory] = useState<string>(defaultCategory ?? "watch");
 
   if (!open) {
     return (
@@ -54,7 +58,8 @@ export function AddItemForm({
           <select
             id="new-item-category"
             name="category"
-            defaultValue={defaultCategory ?? "watch"}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
             className="field"
           >
             {CATEGORIES.map((c) => (
@@ -65,20 +70,14 @@ export function AddItemForm({
           </select>
         </div>
 
-        <div>
-          <label className="label" htmlFor="new-item-name">
-            {t.mkAddOwnName}
-          </label>
-          <input
-            id="new-item-name"
-            name="name"
-            type="text"
-            required
-            maxLength={120}
-            defaultValue={defaultName}
-            className="field"
-          />
-        </div>
+        <SuggestField
+          name="name"
+          label={t.mkAddOwnName}
+          defaultValue={defaultName}
+          category={category}
+          hint={t.mkAddOwnNameHint}
+          pickLabel={t.mkAddOwnPickExisting}
+        />
 
         <div>
           <label className="label" htmlFor="new-item-detail">

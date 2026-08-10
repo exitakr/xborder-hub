@@ -101,6 +101,9 @@ const ja = {
   mkAddOwnErrName: "名称を入力してください。",
   mkCategory: "カテゴリ",
   mkAddOwnName: "名称",
+  mkAddOwnNameHint:
+    "モデル名やサイズまで入れてください（例:「バッグ」ではなく「ボッテガヴェネタ カセット」）。ブランド名だけだと、そのブランドの全商品が混ざり価格が出せません。",
+  mkAddOwnPickExisting: "似た銘柄が登録済みです。こちらを使うと価格が取得できます:",
   mkAddOwnDetail: "詳細（任意）",
   mkAddOwnDetailPlaceholder: "例: レザー、カラー、サイズなど",
   mkAddOwnIdentifier: "型番・リファレンス（任意）",
@@ -198,6 +201,7 @@ const ja = {
     "合計評価額のうち {count} 件は、あなたが登録した自己申告値を使っています。" +
     "登録時点の情報に基づくため、現在の市場価格をそのまま反映しているとは限りません。",
   itAddToHoldings: "保有に追加",
+  itRemoveHolding: "保有から削除",
 
   // --- transaction form ---
   txType: "種別",
@@ -394,6 +398,9 @@ const en: Dict = {
   mkAddOwnErrName: "Please enter a name.",
   mkCategory: "Category",
   mkAddOwnName: "Name",
+  mkAddOwnNameHint:
+    "Include the model and size (\"Bottega Veneta Cassette\", not \"bag\"). A brand name alone matches that brand's whole product line and cannot be priced.",
+  mkAddOwnPickExisting: "Already in the catalogue — these can be priced:",
   mkAddOwnDetail: "Detail (optional)",
   mkAddOwnDetailPlaceholder: "e.g. leather, colour, size",
   mkAddOwnIdentifier: "Reference number (optional)",
@@ -491,6 +498,7 @@ const en: Dict = {
     "{count} of your holdings are valued from figures you entered yourself. Those reflect the " +
     "information available when you recorded them, not necessarily the current market price.",
   itAddToHoldings: "Add to holdings",
+  itRemoveHolding: "Remove from holdings",
 
   txType: "Type",
   txBuy: "Buy",

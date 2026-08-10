@@ -88,6 +88,12 @@ interface CatalogueRow {
   source_type: string | null;
   search_query: string | null;
   price_updated_at: string | null;
+  /**
+   * Lowest figure that could plausibly be this item, in its own currency.
+   * A search that comes back under it matched the item's accessories rather
+   * than the item — see migration 0013.
+   */
+  min_price: number | null;
 }
 
 type SourceType = "ebay" | "scryfall" | "pokemontcg" | "rakuten" | "curated";
@@ -96,6 +102,7 @@ interface Candidate {
   id: string;
   sourceType: SourceType;
   query: string;
+  minPrice: number | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -145,7 +152,7 @@ export async function GET(request: NextRequest) {
     heldItemIds(supabase),
     supabase
       .from("market_items")
-      .select("id, source_type, search_query, price_updated_at")
+      .select("id, source_type, search_query, price_updated_at, min_price")
       .limit(CATALOGUE_READ_LIMIT),
   ]);
 
@@ -166,6 +173,7 @@ export async function GET(request: NextRequest) {
       id: row.id,
       sourceType: row.source_type as SourceType,
       query: row.search_query as string,
+      minPrice: row.min_price === null ? null : Number(row.min_price),
     });
   }
 
@@ -224,7 +232,19 @@ export async function GET(request: NextRequest) {
   async function priceOne(candidate: Candidate) {
     const id = candidate.id;
     try {
-      const series = await fetchFor(candidate, fx);
+      const fetched = await fetchFor(candidate, fx);
+
+      // Last line of defence against a search that matched the item's
+      // accessories rather than the item. Excluding accessory terms at the
+      // source removes most of them, but "cheap listings that are internally
+      // consistent" is indistinguishable from a real price by any statistic —
+      // only knowing what the item cannot possibly cost separates the two.
+      const series =
+        fetched &&
+        candidate.minPrice !== null &&
+        fetched.current.price < candidate.minPrice
+          ? null
+          : fetched;
 
       if (!series) {
         // Not an error: we refuse to publish a price we cannot support.

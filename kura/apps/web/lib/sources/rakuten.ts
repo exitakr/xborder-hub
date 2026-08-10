@@ -36,6 +36,21 @@ const ENDPOINT = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220
 /** The API caps a page at 30, which is comfortably above the median's floor. */
 const HITS = 30;
 
+/**
+ * Listings that use the item's name but are not the item.
+ *
+ * A search for a luxury bag returns its accessory economy — protective covers,
+ * bag charms, handle wraps, storage bags, replicas — and there are far more of
+ * those than of the bag. Excluding them at the source is the only reliable
+ * filter: they are internally consistent in price, so no statistic computed
+ * afterwards can tell them apart from a genuine cheap listing.
+ */
+const EXCLUDE = [
+  "保護", "カバー", "チャーム", "キーホルダー", "ケース", "型紙", "ハンドル",
+  "持ち手", "レプリカ", "風", "収納", "インナーバッグ", "中敷き", "スタンド",
+  "クリーナー", "修理", "リペア", "ショルダーストラップ", "似", "ステッカー",
+].join(" ");
+
 export async function fetchRakutenPrice(keyword: string): Promise<SourcePrice | null> {
   const applicationId = process.env.RAKUTEN_APPLICATION_ID;
   if (!applicationId) return null;
@@ -43,12 +58,17 @@ export async function fetchRakutenPrice(keyword: string): Promise<SourcePrice | 
   const url = new URL(ENDPOINT);
   url.searchParams.set("applicationId", applicationId);
   url.searchParams.set("keyword", keyword);
+  url.searchParams.set("NGKeyword", EXCLUDE);
   url.searchParams.set("hits", String(HITS));
   url.searchParams.set("format", "json");
-  // Cheapest first. The tail of a collectible search is padded with accessories
-  // and empty boxes; the trimmed median below drops both ends anyway, but
-  // starting from the low end keeps the sample near the real item.
-  url.searchParams.set("sort", "+itemPrice");
+  // Relevance, NOT price.
+  //
+  // This asked for cheapest-first, on the reasoning that the expensive tail was
+  // noise. It is the other way round: the cheap end of a luxury search is
+  // entirely accessories, so taking the first 30 by price guaranteed a sample
+  // containing none of the actual item. A Birkin priced this way came out at
+  // roughly the cost of a bag charm, which is precisely what was being measured.
+  url.searchParams.set("sort", "standard");
 
   const res = await fetch(url.toString(), {
     headers: { Accept: "application/json" },

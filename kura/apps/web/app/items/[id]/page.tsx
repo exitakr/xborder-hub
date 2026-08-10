@@ -17,7 +17,7 @@ import { TransactionList } from "./TransactionList";
 import { PriceReportForm } from "./PriceReportForm";
 import { ValuationForm } from "./ValuationForm";
 import { SubmitButton } from "@/components/SubmitButton";
-import { addHolding } from "../../market/actions";
+import { addHolding, removeHolding } from "../../market/actions";
 import { communityConfidence, fill } from "@oma/core";
 
 /**
@@ -291,6 +291,21 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               marketItemId={item.id}
               hasPhoto={Boolean(detail.photoPath)}
             />
+          </section>
+
+          {/* Leaving is as much a part of holding something as arriving. Without
+              this the holding row survived every attempt to clear it, and Browse
+              went on calling the item held. */}
+          <section className="flex justify-end">
+            <form action={removeHolding}>
+              <input type="hidden" name="marketItemId" value={item.id} />
+              <SubmitButton
+                pendingLabel={t.loading}
+                className="btn-secondary px-3 py-1.5 text-xs text-loss"
+              >
+                {t.itRemoveHolding}
+              </SubmitButton>
+            </form>
           </section>
 
           <section>

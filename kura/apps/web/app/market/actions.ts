@@ -92,3 +92,54 @@ export async function createAndHoldItem(
   revalidatePath("/portfolio");
   redirect(`/items/${itemId}`);
 }
+
+/**
+ * Stop holding an item, and clean up behind it.
+ *
+ * There was no way to do this at all: a holding could be emptied of trades but
+ * the row stayed, so Browse went on reporting the item as held and the item
+ * screen went on offering to record trades against it. Deleting the holding is
+ * what the user means by "remove", and the transactions under it go with it —
+ * they describe a position that no longer exists.
+ *
+ * A catalogue row the user created themselves is deleted too, but only when
+ * nobody else holds it. Once a second person is tracking it, it has stopped
+ * being that user's private entry and become shared reference data.
+ */
+export async function removeHolding(formData: FormData) {
+  const parsed = z.string().uuid().safeParse(formData.get("marketItemId"));
+  if (!parsed.success) return;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: holding } = await supabase
+    .from("holdings")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("market_item_id", parsed.data)
+    .maybeSingle();
+
+  if (holding) {
+    // Explicit rather than relying on the FK cascade: the intent to discard the
+    // trades belongs here, where someone reading it can see it.
+    await supabase.from("transactions").delete().eq("holding_id", holding.id).eq("user_id", user.id);
+    await supabase.from("holdings").delete().eq("id", holding.id).eq("user_id", user.id);
+  }
+
+  // The user's own private valuation for it is theirs and goes too.
+  await supabase
+    .from("self_reported_prices")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("market_item_id", parsed.data);
+
+  await supabase.rpc("delete_my_market_item", { p_item_id: parsed.data });
+
+  revalidatePath("/market");
+  revalidatePath("/portfolio");
+  redirect("/portfolio");
+}

@@ -141,15 +141,24 @@ export function PortfolioChart({
 
       {/* The move over the selected window, not over all time — otherwise
           switching range would change the chart and leave the number stale. */}
-      {changePct !== null && (
-        <p
-          className="tnum mb-1 text-sm font-medium"
-          style={{ color: stroke }}
-        >
-          {last >= first ? "+" : ""}
-          {formatMoney(last - first, currency, locale)} ({formatPercent(changePct, locale)})
+      <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        {changePct !== null && (
+          <p className="tnum text-sm font-medium" style={{ color: stroke }}>
+            {last >= first ? "+" : ""}
+            {formatMoney(last - first, currency, locale)} ({formatPercent(changePct, locale)})
+          </p>
+        )}
+        {/* The window actually drawn. Early on, every range holds the same one
+            or two points, so the selector appears to do nothing — saying which
+            dates are on screen is what distinguishes "not working" from
+            "there is only one day of history so far". */}
+        <p className="tnum text-xs text-muted">
+          {shown.length === 1
+            ? longDate(shown[0].ts, locale)
+            : `${shortDate(shown[0].ts, locale)} – ${shortDate(shown[shown.length - 1].ts, locale)}`}
+          {` · ${shown.length}`}
         </p>
-      )}
+      </div>
 
       <div className="h-48 w-full sm:h-60">
       <ResponsiveContainer width="100%" height="100%">
