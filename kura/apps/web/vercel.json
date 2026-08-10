@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "//regions": "Tokyo. Unset, Vercel defaults to iad1 (Washington DC) while the database sits in ap-northeast-1 and the users are in Japan — so every server-rendered page paid a trans-Pacific round trip PER QUERY, and pages run several. Co-locating the functions with the database turns each of those from ~150ms into ~5ms; it is the single largest thing separating a click from its result here.",
   "regions": ["hnd1"],
   "crons": [
     {

@@ -78,7 +78,7 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
 update public.profiles set is_admin = true
 where id = (select id from auth.users where email = 'あなたのメールアドレス');
 ```
-- [ ] `/admin/prices` が開けることを確認
+- [ ] `/admin`（管理ダッシュボード）が開けることを確認
 
 ### A-5. ⚠️ 無料枠のままにしない
 - [ ] **Pro プラン（$25/月）への移行を推奨**
@@ -92,6 +92,17 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 ## B. Vercel（Web 版）
 
 - [ ] リポジトリを接続し、**Root Directory を `apps/web` に設定**（重要）
+- [ ] 実行リージョンが **東京（hnd1）** であることを確認（`vercel.json` で指定済み）
+
+> **なぜ東京固定なのか**: 未指定だと Vercel の既定は `iad1`（米国東部）です。
+> DB は東京（ap-northeast-1）、利用者も日本にいるため、
+> サーバー描画のたびに**クエリ1本ごとに太平洋を往復**していました。
+> 1ページで複数クエリを投げるので、これが体感遅延の主因になります。
+> 同居させると 1 クエリあたり約150ms → 約5ms になります。
+>
+> ⚠️ `vercel.json` は**スキーマ検証が厳格**で、未知のキーがあると
+> `should NOT have additional property` でデプロイ全体が失敗します。
+> JSON にコメントは書けないため、意図はこのファイルに記載しています。
 - [ ] Install Command は既定のままで可（workspaces のルートから解決されます）
 - [ ] 環境変数を設定（すべて Production / Preview 両方に）
 
@@ -182,13 +193,14 @@ eBay キーの取得を待っている間でも、これだけで該当カテゴ
 
 - [ ] **商標調査** — J-PlatPat で `Oh My Asset` / `オーマイアセット` の第9類・第36類 称呼類似検索
       https://www.j-platpat.inpit.go.jp/
-      抵触する場合は `lib/brand.ts` の `name` / `nameJa` を変更するだけで改名できます
+      抵触する場合は `packages/core/src/brand.ts` の `name` / `shortName` を変更するだけで改名できます
 - [ ] シンガポール展開時は IPOS でも別途調査
       https://www.ipos.gov.sg/
 - [ ] 利用規約・プライバシーポリシーの弁護士レビュー
       （`app/legal/terms`, `app/legal/privacy` に日英の草案があります）
 - [ ] 日本で有料化する場合は **特定商取引法に基づく表記** ページを追加
-- [ ] シンガポールの個人データを扱うため **PDPA** の DPO 指定要否を確認
+- [x] シンガポールの個人データを扱うため **PDPA** の DPO 指定を明記済み
+      （プライバシーポリシー §6。実際に担当者を割り当てること）
 - [ ] 「買い時 / 売り時 / 推奨」等の表現が UI に混入していないか最終確認
       （投資助言に該当するリスクを避けるため）
 
