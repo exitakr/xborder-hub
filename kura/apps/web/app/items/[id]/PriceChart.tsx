@@ -42,8 +42,16 @@ interface Props {
   labels: { buy: string; sell: string; empty: string; asking: string; realised: string };
 }
 
-const ASKING = "#1F6FEB";
-const REALISED = "#10B981";
+/**
+ * Recharts takes colours as props rather than classes, so the theme tokens are
+ * read from the document instead of applied by Tailwind. Re-read on render, so
+ * switching theme repaints the chart along with everything around it.
+ */
+function themeColor(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(`--c-${name}`).trim();
+  return raw ? `rgb(${raw})` : fallback;
+}
 
 /**
  * Price history with the user's own trades overlaid (SPEC §6.3).
@@ -74,6 +82,13 @@ export function PriceChart({
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   const data = useMemo(() => mergeSeries(points, community), [points, community]);
+
+  const ASKING = themeColor("accent", "#1F6FEB");
+  const REALISED = themeColor("gain", "#10B981");
+  const SELL = themeColor("sell", "#F59E0B");
+  const grid = themeColor("line", "#E4E7EC");
+  const axis = themeColor("muted", "#6B7480");
+  const panel = themeColor("surface", "#FFFFFF");
 
   if (data.length === 0 && markers.length === 0) {
     return (
@@ -110,28 +125,29 @@ export function PriceChart({
     <div className="h-56 w-full sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 12, right: 12, bottom: 4, left: 4 }}>
-          <CartesianGrid stroke="#E4E7EC" vertical={false} />
+          <CartesianGrid stroke={grid} vertical={false} />
           <XAxis
             dataKey="ts"
             type="number"
             scale="time"
             domain={[tMin - tPad, tMax + tPad]}
             tickFormatter={(ts) => shortDate(ts, locale)}
-            tick={{ fill: "#6B7480", fontSize: 11 }}
-            stroke="#E4E7EC"
+            tick={{ fill: axis, fontSize: 11 }}
+            stroke={grid}
             minTickGap={32}
           />
           <YAxis
             domain={[Math.max(0, min - pad), max + pad]}
             tickFormatter={(v) => compact(v, locale)}
-            tick={{ fill: "#6B7480", fontSize: 11 }}
-            stroke="#E4E7EC"
+            tick={{ fill: axis, fontSize: 11 }}
+            stroke={grid}
             width={52}
           />
           <Tooltip
             contentStyle={{
               borderRadius: 8,
-              border: "1px solid #E4E7EC",
+              border: `1px solid ${grid}`,
+              background: panel,
               fontSize: 12,
             }}
             labelFormatter={(ts) => shortDate(Number(ts), locale)}
@@ -174,7 +190,7 @@ export function PriceChart({
               x={m.ts}
               y={m.unitPrice}
               r={9}
-              fill={m.type === "buy" ? "#1F6FEB" : "#F59E0B"}
+              fill={m.type === "buy" ? ASKING : SELL}
               stroke="#FFFFFF"
               strokeWidth={2}
               isFront
@@ -194,7 +210,7 @@ export function PriceChart({
         <SeriesKey color={ASKING} label={labels.asking} />
         {community.length > 0 && <SeriesKey color={REALISED} label={labels.realised} dashed />}
         <Legend color={ASKING} letter="B" label={labels.buy} />
-        <Legend color="#F59E0B" letter="S" label={labels.sell} />
+        <Legend color={SELL} letter="S" label={labels.sell} />
       </div>
     </div>
   );

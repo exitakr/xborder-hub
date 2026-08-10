@@ -12,6 +12,7 @@ import {
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { numericFont, theme } from "../theme";
+import { useColors } from "../ThemeProvider";
 
 type Dict = ReturnType<typeof getDict>;
 
@@ -49,6 +50,7 @@ export function PriceReportSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const col = useColors();
   const insets = useSafeAreaInsets();
 
   const [kind, setKind] = useState<"sold" | "bought">("sold");
@@ -120,7 +122,7 @@ export function PriceReportSheet({
 
         <View
           style={{
-            backgroundColor: theme.color.canvas,
+            backgroundColor: col.canvas,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + theme.space(4),
@@ -133,13 +135,13 @@ export function PriceReportSheet({
           >
             <View>
               <Text style={{ fontSize: 16, fontWeight: "700" }}>{t.cmReportTitle}</Text>
-              <Text style={{ fontSize: 12, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: col.muted, marginTop: 4 }}>
                 {t.cmReportLead}
               </Text>
             </View>
 
             {error && (
-              <Text accessibilityRole="alert" style={{ color: theme.color.loss, fontSize: 13 }}>
+              <Text accessibilityRole="alert" style={{ color: col.loss, fontSize: 13 }}>
                 {error}
               </Text>
             )}
@@ -193,7 +195,7 @@ export function PriceReportSheet({
               />
             </Card>
 
-            <Text style={{ fontSize: 11, color: theme.color.muted }}>{t.cmPrivacyNote}</Text>
+            <Text style={{ fontSize: 11, color: col.muted }}>{t.cmPrivacyNote}</Text>
 
             <View style={{ flexDirection: "row", gap: theme.space(3) }}>
               <Button label={t.cmSubmit} onPress={save} busy={busy} style={{ flex: 1 }} />
@@ -218,9 +220,10 @@ function Choice<T extends string>({
   selected: T;
   onSelect: (value: T) => void;
 }) {
+  const col = useColors();
   return (
     <View>
-      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
         {label}
       </Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.space(2) }}>
@@ -239,15 +242,15 @@ function Choice<T extends string>({
                 justifyContent: "center",
                 borderRadius: theme.radius.md,
                 borderWidth: 1,
-                borderColor: active ? theme.color.accent : theme.color.line,
-                backgroundColor: active ? theme.color.accent : theme.color.surface,
+                borderColor: active ? col.accent : col.line,
+                backgroundColor: active ? col.accent : col.surface,
               }}
             >
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: "600",
-                  color: active ? "#FFFFFF" : theme.color.ink,
+                  color: active ? "#FFFFFF" : col.ink,
                 }}
               >
                 {option.label}
@@ -264,24 +267,26 @@ function Field({
   label,
   ...props
 }: React.ComponentProps<typeof TextInput> & { label: string }) {
+  const col = useColors();
+
   return (
     <View>
-      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
         {label}
       </Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={theme.color.muted}
+        placeholderTextColor={col.muted}
         style={[
           {
             minHeight: 48,
             borderWidth: 1,
-            borderColor: theme.color.line,
+            borderColor: col.line,
             borderRadius: theme.radius.md,
             paddingHorizontal: theme.space(3),
             fontSize: 15,
-            color: theme.color.ink,
-            backgroundColor: theme.color.surface,
+            color: col.ink,
+            backgroundColor: col.surface,
           },
           numericFont,
         ]}

@@ -34,7 +34,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#FFFFFF",
+  // Two entries so the browser chrome matches whichever theme is showing,
+  // rather than a white bar sitting above a dark page.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F1217" },
+  ],
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -65,7 +70,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        {/*
+          Runs before first paint, so a dark-mode user never sees a white flash.
+          It has to be inline and blocking for that reason — anything deferred
+          to React would apply the class after the page has already been drawn
+          in the wrong colours. Falls back to the OS preference when the user
+          has not chosen, which is what makes the default feel considered
+          rather than arbitrary.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('oma_theme');var d=s?s==='dark':matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"

@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useSession } from "../../src/session";
-import { theme } from "../../src/theme";
+import { useColors } from "../../src/ThemeProvider";
 
 const ICONS = {
   portfolio: "M4 19V9m5 10V5m5 14v-7m5 7V8",
@@ -37,17 +37,19 @@ function TabIcon({
  * add, and my settings" — more tabs would only make the first one harder to find.
  */
 export default function TabsLayout() {
+  const col = useColors();
+
   const { t } = useSession();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.color.accent,
-        tabBarInactiveTintColor: theme.color.muted,
-        tabBarStyle: { backgroundColor: theme.color.surface, borderTopColor: theme.color.line },
-        headerStyle: { backgroundColor: theme.color.surface },
-        headerTitleStyle: { fontSize: 16, fontWeight: "600", color: theme.color.ink },
-        sceneStyle: { backgroundColor: theme.color.canvas },
+        tabBarActiveTintColor: col.accent,
+        tabBarInactiveTintColor: col.muted,
+        tabBarStyle: { backgroundColor: col.surface, borderTopColor: col.line },
+        headerStyle: { backgroundColor: col.surface },
+        headerTitleStyle: { fontSize: 16, fontWeight: "600", color: col.ink },
+        sceneStyle: { backgroundColor: col.canvas },
       }}
     >
       <Tabs.Screen

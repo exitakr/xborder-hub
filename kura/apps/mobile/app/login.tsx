@@ -14,10 +14,13 @@ import { supabase } from "../src/supabase";
 import { useSession } from "../src/session";
 import { Button, Card, Disclaimer } from "../src/components/ui";
 import { theme } from "../src/theme";
+import { useColors } from "../src/ThemeProvider";
 
 type Mode = "signIn" | "signUp" | "magic";
 
 export default function LoginScreen() {
+  const col = useColors();
+
   const { t, profile } = useSession();
   const insets = useSafeAreaInsets();
 
@@ -81,21 +84,21 @@ export default function LoginScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={{ fontSize: 26, fontWeight: "700", color: theme.color.ink }}>
+        <Text style={{ fontSize: 26, fontWeight: "700", color: col.ink }}>
           {wordmark(profile.locale)}
         </Text>
-        <Text style={{ marginTop: 6, fontSize: 14, color: theme.color.muted }}>
+        <Text style={{ marginTop: 6, fontSize: 14, color: col.muted }}>
           {brand.tagline[profile.locale]}
         </Text>
 
         <Card style={{ marginTop: theme.space(8), gap: theme.space(4) }}>
           {error && (
-            <Text accessibilityRole="alert" style={{ color: theme.color.loss, fontSize: 13 }}>
+            <Text accessibilityRole="alert" style={{ color: col.loss, fontSize: 13 }}>
               {error}
             </Text>
           )}
           {notice && (
-            <Text style={{ color: theme.color.gain, fontSize: 13 }}>{notice}</Text>
+            <Text style={{ color: col.gain, fontSize: 13 }}>{notice}</Text>
           )}
 
           {mode === "signUp" && (
@@ -170,39 +173,42 @@ function Field({
   hint,
   ...props
 }: React.ComponentProps<typeof TextInput> & { label: string; hint?: string }) {
+  const col = useColors();
+
   return (
     <View>
-      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
         {label}
       </Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={theme.color.muted}
+        placeholderTextColor={col.muted}
         style={{
           minHeight: 48,
           borderWidth: 1,
-          borderColor: theme.color.line,
+          borderColor: col.line,
           borderRadius: theme.radius.md,
           paddingHorizontal: theme.space(3),
           fontSize: 15,
-          color: theme.color.ink,
-          backgroundColor: theme.color.surface,
+          color: col.ink,
+          backgroundColor: col.surface,
         }}
         {...props}
       />
       {hint && (
-        <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>{hint}</Text>
+        <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>{hint}</Text>
       )}
     </View>
   );
 }
 
 function LinkText({ label, onPress }: { label: string; onPress: () => void }) {
+  const col = useColors();
   return (
     <Text
       accessibilityRole="button"
       onPress={onPress}
-      style={{ color: theme.color.accent, fontSize: 14, textAlign: "center" }}
+      style={{ color: col.accent, fontSize: 14, textAlign: "center" }}
     >
       {label}
     </Text>

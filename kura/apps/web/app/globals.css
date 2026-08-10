@@ -3,8 +3,52 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * The palette, as RGB triples so Tailwind's opacity modifiers still work.
+   * Components never reference a hex value — they name a role (`bg-surface`,
+   * `text-muted`) and the theme decides what that is.
+   */
+  :root {
+    --c-ink: 15 23 32;
+    --c-muted: 107 116 128;
+    --c-line: 228 231 236;
+    --c-surface: 255 255 255;
+    --c-canvas: 247 248 250;
+    --c-accent: 31 111 235;
+    --c-gain: 14 159 110;
+    --c-loss: 224 36 36;
+    --c-buy: 31 111 235;
+    --c-sell: 245 158 11;
+  }
+
+  /*
+   * Dark. Not an inversion: the surface sits slightly above the canvas, the way
+   * a trading terminal separates a panel from its background, and gain/loss are
+   * lifted rather than kept at their light values — the light versions are too
+   * dark to read against a near-black panel.
+   */
+  .dark {
+    --c-ink: 232 236 241;
+    --c-muted: 148 158 171;
+    --c-line: 42 48 58;
+    --c-surface: 24 28 35;
+    --c-canvas: 15 18 23;
+    --c-accent: 88 155 255;
+    --c-gain: 45 196 138;
+    --c-loss: 248 92 92;
+    --c-buy: 88 155 255;
+    --c-sell: 250 178 52;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  html.dark {
+    /* Native form controls and scrollbars follow this, and look wrong if it
+       disagrees with the page. */
+    color-scheme: dark;
   }
 
   body {

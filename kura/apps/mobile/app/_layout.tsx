@@ -5,17 +5,31 @@ import * as Linking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider, useSession } from "../src/session";
 import { supabase } from "../src/supabase";
-import { theme } from "../src/theme";
+import { ThemeProvider, useColors, useTheme } from "../src/ThemeProvider";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <SessionProvider>
-        <AuthGate />
-        <StatusBar style="dark" />
-      </SessionProvider>
+      {/* Outside the session provider: the theme applies to the login screen
+          too, and a signed-out user is still a user with a preference. */}
+      <ThemeProvider>
+        <SessionProvider>
+          <AuthGate />
+          <ThemedStatusBar />
+        </SessionProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
+}
+
+/**
+ * The clock and battery icons are drawn by the OS over our background, so they
+ * have to be told which way to contrast — left on `dark` they vanish into a
+ * dark canvas.
+ */
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
 }
 
 /**
@@ -26,6 +40,8 @@ export default function RootLayout() {
  * which does not exist here, so the exchange is done explicitly.
  */
 function AuthGate() {
+  const col = useColors();
+
   const { session, loading } = useSession();
   const segments = useSegments();
   const router = useRouter();
@@ -76,10 +92,10 @@ function AuthGate() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: theme.color.surface },
-        headerTitleStyle: { fontSize: 16, fontWeight: "600", color: theme.color.ink },
-        headerTintColor: theme.color.accent,
-        contentStyle: { backgroundColor: theme.color.canvas },
+        headerStyle: { backgroundColor: col.surface },
+        headerTitleStyle: { fontSize: 16, fontWeight: "600", color: col.ink },
+        headerTintColor: col.accent,
+        contentStyle: { backgroundColor: col.canvas },
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

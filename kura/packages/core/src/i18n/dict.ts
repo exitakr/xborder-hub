@@ -25,6 +25,10 @@ const ja = {
   navLogin: "ログイン",
   navLogout: "ログアウト",
   navSignup: "はじめる",
+  themeToggle: "表示テーマを切り替え",
+  themeLabel: "表示テーマ",
+  themeLight: "ライト",
+  themeDark: "ダーク",
 
   // --- landing ---
   landingHeadline: "手持ちのコレクションを、ひと目で。",
@@ -324,6 +328,10 @@ const en: Dict = {
   navLogin: "Log in",
   navLogout: "Log out",
   navSignup: "Get started",
+  themeToggle: "Switch theme",
+  themeLabel: "Appearance",
+  themeLight: "Light",
+  themeDark: "Dark",
 
   landingHeadline: "Your collection, at a glance.",
   landingSub:

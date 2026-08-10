@@ -10,39 +10,33 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoney, formatPercent, type Currency, type Locale } from "@oma/core";
+import {
+  RANGES,
+  formatMoney,
+  formatPercent,
+  windowSeries,
+  type Currency,
+  type Locale,
+  type Range,
+} from "@oma/core";
 
 export interface ValuePoint {
   ts: number;
   value: number;
 }
 
-export const RANGES = ["1w", "1m", "ytd", "all"] as const;
-export type Range = (typeof RANGES)[number];
+export { RANGES, type Range };
 
 /**
- * Earliest timestamp a range admits, or null for "everything".
- *
- * Year-to-date is anchored to 1 January in local time rather than "365 days
- * ago": those are different questions, and the one a brokerage screen answers
- * is the calendar one.
+ * Recharts takes colours as props, not classes, so the theme tokens have to be
+ * read out of the document rather than applied by Tailwind. Resolved on every
+ * render so a theme switch repaints the chart with everything else.
  */
-function startOf(range: Range, now: Date): number | null {
-  switch (range) {
-    case "1w":
-      return now.getTime() - 7 * 86_400_000;
-    case "1m":
-      return now.getTime() - 30 * 86_400_000;
-    case "ytd":
-      return new Date(now.getFullYear(), 0, 1).getTime();
-    case "all":
-      return null;
-  }
+function themeColor(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(`--c-${name}`).trim();
+  return raw ? `rgb(${raw})` : fallback;
 }
-
-const GAIN = "#0E9F6E";
-const LOSS = "#E02424";
-const FLAT = "#1F6FEB";
 
 /**
  * Total portfolio value over time.
@@ -73,22 +67,7 @@ export function PortfolioChart({
 }) {
   const [range, setRange] = useState<Range>("1m");
 
-  /**
-   * The window, plus the last point before it.
-   *
-   * Without that leading point a 1-week view of a series whose most recent
-   * observation is ten days old would be empty, and the reading would be "no
-   * data" rather than "flat" — which is wrong, since the value is known and
-   * simply has not moved.
-   */
-  const shown = useMemo(() => {
-    const from = startOf(range, new Date());
-    if (from === null) return points;
-
-    const inWindow = points.filter((p) => p.ts >= from);
-    const before = points.filter((p) => p.ts < from).at(-1);
-    return before ? [{ ...before, ts: from }, ...inWindow] : inWindow;
-  }, [points, range]);
+  const shown = useMemo(() => windowSeries(points, range), [points, range]);
 
   const selector = (
     <div className="mb-3 flex gap-1" role="group">
@@ -121,7 +100,15 @@ export function PortfolioChart({
 
   const first = shown[0].value;
   const last = shown[shown.length - 1].value;
-  const stroke = last > first ? GAIN : last < first ? LOSS : FLAT;
+  const stroke =
+    last > first
+      ? themeColor("gain", "#0E9F6E")
+      : last < first
+        ? themeColor("loss", "#E02424")
+        : themeColor("accent", "#1F6FEB");
+  const grid = themeColor("line", "#E4E7EC");
+  const axis = themeColor("muted", "#6B7480");
+  const panel = themeColor("surface", "#FFFFFF");
   const changePct = first > 0 ? (last - first) / first : null;
 
   const values = shown.map((p) => p.value);
@@ -170,26 +157,31 @@ export function PortfolioChart({
             </linearGradient>
           </defs>
 
-          <CartesianGrid stroke="#E4E7EC" vertical={false} />
+          <CartesianGrid stroke={grid} vertical={false} />
           <XAxis
             dataKey="ts"
             type="number"
             scale="time"
             domain={["dataMin", "dataMax"]}
             tickFormatter={(ts) => shortDate(ts, locale)}
-            tick={{ fill: "#6B7480", fontSize: 11 }}
-            stroke="#E4E7EC"
+            tick={{ fill: axis, fontSize: 11 }}
+            stroke={grid}
             minTickGap={40}
           />
           <YAxis
             domain={[Math.max(0, min - pad), max + pad]}
             tickFormatter={(v) => compact(v, locale)}
-            tick={{ fill: "#6B7480", fontSize: 11 }}
-            stroke="#E4E7EC"
+            tick={{ fill: axis, fontSize: 11 }}
+            stroke={grid}
             width={56}
           />
           <Tooltip
-            contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }}
+            contentStyle={{
+              borderRadius: 8,
+              border: `1px solid ${grid}`,
+              background: panel,
+              fontSize: 12,
+            }}
             labelFormatter={(ts) => longDate(Number(ts), locale)}
             formatter={(value: number | string) => [
               formatMoney(Number(value), currency, locale),

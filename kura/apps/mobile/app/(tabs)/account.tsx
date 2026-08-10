@@ -6,10 +6,14 @@ import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, Disclaimer } from "../../src/components/ui";
 import { theme } from "../../src/theme";
+import { useColors, useTheme } from "../../src/ThemeProvider";
 
 const LOCALE_NAMES: Record<Locale, string> = { ja: "日本語", en: "English" };
 
 export default function AccountScreen() {
+  const col = useColors();
+  const { scheme, toggle } = useTheme();
+
   const { userId, profile, t, reloadProfile } = useSession();
   const router = useRouter();
 
@@ -76,7 +80,7 @@ export default function AccountScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Card style={{ gap: theme.space(4) }}>
-        {saved && <Text style={{ color: theme.color.gain, fontSize: 13 }}>{t.mySaved}</Text>}
+        {saved && <Text style={{ color: col.gain, fontSize: 13 }}>{t.mySaved}</Text>}
 
         <View>
           <Label>{t.myDisplayName}</Label>
@@ -88,12 +92,12 @@ export default function AccountScreen() {
             style={{
               minHeight: 48,
               borderWidth: 1,
-              borderColor: theme.color.line,
+              borderColor: col.line,
               borderRadius: theme.radius.md,
               paddingHorizontal: theme.space(3),
               fontSize: 15,
-              color: theme.color.ink,
-              backgroundColor: theme.color.surface,
+              color: col.ink,
+              backgroundColor: col.surface,
             }}
           />
         </View>
@@ -116,6 +120,24 @@ export default function AccountScreen() {
           />
         </View>
 
+        {/* Applies on tap rather than on save. Everything else in this card is
+            a profile field that round-trips to the server; the theme is a
+            device setting, and making someone press Save to see a colour
+            change would read as the control being broken. */}
+        <View>
+          <Label>{t.themeLabel}</Label>
+          <Segmented
+            options={[
+              { value: "light" as const, label: t.themeLight },
+              { value: "dark" as const, label: t.themeDark },
+            ]}
+            value={scheme}
+            onChange={(next) => {
+              if (next !== scheme) toggle();
+            }}
+          />
+        </View>
+
         <Button
           label={t.mySave}
           onPress={save}
@@ -127,16 +149,16 @@ export default function AccountScreen() {
       <Button label={t.navLogout} variant="secondary" onPress={() => supabase.auth.signOut()} />
 
       <Pressable accessibilityRole="link" onPress={() => router.push("/legal")}>
-        <Text style={{ fontSize: 13, color: theme.color.accent, textAlign: "center" }}>
+        <Text style={{ fontSize: 13, color: col.accent, textAlign: "center" }}>
           {t.legalTerms} · {t.legalPrivacy}
         </Text>
       </Pressable>
 
-      <Card style={{ borderColor: theme.color.loss, gap: theme.space(3) }}>
-        <Text style={{ fontSize: 13, fontWeight: "600", color: theme.color.loss }}>
+      <Card style={{ borderColor: col.loss, gap: theme.space(3) }}>
+        <Text style={{ fontSize: 13, fontWeight: "600", color: col.loss }}>
           {t.myDanger}
         </Text>
-        <Text style={{ fontSize: 13, lineHeight: 20, color: theme.color.muted }}>
+        <Text style={{ fontSize: 13, lineHeight: 20, color: col.muted }}>
           {t.myDangerBody}
         </Text>
         <Button label={t.myDeleteAccount} variant="danger" onPress={confirmDelete} busy={busy} />
@@ -148,8 +170,10 @@ export default function AccountScreen() {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
+  const col = useColors();
+
   return (
-    <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+    <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
       {children}
     </Text>
   );
@@ -164,6 +188,7 @@ function Segmented<T extends string>({
   value: T;
   onChange: (next: T) => void;
 }) {
+  const col = useColors();
   return (
     <View style={{ flexDirection: "row", gap: theme.space(2) }}>
       {options.map((o) => {
@@ -181,15 +206,15 @@ function Segmented<T extends string>({
               justifyContent: "center",
               borderRadius: theme.radius.md,
               borderWidth: 1,
-              borderColor: active ? theme.color.accent : theme.color.line,
-              backgroundColor: active ? theme.color.accent : theme.color.surface,
+              borderColor: active ? col.accent : col.line,
+              backgroundColor: active ? col.accent : col.surface,
             }}
           >
             <Text
               style={{
                 fontSize: 13,
                 fontWeight: "600",
-                color: active ? "#FFFFFF" : theme.color.ink,
+                color: active ? "#FFFFFF" : col.ink,
               }}
             >
               {o.label}

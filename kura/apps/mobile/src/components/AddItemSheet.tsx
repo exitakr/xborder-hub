@@ -5,6 +5,7 @@ import { CATEGORIES, CATEGORY_LABEL_KEY, getDict, newItemSchema, type Category }
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { theme } from "../theme";
+import { useColors } from "../ThemeProvider";
 
 type Dict = ReturnType<typeof getDict>;
 
@@ -31,6 +32,7 @@ export function AddItemSheet({
   onClose: () => void;
   onAdded: (itemId: string) => void;
 }) {
+  const col = useColors();
   const insets = useSafeAreaInsets();
 
   const [category, setCategory] = useState<Category>(defaultCategory ?? "watch");
@@ -83,7 +85,7 @@ export function AddItemSheet({
 
         <View
           style={{
-            backgroundColor: theme.color.canvas,
+            backgroundColor: col.canvas,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + theme.space(4),
@@ -96,13 +98,13 @@ export function AddItemSheet({
           >
             <View>
               <Text style={{ fontSize: 16, fontWeight: "700" }}>{t.mkAddOwnTitle}</Text>
-              <Text style={{ fontSize: 12, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: col.muted, marginTop: 4 }}>
                 {t.mkAddOwnLead}
               </Text>
             </View>
 
             {error && (
-              <Text accessibilityRole="alert" style={{ color: theme.color.loss, fontSize: 13 }}>
+              <Text accessibilityRole="alert" style={{ color: col.loss, fontSize: 13 }}>
                 {error}
               </Text>
             )}
@@ -114,7 +116,7 @@ export function AddItemSheet({
                     fontSize: 13,
                     fontWeight: "600",
                     marginBottom: 6,
-                    color: theme.color.ink,
+                    color: col.ink,
                   }}
                 >
                   {t.mkCategory}
@@ -135,15 +137,15 @@ export function AddItemSheet({
                           justifyContent: "center",
                           borderRadius: theme.radius.md,
                           borderWidth: 1,
-                          borderColor: active ? theme.color.accent : theme.color.line,
-                          backgroundColor: active ? theme.color.accent : theme.color.surface,
+                          borderColor: active ? col.accent : col.line,
+                          backgroundColor: active ? col.accent : col.surface,
                         }}
                       >
                         <Text
                           style={{
                             fontSize: 12,
                             fontWeight: "600",
-                            color: active ? "#FFFFFF" : theme.color.ink,
+                            color: active ? "#FFFFFF" : col.ink,
                           }}
                         >
                           {t[CATEGORY_LABEL_KEY[c]]}
@@ -168,7 +170,7 @@ export function AddItemSheet({
               />
             </Card>
 
-            <Text style={{ fontSize: 11, color: theme.color.muted }}>{t.mkAddOwnNote}</Text>
+            <Text style={{ fontSize: 11, color: col.muted }}>{t.mkAddOwnNote}</Text>
 
             <View style={{ flexDirection: "row", gap: theme.space(3) }}>
               <Button
@@ -190,23 +192,25 @@ function Field({
   label,
   ...props
 }: React.ComponentProps<typeof TextInput> & { label: string }) {
+  const col = useColors();
+
   return (
     <View>
-      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
         {label}
       </Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={theme.color.muted}
+        placeholderTextColor={col.muted}
         style={{
           minHeight: 48,
           borderWidth: 1,
-          borderColor: theme.color.line,
+          borderColor: col.line,
           borderRadius: theme.radius.md,
           paddingHorizontal: theme.space(3),
           fontSize: 15,
-          color: theme.color.ink,
-          backgroundColor: theme.color.surface,
+          color: col.ink,
+          backgroundColor: col.surface,
         }}
         {...props}
       />

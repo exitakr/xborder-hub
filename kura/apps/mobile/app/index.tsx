@@ -1,7 +1,7 @@
 import { ActivityIndicator, View } from "react-native";
 import { Redirect } from "expo-router";
 import { useSession } from "../src/session";
-import { theme } from "../src/theme";
+import { useColors } from "../src/ThemeProvider";
 
 /**
  * Entry route. Holds a spinner only for as long as it takes to read the stored
@@ -9,6 +9,8 @@ import { theme } from "../src/theme";
  * portfolio appears.
  */
 export default function Index() {
+  const col = useColors();
+
   const { session, loading } = useSession();
 
   if (loading) {
@@ -18,10 +20,10 @@ export default function Index() {
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: theme.color.canvas,
+          backgroundColor: col.canvas,
         }}
       >
-        <ActivityIndicator color={theme.color.accent} />
+        <ActivityIndicator color={col.accent} />
       </View>
     );
   }

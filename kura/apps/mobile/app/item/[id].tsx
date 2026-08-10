@@ -23,8 +23,11 @@ import { ValuationSheet } from "../../src/components/ValuationSheet";
 import { usePhotoUrls } from "../../src/usePhotoUrls";
 import { numericFont, theme, toneColor } from "../../src/theme";
 import { intlLocale } from "../../src/i18n";
+import { useColors } from "../../src/ThemeProvider";
 
 export default function ItemScreen() {
+  const col = useColors();
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const { userId, profile, t } = useSession();
   const navigation = useNavigation();
@@ -54,7 +57,7 @@ export default function ItemScreen() {
   if (!detail) {
     return (
       <View style={{ flex: 1, padding: theme.space(6) }}>
-        <Text style={{ color: theme.color.muted, fontSize: 13 }}>{t.loading}</Text>
+        <Text style={{ color: col.muted, fontSize: 13 }}>{t.loading}</Text>
       </View>
     );
   }
@@ -150,18 +153,18 @@ export default function ItemScreen() {
         <View style={{ flexDirection: "row", gap: theme.space(4) }}>
           <Thumb uri={photoUrl ?? null} category={item.category} size={88} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontSize: 11, color: theme.color.muted }}>
+            <Text style={{ fontSize: 11, color: col.muted }}>
               {t[CATEGORY_LABEL_KEY[item.category]]}
             </Text>
             <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 2 }}>{item.name}</Text>
             {item.detail && (
-              <Text style={{ fontSize: 13, color: theme.color.muted, marginTop: 2 }}>
+              <Text style={{ fontSize: 13, color: col.muted, marginTop: 2 }}>
                 {item.detail}
               </Text>
             )}
             <Text style={[{ fontSize: 22, fontWeight: "700", marginTop: 8 }, numericFont]}>
               {price === null ? (
-                <Text style={{ fontSize: 15, color: theme.color.muted }}>{t.mkNoPrice}</Text>
+                <Text style={{ fontSize: 15, color: col.muted }}>{t.mkNoPrice}</Text>
               ) : (
                 formatMoney(price, profile.currency, profile.locale)
               )}
@@ -169,7 +172,7 @@ export default function ItemScreen() {
             {/* Labelled at the number itself, not only in a footnote: the badge
                 is what stops a self-reported figure reading as a market quote. */}
             {detail.selfReported && (
-              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
                 {t.srBadge} ·{" "}
                 {fill(t.srNote, {
                   asOf: detail.selfReported.asOf,
@@ -199,8 +202,8 @@ export default function ItemScreen() {
               style={{
                 fontSize: 11,
                 lineHeight: 16,
-                color: theme.color.muted,
-                backgroundColor: theme.color.canvas,
+                color: col.muted,
+                backgroundColor: col.canvas,
                 padding: theme.space(3),
                 borderRadius: theme.radius.sm,
                 marginTop: 4,
@@ -236,7 +239,7 @@ export default function ItemScreen() {
             two would imply a single figure nobody actually quoted. */}
         <Card>
           <Text style={{ fontSize: 13, fontWeight: "600" }}>{t.cmTitle}</Text>
-          <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>{t.cmLead}</Text>
+          <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>{t.cmLead}</Text>
 
           {detail.community ? (
             <>
@@ -248,7 +251,7 @@ export default function ItemScreen() {
               >
                 {formatMoney(detail.community.price, profile.currency, profile.locale)}
               </Text>
-              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
                 {t.cmContributors}: {detail.community.contributors} · {t.cmReports}:{" "}
                 {detail.community.reports}
               </Text>
@@ -256,11 +259,11 @@ export default function ItemScreen() {
           ) : (
             <>
               <Text
-                style={{ fontSize: 13, color: theme.color.muted, marginTop: theme.space(3) }}
+                style={{ fontSize: 13, color: col.muted, marginTop: theme.space(3) }}
               >
                 {t.cmNone}
               </Text>
-              <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
                 {t.cmWhyThreshold}
               </Text>
             </>
@@ -280,7 +283,7 @@ export default function ItemScreen() {
         {item.current_price === null && (
           <Card>
             <Text style={{ fontSize: 13, fontWeight: "600" }}>{t.srTitle}</Text>
-            <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>
+            <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
               {t.srLead}
             </Text>
             <Button
@@ -303,14 +306,14 @@ export default function ItemScreen() {
             </View>
 
             <Card>
-              <Text style={{ fontSize: 11, color: theme.color.muted }}>{t.pfPl}</Text>
+              <Text style={{ fontSize: 11, color: col.muted }}>{t.pfPl}</Text>
               <Text
                 style={[
                   {
                     fontSize: 16,
                     fontWeight: "600",
                     marginTop: 2,
-                    color: toneColor(summary.unrealized),
+                    color: toneColor(col, summary.unrealized),
                   },
                   numericFont,
                 ]}
@@ -355,7 +358,7 @@ export default function ItemScreen() {
 
             {transactions.length === 0 ? (
               <Card>
-                <Text style={{ fontSize: 13, color: theme.color.muted }}>
+                <Text style={{ fontSize: 13, color: col.muted }}>
                   {t.itNoTransactions}
                 </Text>
               </Card>
@@ -372,7 +375,7 @@ export default function ItemScreen() {
                       borderRadius: 14,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: tx.type === "buy" ? theme.color.buy : theme.color.sell,
+                      backgroundColor: tx.type === "buy" ? col.buy : col.sell,
                     }}
                   >
                     <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>
@@ -384,7 +387,7 @@ export default function ItemScreen() {
                     <Text style={{ fontSize: 13, fontWeight: "600" }}>
                       {tx.type === "buy" ? t.txBuy : t.txSell} ×{tx.quantity}
                     </Text>
-                    <Text style={[{ fontSize: 11, color: theme.color.muted }, numericFont]}>
+                    <Text style={[{ fontSize: 11, color: col.muted }, numericFont]}>
                       {tx.traded_on} · {formatMoney(tx.unit_price, tx.currency, profile.locale)}
                     </Text>
                   </View>
@@ -398,7 +401,7 @@ export default function ItemScreen() {
                     }}
                     style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: "center" }}
                   >
-                    <Text style={{ fontSize: 12, color: theme.color.accent }}>{t.txEdit}</Text>
+                    <Text style={{ fontSize: 12, color: col.accent }}>{t.txEdit}</Text>
                   </Pressable>
 
                   <Pressable
@@ -407,7 +410,7 @@ export default function ItemScreen() {
                     onPress={() => confirmDelete(tx.id)}
                     style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: "center" }}
                   >
-                    <Text style={{ fontSize: 12, color: theme.color.loss }}>{t.txDelete}</Text>
+                    <Text style={{ fontSize: 12, color: col.loss }}>{t.txDelete}</Text>
                   </Pressable>
                 </Card>
               ))
@@ -473,17 +476,21 @@ export default function ItemScreen() {
 }
 
 function Meta({ label, children }: { label: string; children: React.ReactNode }) {
+  const col = useColors();
+
   return (
-    <Text style={{ fontSize: 11, color: theme.color.muted }}>
+    <Text style={{ fontSize: 11, color: col.muted }}>
       {label}: {children}
     </Text>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
+  const col = useColors();
+
   return (
     <Card style={{ flex: 1 }}>
-      <Text style={{ fontSize: 11, color: theme.color.muted }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: col.muted }}>{label}</Text>
       <Text style={[{ fontSize: 14, fontWeight: "600", marginTop: 2 }, numericFont]}>
         {value}
       </Text>

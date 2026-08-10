@@ -9,6 +9,7 @@ import {
 import Svg, { Path, Polyline } from "react-native-svg";
 import type { Category } from "@oma/core";
 import { theme } from "../theme";
+import { useColors } from "../ThemeProvider";
 
 /** Card surface, matching the web app's `.card`. */
 export function Card({
@@ -18,14 +19,16 @@ export function Card({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
+  const col = useColors();
+
   return (
     <View
       style={[
         {
-          backgroundColor: theme.color.surface,
+          backgroundColor: col.surface,
           borderRadius: theme.radius.lg,
           borderWidth: 1,
-          borderColor: theme.color.line,
+          borderColor: col.line,
           padding: theme.space(4),
         },
         style,
@@ -51,6 +54,7 @@ export function Button({
   busy?: boolean;
   style?: ViewStyle;
 }) {
+  const col = useColors();
   const isPrimary = variant === "primary";
   const isDanger = variant === "danger";
 
@@ -67,22 +71,22 @@ export function Button({
           borderRadius: theme.radius.md,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: isPrimary ? theme.color.accent : theme.color.surface,
+          backgroundColor: isPrimary ? col.accent : col.surface,
           borderWidth: isPrimary ? 0 : 1,
-          borderColor: isDanger ? theme.color.loss : theme.color.line,
+          borderColor: isDanger ? col.loss : col.line,
           opacity: disabled || busy ? 0.5 : pressed ? 0.85 : 1,
         },
         style,
       ]}
     >
       {busy ? (
-        <ActivityIndicator color={isPrimary ? "#FFFFFF" : theme.color.ink} />
+        <ActivityIndicator color={isPrimary ? "#FFFFFF" : col.ink} />
       ) : (
         <Text
           style={{
             fontSize: 15,
             fontWeight: "600",
-            color: isPrimary ? "#FFFFFF" : isDanger ? theme.color.loss : theme.color.ink,
+            color: isPrimary ? "#FFFFFF" : isDanger ? col.loss : col.ink,
           }}
         >
           {label}
@@ -97,12 +101,14 @@ export function Button({
  * the end of its scroll content.
  */
 export function Disclaimer({ text }: { text: string }) {
+  const col = useColors();
+
   return (
     <Text
       style={{
         fontSize: 11,
         lineHeight: 16,
-        color: theme.color.muted,
+        color: col.muted,
         marginTop: theme.space(6),
         marginBottom: theme.space(4),
       }}
@@ -129,18 +135,24 @@ const GLYPHS: Record<Category, string> = {
 export function CategoryGlyph({
   category,
   size = 20,
-  color = theme.color.muted,
+  color,
 }: {
   category: Category;
   size?: number;
   color?: string;
 }) {
+  // Defaulted in the body rather than in the signature: the fallback comes from
+  // the active theme, and a default parameter is evaluated before any hook can
+  // run.
+  const col = useColors();
+  const stroke = color ?? col.muted;
+
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path
         d={GLYPHS[category]}
         fill="none"
-        stroke={color}
+        stroke={stroke}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -159,6 +171,8 @@ export function Thumb({
   category: Category;
   size?: number;
 }) {
+  const col = useColors();
+
   if (uri) {
     return (
       <Image
@@ -169,7 +183,7 @@ export function Thumb({
           height: size,
           borderRadius: theme.radius.md,
           borderWidth: 1,
-          borderColor: theme.color.line,
+          borderColor: col.line,
         }}
       />
     );
@@ -181,8 +195,8 @@ export function Thumb({
         height: size,
         borderRadius: theme.radius.md,
         borderWidth: 1,
-        borderColor: theme.color.line,
-        backgroundColor: theme.color.canvas,
+        borderColor: col.line,
+        backgroundColor: col.canvas,
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -202,6 +216,8 @@ export function Sparkline({
   width?: number;
   height?: number;
 }) {
+  const col = useColors();
+
   if (values.length < 2) return <View style={{ width, height }} />;
 
   const min = Math.min(...values);
@@ -223,7 +239,7 @@ export function Sparkline({
       <Polyline
         points={points}
         fill="none"
-        stroke={rising ? theme.color.gain : theme.color.loss}
+        stroke={rising ? col.gain : col.loss}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"

@@ -18,8 +18,11 @@ import { useSession } from "../../src/session";
 import { Button, Card, CategoryGlyph, Disclaimer } from "../../src/components/ui";
 import { AddItemSheet } from "../../src/components/AddItemSheet";
 import { numericFont, theme } from "../../src/theme";
+import { useColors } from "../../src/ThemeProvider";
 
 export default function MarketScreen() {
+  const col = useColors();
+
   const { userId, profile, t } = useSession();
   const router = useRouter();
 
@@ -91,19 +94,19 @@ export default function MarketScreen() {
         onChangeText={setTerm}
         placeholder={t.mkSearch}
         accessibilityLabel={t.mkSearch}
-        placeholderTextColor={theme.color.muted}
+        placeholderTextColor={col.muted}
         autoCapitalize="none"
         autoCorrect={false}
         clearButtonMode="while-editing"
         style={{
           minHeight: 48,
           borderWidth: 1,
-          borderColor: theme.color.line,
+          borderColor: col.line,
           borderRadius: theme.radius.md,
           paddingHorizontal: theme.space(3),
           fontSize: 15,
-          color: theme.color.ink,
-          backgroundColor: theme.color.surface,
+          color: col.ink,
+          backgroundColor: col.surface,
         }}
       />
 
@@ -125,12 +128,12 @@ export default function MarketScreen() {
       </ScrollView>
 
       {loading ? (
-        <Text style={{ color: theme.color.muted, fontSize: 13, paddingVertical: theme.space(8), textAlign: "center" }}>
+        <Text style={{ color: col.muted, fontSize: 13, paddingVertical: theme.space(8), textAlign: "center" }}>
           {t.loading}
         </Text>
       ) : items.length === 0 ? (
         <View style={{ paddingVertical: theme.space(4), gap: theme.space(3) }}>
-          <Text style={{ color: theme.color.muted, fontSize: 13, textAlign: "center" }}>
+          <Text style={{ color: col.muted, fontSize: 13, textAlign: "center" }}>
             {t.mkNoResults}
           </Text>
           {term.trim().length > 0 && (
@@ -153,8 +156,8 @@ export default function MarketScreen() {
                   height: 44,
                   borderRadius: theme.radius.md,
                   borderWidth: 1,
-                  borderColor: theme.color.line,
-                  backgroundColor: theme.color.canvas,
+                  borderColor: col.line,
+                  backgroundColor: col.canvas,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -170,12 +173,12 @@ export default function MarketScreen() {
                 <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: "600" }}>
                   {item.name}
                 </Text>
-                <Text numberOfLines={1} style={{ fontSize: 11, color: theme.color.muted }}>
+                <Text numberOfLines={1} style={{ fontSize: 11, color: col.muted }}>
                   {item.detail ?? item.identifier ?? ""}
                 </Text>
                 <Text style={[{ fontSize: 14, marginTop: 2 }, numericFont]}>
                   {price === null ? (
-                    <Text style={{ color: theme.color.muted }}>{t.mkNoPrice}</Text>
+                    <Text style={{ color: col.muted }}>{t.mkNoPrice}</Text>
                   ) : (
                     formatMoney(price, profile.currency, profile.locale)
                   )}
@@ -183,7 +186,7 @@ export default function MarketScreen() {
               </Pressable>
 
               {owned ? (
-                <Text style={{ fontSize: 11, color: theme.color.muted }}>{t.mkAdded}</Text>
+                <Text style={{ fontSize: 11, color: col.muted }}>{t.mkAdded}</Text>
               ) : (
                 <Pressable
                   accessibilityRole="button"
@@ -195,11 +198,11 @@ export default function MarketScreen() {
                     justifyContent: "center",
                     borderRadius: theme.radius.md,
                     borderWidth: 1,
-                    borderColor: theme.color.line,
+                    borderColor: col.line,
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: "600", color: theme.color.accent }}>
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: col.accent }}>
                     {t.mkAdd}
                   </Text>
                 </Pressable>
@@ -239,6 +242,7 @@ function Chip({
   onPress: () => void;
   category?: Category;
 }) {
+  const col = useColors();
   return (
     <Pressable
       accessibilityRole="button"
@@ -252,22 +256,22 @@ function Chip({
         paddingHorizontal: theme.space(3),
         borderRadius: theme.radius.pill,
         borderWidth: 1,
-        borderColor: active ? theme.color.accent : theme.color.line,
-        backgroundColor: active ? theme.color.accent : theme.color.surface,
+        borderColor: active ? col.accent : col.line,
+        backgroundColor: active ? col.accent : col.surface,
       }}
     >
       {category && (
         <CategoryGlyph
           category={category}
           size={14}
-          color={active ? "#FFFFFF" : theme.color.muted}
+          color={active ? "#FFFFFF" : col.muted}
         />
       )}
       <Text
         style={{
           fontSize: 12,
           fontWeight: "600",
-          color: active ? "#FFFFFF" : theme.color.muted,
+          color: active ? "#FFFFFF" : col.muted,
         }}
       >
         {label}

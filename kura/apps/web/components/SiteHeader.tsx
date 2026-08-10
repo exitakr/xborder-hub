@@ -3,6 +3,7 @@ import { brand, wordmark } from "@oma/core";
 import type { Locale } from "@oma/core";
 import { getDict } from "@oma/core";
 import { LogoutButton } from "./LogoutButton";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
   locale: Locale;
@@ -49,10 +50,12 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             <NavLink href="/market">{t.navMarket}</NavLink>
             <NavLink href="/mypage">{t.navMypage}</NavLink>
             {isAdmin && <NavLink href="/admin">{t.navAdmin}</NavLink>}
+            <ThemeToggle label={t.themeToggle} />
             <LogoutButton label={t.navLogout} />
           </nav>
         ) : (
           <nav className="ml-auto flex shrink-0 items-center gap-2">
+            <ThemeToggle label={t.themeToggle} />
             <Link href="/login" className="btn-secondary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
               {t.navLogin}
             </Link>

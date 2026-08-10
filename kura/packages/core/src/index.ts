@@ -24,6 +24,8 @@ export {
 
 export { convertTransactions, unknownValueSummary } from "./holdings.ts";
 
+export { RANGES, rangeStart, windowSeries, type Range } from "./ranges.ts";
+
 export {
   CURRENCIES,
   convert,

@@ -45,18 +45,42 @@ export default async function PortfolioPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t.pfTitle}</h1>
 
-      {/* Headline figures. Total value first — it is the reason to open the app. */}
-      <section className="card p-5">
+      {/*
+        One card, not two.
+        
+        This is the screen people screenshot, and a total sitting in one box
+        above a chart in another reads as two facts that happen to be adjacent
+        rather than as one statement about a portfolio. Order follows what the
+        eye should take first: the number, its move, the shape of that move,
+        then the supporting figures, then the caveats — which belong at the
+        bottom because they qualify the number rather than compete with it.
+      */}
+      <section className="card p-5 sm:p-6">
         <p className="text-sm text-muted">{t.pfTotalValue}</p>
-        <p className="tnum mt-1 text-3xl font-semibold">
+        <p className="tnum mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
           {formatMoney(totals.totalValue, view.currency, profile.locale)}
         </p>
-        <p className={`tnum mt-1 text-sm font-medium ${plTone}`}>
+        <p className={`tnum mt-1.5 text-base font-medium ${plTone}`}>
           {formatMoney(totals.unrealized, view.currency, profile.locale)} (
           {formatPercent(totals.unrealizedPct, profile.locale)})
         </p>
 
-        <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-line pt-4 sm:grid-cols-3">
+        <div className="mt-5">
+          <PortfolioChart
+            points={series}
+            currency={view.currency}
+            locale={profile.locale}
+            emptyLabel={t.pfValueChartEmpty}
+            rangeLabels={{
+              "1w": t.pfRange1w,
+              "1m": t.pfRange1m,
+              ytd: t.pfRangeYtd,
+              all: t.pfRangeAll,
+            }}
+          />
+        </div>
+
+        <dl className="mt-5 grid grid-cols-3 gap-4 border-t border-line pt-4">
           <Stat label={t.pfCost}>
             {formatMoney(totals.totalCost, view.currency, profile.locale)}
           </Stat>
@@ -67,7 +91,7 @@ export default async function PortfolioPage() {
         </dl>
 
         {(totals.excludedCount > 0 || view.selfReportedCount > 0) && (
-          <div className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs text-muted">
+          <div className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs leading-relaxed text-muted">
             {totals.excludedCount > 0 && <p>{t.pfExcluded}</p>}
             {/* The total is one number built from more than one kind of evidence.
                 Saying so where the number is, rather than in a footer nobody
@@ -77,25 +101,6 @@ export default async function PortfolioPage() {
             )}
           </div>
         )}
-      </section>
-
-      {/* Always rendered, even with nothing to draw: hiding the section made a
-          chart that had no history yet indistinguishable from one that was
-          never built. */}
-      <section className="card p-4">
-        <h2 className="mb-2 text-sm font-semibold">{t.pfValueChart}</h2>
-        <PortfolioChart
-          points={series}
-          currency={view.currency}
-          locale={profile.locale}
-          emptyLabel={t.pfValueChartEmpty}
-          rangeLabels={{
-            "1w": t.pfRange1w,
-            "1m": t.pfRange1m,
-            ytd: t.pfRangeYtd,
-            all: t.pfRangeAll,
-          }}
-        />
       </section>
 
       {view.byCategory.length > 0 && (

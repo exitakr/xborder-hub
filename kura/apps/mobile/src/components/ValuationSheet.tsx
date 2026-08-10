@@ -11,6 +11,7 @@ import {
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { numericFont, theme } from "../theme";
+import { useColors } from "../ThemeProvider";
 
 type Dict = ReturnType<typeof getDict>;
 
@@ -36,6 +37,7 @@ export function ValuationSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const col = useColors();
   const insets = useSafeAreaInsets();
 
   const [price, setPrice] = useState(existing ? String(existing.price) : "");
@@ -122,7 +124,7 @@ export function ValuationSheet({
 
         <View
           style={{
-            backgroundColor: theme.color.canvas,
+            backgroundColor: col.canvas,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + theme.space(4),
@@ -137,13 +139,13 @@ export function ValuationSheet({
               <Text style={{ fontSize: 16, fontWeight: "700" }}>
                 {existing ? t.srEdit : t.srAdd}
               </Text>
-              <Text style={{ fontSize: 12, color: theme.color.muted, marginTop: 4 }}>
+              <Text style={{ fontSize: 12, color: col.muted, marginTop: 4 }}>
                 {t.srLead}
               </Text>
             </View>
 
             {error && (
-              <Text accessibilityRole="alert" style={{ color: theme.color.loss, fontSize: 13 }}>
+              <Text accessibilityRole="alert" style={{ color: col.loss, fontSize: 13 }}>
                 {error}
               </Text>
             )}
@@ -162,7 +164,7 @@ export function ValuationSheet({
                     fontSize: 13,
                     fontWeight: "600",
                     marginBottom: 6,
-                    color: theme.color.ink,
+                    color: col.ink,
                   }}
                 >
                   {t.myCurrency}
@@ -183,15 +185,15 @@ export function ValuationSheet({
                           justifyContent: "center",
                           borderRadius: theme.radius.md,
                           borderWidth: 1,
-                          borderColor: active ? theme.color.accent : theme.color.line,
-                          backgroundColor: active ? theme.color.accent : theme.color.surface,
+                          borderColor: active ? col.accent : col.line,
+                          backgroundColor: active ? col.accent : col.surface,
                         }}
                       >
                         <Text
                           style={{
                             fontSize: 13,
                             fontWeight: "600",
-                            color: active ? "#FFFFFF" : theme.color.ink,
+                            color: active ? "#FFFFFF" : col.ink,
                           }}
                         >
                           {c}
@@ -221,7 +223,7 @@ export function ValuationSheet({
               />
             </Card>
 
-            <Text style={{ fontSize: 11, color: theme.color.muted }}>{t.srPrivate}</Text>
+            <Text style={{ fontSize: 11, color: col.muted }}>{t.srPrivate}</Text>
 
             <View style={{ flexDirection: "row", gap: theme.space(3) }}>
               <Button label={t.srSave} onPress={save} busy={busy} style={{ flex: 1 }} />
@@ -243,32 +245,34 @@ function Field({
   help,
   ...props
 }: React.ComponentProps<typeof TextInput> & { label: string; help?: string }) {
+  const col = useColors();
+
   return (
     <View>
-      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: theme.color.ink }}>
+      <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6, color: col.ink }}>
         {label}
       </Text>
       <TextInput
         accessibilityLabel={label}
         accessibilityHint={help}
-        placeholderTextColor={theme.color.muted}
+        placeholderTextColor={col.muted}
         style={[
           {
             minHeight: 48,
             borderWidth: 1,
-            borderColor: theme.color.line,
+            borderColor: col.line,
             borderRadius: theme.radius.md,
             paddingHorizontal: theme.space(3),
             fontSize: 15,
-            color: theme.color.ink,
-            backgroundColor: theme.color.surface,
+            color: col.ink,
+            backgroundColor: col.surface,
           },
           numericFont,
         ]}
         {...props}
       />
       {help && (
-        <Text style={{ fontSize: 11, color: theme.color.muted, marginTop: 4 }}>{help}</Text>
+        <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>{help}</Text>
       )}
     </View>
   );

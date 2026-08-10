@@ -4,6 +4,7 @@ import { brand } from "@oma/core";
 import { useSession } from "../src/session";
 import { Button, Disclaimer } from "../src/components/ui";
 import { theme } from "../src/theme";
+import { useColors } from "../src/ThemeProvider";
 
 /**
  * In-app legal screen.
@@ -72,10 +73,12 @@ export default function LegalScreen() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const col = useColors();
+
   return (
     <View>
       <Text style={{ fontSize: 14, fontWeight: "600", marginBottom: 6 }}>{title}</Text>
-      <Text style={{ fontSize: 13, lineHeight: 20, color: theme.color.muted }}>{children}</Text>
+      <Text style={{ fontSize: 13, lineHeight: 20, color: col.muted }}>{children}</Text>
     </View>
   );
 }

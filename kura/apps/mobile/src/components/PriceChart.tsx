@@ -4,6 +4,7 @@ import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatMoney, type Currency, type Locale } from "@oma/core";
 import { theme } from "../theme";
 import { intlLocale } from "../i18n";
+import { useColors } from "../ThemeProvider";
 
 export interface ChartPoint {
   ts: number;
@@ -48,12 +49,14 @@ export function PriceChart({
   labels: { buy: string; sell: string; empty: string; asking: string; realised: string };
   height?: number;
 }) {
+  const col = useColors();
+
   const [width, setWidth] = useState(0);
 
   if (points.length === 0 && community.length === 0 && markers.length === 0) {
     return (
       <View style={{ height, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: theme.color.muted, fontSize: 13, textAlign: "center" }}>
+        <Text style={{ color: col.muted, fontSize: 13, textAlign: "center" }}>
           {labels.empty}
         </Text>
       </View>
@@ -139,10 +142,10 @@ export function PriceChart({
               y1={padTop + plotH}
               x2={padLeft + plotW}
               y2={padTop + plotH}
-              stroke={theme.color.line}
+              stroke={col.line}
               strokeWidth={1}
             />
-            <Path d={path} fill="none" stroke={theme.color.accent} strokeWidth={2} />
+            <Path d={path} fill="none" stroke={col.accent} strokeWidth={2} />
 
             {/* A short series has to show its points: one observation draws a
                 zero-length path, which renders as an empty chart and reads as a
@@ -154,7 +157,7 @@ export function PriceChart({
                   cx={x(p.ts)}
                   cy={y(p.price)}
                   r={3}
-                  fill={theme.color.accent}
+                  fill={col.accent}
                 />
               ))}
 
@@ -166,7 +169,7 @@ export function PriceChart({
                 <Path
                   d={communityPath}
                   fill="none"
-                  stroke={theme.color.gain}
+                  stroke={col.gain}
                   strokeWidth={2}
                   strokeDasharray="5,3"
                 />
@@ -176,7 +179,7 @@ export function PriceChart({
                     cx={x(p.ts)}
                     cy={y(p.price)}
                     r={3}
-                    fill={theme.color.gain}
+                    fill={col.gain}
                   />
                 ))}
               </>
@@ -188,7 +191,7 @@ export function PriceChart({
                   cx={m.cx}
                   cy={m.cy}
                   r={9}
-                  fill={m.type === "buy" ? theme.color.buy : theme.color.sell}
+                  fill={m.type === "buy" ? col.buy : col.sell}
                   stroke="#FFFFFF"
                   strokeWidth={2}
                 />
@@ -209,10 +212,10 @@ export function PriceChart({
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 11, color: theme.color.muted }}>
+        <Text style={{ fontSize: 11, color: col.muted }}>
           {shortDate(first.ts, locale)}
         </Text>
-        <Text style={{ fontSize: 11, color: theme.color.muted }}>
+        <Text style={{ fontSize: 11, color: col.muted }}>
           {shortDate(last.ts, locale)}
         </Text>
       </View>
@@ -227,12 +230,12 @@ export function PriceChart({
           marginTop: theme.space(2),
         }}
       >
-        <LegendLine color={theme.color.accent} label={labels.asking} />
+        <LegendLine color={col.accent} label={labels.asking} />
         {community.length > 0 && (
-          <LegendLine color={theme.color.gain} label={labels.realised} dashed />
+          <LegendLine color={col.gain} label={labels.realised} dashed />
         )}
-        <LegendDot color={theme.color.buy} letter="B" label={labels.buy} />
-        <LegendDot color={theme.color.sell} letter="S" label={labels.sell} />
+        <LegendDot color={col.buy} letter="B" label={labels.buy} />
+        <LegendDot color={col.sell} letter="S" label={labels.sell} />
       </View>
     </View>
   );
@@ -252,6 +255,8 @@ function LegendLine({
   label: string;
   dashed?: boolean;
 }) {
+  const col = useColors();
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       {dashed ? (
@@ -263,7 +268,7 @@ function LegendLine({
       ) : (
         <View style={{ width: 20, height: 2, backgroundColor: color }} />
       )}
-      <Text style={{ fontSize: 11, color: theme.color.muted }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: col.muted }}>{label}</Text>
     </View>
   );
 }
@@ -277,6 +282,8 @@ function LegendDot({
   letter: string;
   label: string;
 }) {
+  const col = useColors();
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View
@@ -291,7 +298,7 @@ function LegendDot({
       >
         <Text style={{ fontSize: 9, fontWeight: "700", color: "#FFFFFF" }}>{letter}</Text>
       </View>
-      <Text style={{ fontSize: 11, color: theme.color.muted }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: col.muted }}>{label}</Text>
     </View>
   );
 }
