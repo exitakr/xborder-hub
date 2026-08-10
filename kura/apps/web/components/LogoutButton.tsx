@@ -22,7 +22,7 @@ export function LogoutButton({ label }: { label: string }) {
       type="button"
       onClick={signOut}
       disabled={pending}
-      className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink disabled:opacity-50"
+      className="btn-secondary w-full sm:w-auto"
     >
       {label}
     </button>

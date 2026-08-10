@@ -5,6 +5,7 @@ import { loadPortfolio } from "@oma/core";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@oma/core";
 import { DeleteAccount, ProfileForm } from "./ProfileForm";
+import { LogoutButton } from "@/components/LogoutButton";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -77,6 +78,11 @@ export default async function MyPage() {
           </dl>
         </section>
       )}
+
+      {/* Between the everyday settings and the irreversible one. Signing out is
+          the ordinary way to leave, and it needs to be findable without sitting
+          next to account deletion where a mis-tap is costly. */}
+      <LogoutButton label={t.navLogout} />
 
       <DeleteAccount t={t} />
     </div>

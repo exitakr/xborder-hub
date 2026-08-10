@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { brand, wordmark } from "@oma/core";
 import { site } from "@/lib/site";
-import { getDict } from "@oma/core";
+import { getDict, isLocale } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
 import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -43,8 +43,8 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
-  const t = getDict(locale);
+  // The cookie is the answer for a visitor; an account overrides it below.
+  let locale = await getLocale();
 
   // A signed-out visitor is the normal case on "/", so a missing session here
   // is not an error condition.
@@ -60,14 +60,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     if (user) {
       const { data } = await supabase
         .from("profiles")
-        .select("is_admin")
+        .select("is_admin, locale")
         .eq("id", user.id)
         .maybeSingle();
       isAdmin = Boolean(data?.is_admin);
+
+      /*
+       * The account's language wins over the cookie.
+       *
+       * Pages behind the login wall render from `profile.locale`, while this
+       * shell used to render from the cookie alone. Those agreed only by
+       * luck — and once a signed-out visitor can set the cookie, a visitor
+       * who switches to English and then signs in to a Japanese account gets
+       * an English header wrapped around a Japanese page.
+       */
+      if (isLocale(data?.locale)) locale = data.locale;
     }
   } catch {
     // Supabase not configured yet — render the app signed-out rather than 500.
   }
+
+  const t = getDict(locale);
 
   return (
     <html lang={locale} suppressHydrationWarning>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { brand, wordmark } from "@oma/core";
 import type { Locale } from "@oma/core";
 import { getDict } from "@oma/core";
-import { LogoutButton } from "./LogoutButton";
+import { LocaleToggle } from "./LocaleToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface Props {
@@ -50,11 +50,19 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             <NavLink href="/market">{t.navMarket}</NavLink>
             <NavLink href="/mypage">{t.navMypage}</NavLink>
             {isAdmin && <NavLink href="/admin">{t.navAdmin}</NavLink>}
+            {/* Logout lives in /mypage, not here. It is a rare, irreversible-
+                feeling action sitting one mis-tap from the links people use
+                constantly, and on a phone this row already scrolls — a button
+                that ends the session should not be something you can hit while
+                swiping past it. */}
             <ThemeToggle label={t.themeToggle} />
-            <LogoutButton label={t.navLogout} />
           </nav>
         ) : (
           <nav className="ml-auto flex shrink-0 items-center gap-2">
+            {/* Signed-in users switch language in /mypage, where it is saved to
+                the account. A visitor has nowhere to save it yet, and choosing
+                whether to sign up is when reading the page matters most. */}
+            <LocaleToggle locale={locale} />
             <ThemeToggle label={t.themeToggle} />
             <Link href="/login" className="btn-secondary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
               {t.navLogin}
