@@ -158,6 +158,14 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             {t.itLowConfidenceWarn}
           </p>
         )}
+        {/* Says why there is no number, rather than leaving "insufficient" to
+            be read as a failure of the app. For a brand-name-only entry the
+            reason is actionable: name the model and the search narrows. */}
+        {price === null && (
+          <p className="mt-1 rounded-lg bg-canvas px-3 py-2 leading-relaxed text-muted">
+            {t.itNoPriceWhy}
+          </p>
+        )}
       </section>
 
       <section className="card p-4">

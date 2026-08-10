@@ -66,6 +66,7 @@ export async function fetchRakutenPrice(keyword: string): Promise<SourcePrice | 
     price: median.price,
     currency: "JPY",
     sampleSize: median.sampleSize,
+    spread: median.spread,
     source: "rakuten_ichiba",
   };
 }

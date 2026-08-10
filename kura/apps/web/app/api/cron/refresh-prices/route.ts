@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
         .update({
           current_price: series.current.price,
           currency: series.current.currency,
-          data_confidence: confidenceOf(candidate.sourceType, series.current.sampleSize),
+          data_confidence: confidenceOf(candidate.sourceType, series.current),
           price_updated_at: new Date().toISOString(),
         })
         .eq("id", id);
@@ -416,11 +416,13 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSer
  * observations is meaningless there — they are "medium" by construction, which
  * is honest: a real market price, from a single upstream aggregate.
  */
-function confidenceOf(sourceType: SourceType, sampleSize: number) {
+function confidenceOf(sourceType: SourceType, observation: SourceSeries["current"]) {
   // eBay and Rakuten both reduce many listings to a median, so the number of
   // listings behind it is meaningful. The card APIs return one already-aggregated
   // figure, where counting observations would say nothing.
-  if (sourceType === "ebay" || sourceType === "rakuten") return confidenceFor(sampleSize);
+  if (sourceType === "ebay" || sourceType === "rakuten") {
+    return confidenceFor(observation.sampleSize, observation.spread);
+  }
   return "medium" as const;
 }
 

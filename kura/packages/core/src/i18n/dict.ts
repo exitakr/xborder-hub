@@ -123,7 +123,11 @@ const ja = {
   itUpdatedAt: "最終更新",
   itConfidence: "データ信頼度",
   itLowConfidenceWarn:
-    "この銘柄は参照できた取引件数が少なく、実際の売買価格と大きく異なる場合があります。",
+    "この銘柄は参照できた出品件数が少ない、または出品ごとの価格差が大きく、実際の売買価格と大きく異なる場合があります。",
+  itNoPriceWhy:
+    "検索結果の価格差が大きすぎるか、件数が足りないため、価格を表示していません。" +
+    "ブランド名だけで登録した銘柄では、別カテゴリの商品が混ざり、どの商品の価格でもない数値になるためです。" +
+    "型番や品名を具体的にすると精度が上がります。",
   itPhoto: "写真",
   itPhotoAdd: "写真を追加",
   itPhotoReplace: "写真を変更",
@@ -411,7 +415,11 @@ const en: Dict = {
   itUpdatedAt: "Last updated",
   itConfidence: "Data confidence",
   itLowConfidenceWarn:
-    "This item is based on a small number of observations and may differ substantially from actual sale prices.",
+    "Priced from few listings, or from listings that disagree widely, so it may differ materially from what this actually trades for.",
+  itNoPriceWhy:
+    "No price is shown because the listings found either disagree too much or are too few. " +
+    "An item recorded under a brand name alone matches that brand's whole product line, and the middle of that describes no single product. " +
+    "A model number or fuller name narrows it.",
   itPhoto: "Photo",
   itPhotoAdd: "Add photo",
   itPhotoReplace: "Replace photo",

@@ -134,3 +134,39 @@ test("confidenceFor maps sample counts to labels", () => {
   assert.equal(confidenceFor(6), "low");
   assert.equal(confidenceFor(3), "insufficient");
 });
+
+test("trimmedMedian refuses a price when the listings disagree", () => {
+  // What a brand-name-only search returns: keychains around 2,000 alongside
+  // handbags around 300,000. A median exists arithmetically and describes
+  // nothing, so there is no price to publish.
+  const mixed = [
+    2_000, 2_400, 2_800, 3_200, 3_600,
+    280_000, 300_000, 320_000, 340_000, 360_000,
+  ];
+  assert.equal(trimmedMedian(mixed), null);
+});
+
+test("trimmedMedian still prices one product across conditions", () => {
+  // The same bag, used through new. Wide-ish, but coherent.
+  const oneProduct = [240_000, 260_000, 280_000, 300_000, 310_000, 320_000, 340_000];
+  const result = trimmedMedian(oneProduct);
+  assert.ok(result, "a coherent sample must still produce a price");
+  assert.ok(result.spread <= 1, "spread is reported alongside the price");
+});
+
+test("trimmedMedian reports the spread it measured", () => {
+  const tight = [100, 101, 102, 103, 104, 105, 106];
+  const result = trimmedMedian(tight);
+  assert.ok(result);
+  assert.ok(result.spread < 0.05, `expected a tight spread, got ${result.spread}`);
+});
+
+test("confidenceFor caps the label when the sample is loose", () => {
+  // Plenty of listings, but they disagree: count alone would say "high".
+  assert.equal(confidenceFor(25, 0.9), "low");
+  assert.equal(confidenceFor(25, 0.4), "medium");
+  assert.equal(confidenceFor(25, 0.1), "high");
+  // A ceiling only ever lowers: few listings stay low however tight they are.
+  assert.equal(confidenceFor(6, 0.05), "low");
+  assert.equal(confidenceFor(3, 0.05), "insufficient");
+});

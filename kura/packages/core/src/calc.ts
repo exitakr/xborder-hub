@@ -180,8 +180,12 @@ export function totals(summaries: readonly HoldingSummary[]): PortfolioTotals {
  */
 export function trimmedMedian(
   values: readonly number[],
-  { trimRatio = 0.1, minSamples = 5 }: { trimRatio?: number; minSamples?: number } = {},
-): { price: number; sampleSize: number } | null {
+  {
+    trimRatio = 0.1,
+    minSamples = 5,
+    maxSpread = 1,
+  }: { trimRatio?: number; minSamples?: number; maxSpread?: number } = {},
+): { price: number; sampleSize: number; spread: number } | null {
   const clean = values.filter((v) => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
   if (clean.length < minSamples) return null;
 
@@ -189,19 +193,55 @@ export function trimmedMedian(
   const kept = drop > 0 ? clean.slice(drop, clean.length - drop) : clean;
   if (kept.length === 0) return null;
 
-  const mid = Math.floor(kept.length / 2);
-  const price =
-    kept.length % 2 === 0 ? (kept[mid - 1] + kept[mid]) / 2 : kept[mid];
+  const price = quantile(kept, 0.5);
+  if (price <= 0) return null;
 
-  return { price, sampleSize: clean.length };
+  // Are these listings even about the same thing?
+  //
+  // Trimming removes outliers; it cannot tell that a keyword matched several
+  // different products. A search for a brand name alone returns that brand's
+  // keychains alongside its handbags, and the median of that is a number
+  // describing neither — yet with enough listings behind it, it would be
+  // labelled high-confidence. The interquartile range relative to the median
+  // is what separates "one product, varying condition" (tight) from "the
+  // keyword was too general" (wide), and a wide one is reported as no price
+  // at all rather than as a figure nobody can stand behind.
+  const spread = (quantile(kept, 0.75) - quantile(kept, 0.25)) / price;
+  if (spread > maxSpread) return null;
+
+  return { price, sampleSize: clean.length, spread };
+}
+
+/** Linear-interpolated quantile of an already-ascending array. */
+function quantile(sorted: readonly number[], q: number): number {
+  if (sorted.length === 1) return sorted[0];
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
 }
 
 export type Confidence = "high" | "medium" | "low" | "insufficient";
 
-/** Map an observation count onto the confidence label shown next to a price. */
-export function confidenceFor(sampleSize: number): Confidence {
-  if (sampleSize >= 20) return "high";
-  if (sampleSize >= 10) return "medium";
-  if (sampleSize >= 5) return "low";
-  return "insufficient";
+/**
+ * Confidence label for a price built from listings.
+ *
+ * Count alone is not evidence of agreement: thirty listings that disagree
+ * wildly are a worse basis than eight that cluster, but counting would call
+ * the first one high. `spread` (the interquartile range over the median, as
+ * returned by `trimmedMedian`) is therefore a ceiling on the label — a loose
+ * sample cannot be called high-confidence however many rows are in it.
+ */
+export function confidenceFor(sampleSize: number, spread?: number): Confidence {
+  const byCount: Confidence =
+    sampleSize >= 20 ? "high" : sampleSize >= 10 ? "medium" : sampleSize >= 5 ? "low" : "insufficient";
+
+  if (spread === undefined || !Number.isFinite(spread)) return byCount;
+
+  // A quarter of the median is roughly what one product in mixed condition
+  // spans; past half, the listings are describing more than one thing.
+  const ceiling: Confidence = spread <= 0.25 ? "high" : spread <= 0.5 ? "medium" : "low";
+
+  const rank = { insufficient: 0, low: 1, medium: 2, high: 3 } as const;
+  return rank[byCount] <= rank[ceiling] ? byCount : ceiling;
 }

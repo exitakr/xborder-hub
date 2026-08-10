@@ -21,15 +21,15 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex h-14 max-w-app items-center gap-2 px-3 sm:gap-4 sm:px-4">
-        {/* The full three-word name is what pushed the Japanese navigation off
-            the row and onto a second line. Below `sm` the abbreviation carries
-            it instead — same brand, and the nav keeps the row it belongs on. */}
+        {/* Always the full name. The abbreviation was here to keep the
+            Japanese navigation on one row, but shortening the nav labels
+            themselves solved that — and a wordmark that changes with viewport
+            width reads as two different products. */}
         <Link
           href={signedIn ? "/portfolio" : "/"}
-          className="shrink-0 rounded text-base font-semibold tracking-tight"
+          className="shrink-0 rounded text-sm font-semibold tracking-tight sm:text-base"
         >
-          <span className="sm:hidden">{brand.shortName}</span>
-          <span className="hidden sm:inline">{wordmark(locale)}</span>
+          {wordmark(locale)}
           <span className="sr-only"> — {brand.tagline[locale]}</span>
         </Link>
 

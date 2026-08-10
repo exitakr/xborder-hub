@@ -99,6 +99,7 @@ export interface PriceObservation {
   price: number;
   currency: string;
   sampleSize: number;
+  spread: number;
 }
 
 /**
@@ -150,7 +151,12 @@ export async function fetchPrice(
   const result = trimmedMedian(values);
   if (!result) return null;
 
-  return { price: result.price, currency, sampleSize: result.sampleSize };
+  return {
+    price: result.price,
+    currency,
+    sampleSize: result.sampleSize,
+    spread: result.spread,
+  };
 }
 
 function dominantCurrency(

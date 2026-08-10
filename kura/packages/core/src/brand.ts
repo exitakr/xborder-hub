@@ -13,10 +13,12 @@ export const brand = {
   /** Full wordmark, used in headers, titles, and legal text. */
   name: "Oh My Asset",
   /**
-   * Compact wordmark. The full name is three words wide, which on a phone
-   * pushes the navigation off the row beside it; screens that are tight on
-   * horizontal space use this instead. Not a separate brand — an abbreviation
-   * of the same one.
+   * Abbreviation, for places where the full name genuinely cannot fit.
+   *
+   * Deliberately NOT used in the header: swapping the wordmark at a breakpoint
+   * made the product look like two different ones depending on the device. The
+   * Japanese navigation it was introduced to make room for was fixed by
+   * shortening the nav labels instead.
    */
   shortName: "OMA",
   /** Short tagline. Deliberately factual — no investment-advice framing. */

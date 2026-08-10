@@ -13,6 +13,12 @@ export interface SourcePrice {
   currency: "USD" | "JPY" | "SGD";
   /** Observations behind the figure. Aggregated sources report one. */
   sampleSize: number;
+  /**
+   * Interquartile range over the median, for prices derived from listings.
+   * Undefined for sources that publish one already-aggregated figure, where
+   * there is no sample to disagree with itself.
+   */
+  spread?: number;
   source: string;
 }
 
