@@ -386,11 +386,21 @@ export interface ItemDetail {
   selfReported: SelfReportedPrice | null;
 }
 
-/** Everything the item-detail screen needs, in one round of queries. */
+/**
+ * Everything the item-detail screen needs, in one round of queries.
+ *
+ * `userId` is nullable so the same function serves a signed-out visitor. The
+ * catalogue, its price history and the community figure are public reference
+ * data (the `public read` policies in 0001/0006); holdings, trades and a
+ * private valuation are not, and are simply not asked for when there is nobody
+ * to ask about. Without this the item pages could not be public at all, and a
+ * catalogue nobody can reach without an account cannot be found by anyone
+ * looking for it.
+ */
 export async function loadItemDetail(
   supabase: SupabaseClient,
   itemId: string,
-  userId: string,
+  userId: string | null,
   displayCurrency: Currency,
 ): Promise<ItemDetail | null> {
   const { data: itemRow } = await supabase
@@ -410,12 +420,14 @@ export async function loadItemDetail(
     { data: crowdSeries },
     { data: ownRows },
   ] = await Promise.all([
-      supabase
-        .from("holdings")
-        .select("id, photo_path")
-        .eq("user_id", userId)
-        .eq("market_item_id", itemId)
-        .maybeSingle(),
+      userId
+        ? supabase
+            .from("holdings")
+            .select("id, photo_path")
+            .eq("user_id", userId)
+            .eq("market_item_id", itemId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
       supabase
         .from("price_snapshots")
         .select("price, currency, observed_at")
@@ -428,15 +440,17 @@ export async function loadItemDetail(
       // result rather than as something this layer has to re-check.
       supabase.rpc("community_price", { item: itemId }),
       supabase.rpc("community_price_series", { item: itemId }),
-      supabase
-        .from("self_reported_prices")
-        .select("market_item_id, price, currency, source, as_of")
-        .eq("user_id", userId)
-        .eq("market_item_id", itemId),
+      userId
+        ? supabase
+            .from("self_reported_prices")
+            .select("market_item_id, price, currency, source, as_of")
+            .eq("user_id", userId)
+            .eq("market_item_id", itemId)
+        : Promise.resolve({ data: null }),
     ]);
 
   let transactions: TransactionRow[] = [];
-  if (holding) {
+  if (userId && holding) {
     const { data } = await supabase
       .from("transactions")
       .select("id, holding_id, type, traded_on, quantity, unit_price, currency")

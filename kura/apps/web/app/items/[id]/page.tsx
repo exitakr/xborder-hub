@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getDict } from "@oma/core";
-import { requireProfile, signedPhotoUrl } from "@/lib/profile";
+import { optionalProfile, signedPhotoUrl } from "@/lib/profile";
+import { getLocale } from "@/lib/i18n-server";
+import { site } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { loadItemDetail } from "@oma/core";
 import { formatMoney, formatPercent } from "@oma/core";
@@ -17,16 +20,60 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { addHolding } from "../../market/actions";
 import { communityConfidence, fill } from "@oma/core";
 
-export const metadata: Metadata = { title: "Item" };
+/**
+ * Per-item metadata, which is the point of these pages being public.
+ *
+ * A catalogue entry indexed under the model number someone is searching for is
+ * how a person who owns that thing finds a tool for tracking it. A single
+ * static "Item" title made all 80-odd pages identical to a crawler, so none of
+ * them ranked for anything.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const locale = await getLocale();
+  const t = getDict(locale);
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("market_items")
+    .select("name, detail, identifier, category")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!data) return { title: t.mkTitle };
+
+  const name = data.name as string;
+  const detail = (data.detail as string | null) ?? (data.identifier as string | null);
+  const category = t[CATEGORY_LABEL_KEY[data.category as keyof typeof CATEGORY_LABEL_KEY]];
+  const description =
+    locale === "ja"
+      ? `${name}${detail ? `（${detail}）` : ""}の市場価格と推移。${category}を資産として記録・管理できます。`
+      : `Market price and history for ${name}${detail ? ` (${detail})` : ""}. Track ${category.toLowerCase()} as part of a portfolio.`;
+
+  const url = `${site.domain}/items/${id}`;
+
+  return {
+    title: name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: name, description, url, type: "website" },
+    twitter: { card: "summary", title: name, description },
+  };
+}
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const profile = await requireProfile();
-  const t = getDict(profile.locale);
+  const profile = await optionalProfile();
+  const locale = profile?.locale ?? (await getLocale());
+  const t = getDict(locale);
   const supabase = await createClient();
 
-  const currency = profile.currency;
-  const detail = await loadItemDetail(supabase, id, profile.userId, currency);
+  const currency = profile?.currency ?? "JPY";
+  const detail = await loadItemDetail(supabase, id, profile?.userId ?? null, currency);
   if (!detail) notFound();
 
   const { item, price, holdingId, transactions, summary, community } = detail;
@@ -57,7 +104,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             {price === null ? (
               <span className="text-base text-muted">{t.mkNoPrice}</span>
             ) : (
-              formatMoney(price, currency, profile.locale)
+              formatMoney(price, currency, locale)
             )}
           </p>
           {/* A self-reported figure is labelled at the number itself, not only in
@@ -80,7 +127,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           exactly what this product refuses to show. */}
       <section className="card space-y-1.5 p-4 text-xs text-muted">
         <p>
-          {t.itSource}: {sourceLabel(item.source_type, profile.locale)}
+          {t.itSource}: {sourceLabel(item.source_type, locale)}
           {item.source_url && (
             <>
               {" · "}
@@ -99,7 +146,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           {t.itUpdatedAt}:{" "}
           {item.price_updated_at
             ? new Date(item.price_updated_at).toLocaleString(
-                profile.locale === "ja" ? "ja-JP" : "en-SG",
+                locale === "ja" ? "ja-JP" : "en-SG",
               )
             : t.noData}
         </p>
@@ -120,7 +167,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           community={detail.communitySeries}
           markers={markers}
           currency={currency}
-          locale={profile.locale}
+          locale={locale}
           labels={{
             buy: t.itMarkerBuy,
             sell: t.itMarkerSell,
@@ -143,7 +190,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         {community ? (
           <>
             <p className="tnum text-2xl font-semibold">
-              {formatMoney(community.price, currency, profile.locale)}
+              {formatMoney(community.price, currency, locale)}
             </p>
             <dl className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
               <div className="flex gap-1.5">
@@ -171,13 +218,19 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        <PriceReportForm t={t} marketItemId={item.id} defaultCurrency={currency} />
+        {profile ? (
+          <PriceReportForm t={t} marketItemId={item.id} defaultCurrency={currency} />
+        ) : (
+          <Link href="/signup" className="btn-secondary w-full">
+            {t.cmReport}
+          </Link>
+        )}
       </section>
 
       {/* Offered only where no feed answers. An item that already has a market
           price does not need a second one, and two figures side by side would
           just raise the question of which the portfolio total used. */}
-      {item.current_price === null && (
+      {item.current_price === null && profile && (
         <section className="card space-y-3 p-4">
           <div>
             <h2 className="text-sm font-semibold">{t.srTitle}</h2>
@@ -187,7 +240,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             t={t}
             marketItemId={item.id}
             defaultCurrency={currency}
-            locale={profile.locale}
+            locale={locale}
             existing={detail.selfReported}
           />
         </section>
@@ -199,13 +252,13 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             <Stat label={t.pfQty} value={String(summary.quantity)} />
             <Stat
               label={t.pfAvgCost}
-              value={formatMoney(summary.avgCost, currency, profile.locale)}
+              value={formatMoney(summary.avgCost, currency, locale)}
             />
             <Stat
               label={t.pfPl}
-              value={`${formatMoney(summary.unrealized, currency, profile.locale)} (${formatPercent(
+              value={`${formatMoney(summary.unrealized, currency, locale)} (${formatPercent(
                 summary.unrealizedPct,
-                profile.locale,
+                locale,
               )})`}
               tone={
                 summary.unrealized === null || summary.unrealized === 0
@@ -236,19 +289,29 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             <h2 className="mb-2 text-sm font-semibold">{t.itTransactions}</h2>
             <TransactionList
               t={t}
-              locale={profile.locale}
+              locale={locale}
               marketItemId={item.id}
               transactions={transactions}
             />
           </section>
         </>
-      ) : (
+      ) : profile ? (
         <form action={addHolding}>
           <input type="hidden" name="marketItemId" value={item.id} />
           <SubmitButton pendingLabel={t.loading} className="btn-primary w-full">
             {t.itAddToHoldings}
           </SubmitButton>
         </form>
+      ) : (
+        /* The page's whole job for a visitor: they came here from a search for
+           something they own, and this is the step that turns reading a price
+           into tracking one. */
+        <section className="card space-y-3 p-5 text-center">
+          <p className="text-sm text-muted">{t.itVisitorLead}</p>
+          <Link href="/signup" className="btn-primary w-full">
+            {t.itAddToHoldings}
+          </Link>
+        </section>
       )}
     </div>
   );

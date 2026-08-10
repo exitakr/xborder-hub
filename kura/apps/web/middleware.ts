@@ -1,8 +1,17 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Routes that require a session. Everything else is public. */
-const PROTECTED = ["/portfolio", "/market", "/items", "/mypage", "/admin"];
+/**
+ * Routes that require a session. Everything else is public.
+ *
+ * `/market` and `/items` deliberately are not here. The catalogue and its
+ * prices are public reference data, and putting them behind the login wall
+ * meant nobody could find this product by searching for the thing they own —
+ * the only way in was to already know the app existed. The pages render
+ * read-only without a session; every action on them (holding an item,
+ * recording a trade, entering a valuation) still checks for one.
+ */
+const PROTECTED = ["/portfolio", "/mypage", "/admin"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

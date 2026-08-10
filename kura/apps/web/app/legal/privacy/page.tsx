@@ -61,7 +61,13 @@ export default async function PrivacyPage() {
           <p>
             シンガポール個人情報保護法（PDPA）に基づき、利用者は自己の個人データへのアクセス、
             訂正、および同意の撤回を請求することができます。
-            ご請求は下記の連絡先までお願いします。
+            ご請求は<a href="/contact" className="text-accent hover:underline">お問い合わせフォーム</a>
+            からお願いします。原則として30日以内に回答します。
+          </p>
+          <p>
+            PDPA 第11条に基づくデータ保護責任者（Data Protection Officer）を指定しており、
+            上記フォームからの請求は当該責任者が受領します。
+            回答に不服がある場合は、シンガポール個人情報保護委員会（PDPC）へ申し立てることができます。
           </p>
 
           <h2>7. 保存期間と削除</h2>
@@ -128,8 +134,14 @@ export default async function PrivacyPage() {
           <h2>6. For users in Singapore (PDPA)</h2>
           <p>
             Under Singapore&rsquo;s Personal Data Protection Act you may request access to and
-            correction of your personal data, and may withdraw consent. Please use the contact
-            address below.
+            correction of your personal data, and may withdraw consent. Please use the{" "}
+            <a href="/contact" className="text-accent hover:underline">contact form</a>; we
+            respond within 30 days.
+          </p>
+          <p>
+            We have designated a Data Protection Officer as required by section 11 of the PDPA,
+            and requests sent through that form reach them. If you are not satisfied with our
+            response, you may complain to the Personal Data Protection Commission (PDPC).
           </p>
 
           <h2>7. Retention and deletion</h2>

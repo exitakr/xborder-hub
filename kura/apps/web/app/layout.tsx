@@ -14,6 +14,21 @@ export const metadata: Metadata = {
   title: { default: brand.name, template: `%s · ${brand.name}` },
   description: brand.tagline.en,
   robots: { index: true, follow: true },
+  applicationName: brand.name,
+  // Both launch markets, declared: a Japanese searcher and a Singaporean one
+  // are looking for the same catalogue in different languages, and without
+  // this a crawler treats one of them as the only version.
+  alternates: { canonical: "/" },
+  openGraph: {
+    siteName: brand.name,
+    title: brand.name,
+    description: brand.tagline.en,
+    url: site.domain,
+    type: "website",
+    locale: "ja_JP",
+    alternateLocale: ["en_SG"],
+  },
+  twitter: { card: "summary", title: brand.name, description: brand.tagline.en },
 };
 
 export const viewport: Viewport = {

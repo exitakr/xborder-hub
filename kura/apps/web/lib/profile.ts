@@ -49,6 +49,25 @@ export async function requireProfile(): Promise<SessionProfile> {
 }
 
 /**
+ * The signed-in profile, or null.
+ *
+ * For pages that render for everyone but do more when there is a session —
+ * the catalogue and item pages. `requireProfile` cannot serve these: it
+ * redirects, which would put the whole catalogue back behind the login wall.
+ * The display locale and currency still need a value for a visitor, so they
+ * fall back to the same defaults a new account gets.
+ */
+export async function optionalProfile(): Promise<SessionProfile | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+  return requireProfile();
+}
+
+/**
  * Short-lived signed URL for a private holding photo.
  * Returns null rather than throwing, so a missing object degrades to the
  * category glyph instead of breaking the page.

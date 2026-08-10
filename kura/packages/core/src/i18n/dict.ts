@@ -129,6 +129,8 @@ const ja = {
   itPhotoReplace: "写真を変更",
   itMarkerBuy: "購入",
   itMarkerSell: "売却",
+  itVisitorLead:
+    "無料で登録すると、この銘柄を保有資産として記録し、価格の推移を追えます。",
 
   // --- community-reported prices ---
   cmTitle: "みんなの売却実績",
@@ -415,6 +417,8 @@ const en: Dict = {
   itPhotoReplace: "Replace photo",
   itMarkerBuy: "Buy",
   itMarkerSell: "Sell",
+  itVisitorLead:
+    "Create a free account to track this item as part of your portfolio and follow its price.",
 
   // --- community-reported prices ---
   cmTitle: "Community sale prices",
