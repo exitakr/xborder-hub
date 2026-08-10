@@ -7,11 +7,9 @@ import { sendContactMessage, type ContactState } from "./actions";
 export function ContactForm({
   t,
   locale,
-  defaultEmail = "",
 }: {
   t: ReturnType<typeof getDict>;
   locale: Locale;
-  defaultEmail?: string;
 }) {
   const [state, action, pending] = useActionState<ContactState, FormData>(
     sendContactMessage,
@@ -48,7 +46,6 @@ export function ContactForm({
             required
             maxLength={320}
             autoComplete="email"
-            defaultValue={defaultEmail}
             className="field"
           />
         </div>

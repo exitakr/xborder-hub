@@ -59,6 +59,13 @@ export async function sendContactMessage(
     locale,
   });
 
-  if (error) return { error: "generic" };
+  if (error) {
+    // A support message that fails to store is lost with nothing to show for
+    // it — the sender sees a generic failure and there is no mailbox holding a
+    // copy. Logging the cause is the only way the operator learns that, say,
+    // the contact table was never created.
+    console.error("contact_messages insert failed", error.message);
+    return { error: "generic" };
+  }
   return { ok: true };
 }

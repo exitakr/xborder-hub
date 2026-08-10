@@ -68,7 +68,7 @@ const ja = {
   ctSubject: "件名",
   ctBody: "お問い合わせ内容",
   ctSubmit: "送信する",
-  ctSent: "送信しました。順次確認のうえ、ご記入のメールアドレス宛にご返信します。",
+  ctSent: "送信しました。お問い合わせありがとうございます。",
   ctErrEmail: "メールアドレスの形式が正しくありません。",
   ctPrivacy:
     "ご記入いただいた内容とメールアドレスは、お問い合わせへの対応にのみ使用します。",
@@ -253,6 +253,9 @@ const ja = {
   // --- admin dashboard ---
   adDashTitle: "管理ダッシュボード",
   adDashLead: "利用状況・データ品質・お問い合わせをまとめて確認できます。",
+  adSetupTitle: "集計関数が見つかりません",
+  adSetupBody:
+    "Supabase の SQL Editor で 0011_contact_and_admin_kpis.sql（および未適用のマイグレーション）を実行してください。実行後にこのページを再読み込みすると数値が表示されます。",
   adKpiUsers: "会員",
   adKpiTotalUsers: "総会員数",
   adKpiNew7: "新規（7日）",
@@ -371,7 +374,7 @@ const en: Dict = {
   ctSubject: "Subject",
   ctBody: "Message",
   ctSubmit: "Send",
-  ctSent: "Sent. We read every message and will reply to the address you gave.",
+  ctSent: "Sent. Thank you for getting in touch.",
   ctErrEmail: "That email address does not look right.",
   ctPrivacy: "Your message and address are used only to answer this enquiry.",
 
@@ -551,6 +554,9 @@ const en: Dict = {
   // --- admin dashboard ---
   adDashTitle: "Admin dashboard",
   adDashLead: "Usage, data quality and support enquiries in one place.",
+  adSetupTitle: "Aggregate functions not found",
+  adSetupBody:
+    "Run 0011_contact_and_admin_kpis.sql — and any other pending migrations — in the Supabase SQL editor, then reload this page.",
   adKpiUsers: "Members",
   adKpiTotalUsers: "Total members",
   adKpiNew7: "New (7d)",

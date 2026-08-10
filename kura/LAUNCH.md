@@ -129,7 +129,6 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 | `RAKUTEN_APPLICATION_ID` | 楽天ウェブサービスのアプリ ID（時計/バッグ/スニーカーの JPY 相場） | ✅ |
 | `CRON_SECRET` | `openssl rand -hex 32` の出力 | ✅ |
 | `NEXT_PUBLIC_SITE_URL` | `https://<本番ドメイン>` | — |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | 問い合わせ先アドレス | — |
 
 - [ ] デプロイ後、Cron が登録されていることを確認
       （Settings → Cron Jobs に `/api/cron/refresh-prices` が 20:00 UTC で表示される）

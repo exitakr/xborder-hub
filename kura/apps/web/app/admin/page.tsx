@@ -75,6 +75,19 @@ export default async function AdminPage() {
   const members = (memberRes.data ?? []) as Member[];
   const messages = (messageRes.data ?? []) as Message[];
 
+  /*
+   * Why the dashboard is empty, in the dashboard.
+   *
+   * "Please try again shortly" is the wrong thing to tell the one person who
+   * can actually fix this. The overwhelmingly likely cause is that migration
+   * 0011 has not been run, in which case these functions do not exist at all —
+   * and the Postgres error says so precisely. This surface is already behind
+   * an is_admin check that the functions themselves repeat, so the message is
+   * only ever shown to the operator.
+   */
+  const failure =
+    kpiRes.error?.message ?? memberRes.error?.message ?? messageRes.error?.message ?? null;
+
   // Month-on-month signup growth. Null rather than 0% when the comparison
   // period is empty: "no prior month" and "no growth" are different claims.
   const growth =
@@ -93,7 +106,15 @@ export default async function AdminPage() {
       </div>
 
       {!k ? (
-        <p className="py-12 text-center text-sm text-muted">{t.errorBody}</p>
+        <section className="card border-loss/40 p-5">
+          <h2 className="text-sm font-semibold text-loss">{t.adSetupTitle}</h2>
+          <p className="mt-2 text-sm text-muted">{t.adSetupBody}</p>
+          {failure && (
+            <pre className="mt-3 overflow-x-auto rounded-lg bg-canvas p-3 text-xs text-muted">
+              {failure}
+            </pre>
+          )}
+        </section>
       ) : (
         <>
           <section className="card p-5">
