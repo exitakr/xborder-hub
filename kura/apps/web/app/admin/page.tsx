@@ -43,6 +43,13 @@ interface Member {
   last_activity: string | null;
 }
 
+interface PlanKpis {
+  paid_total: number;
+  paid_30d: number;
+  at_limit: number;
+  near_limit: number;
+}
+
 interface Message {
   id: string;
   user_id: string | null;
@@ -65,15 +72,19 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes] = await Promise.all([
+  const [kpiRes, memberRes, messageRes, planRes] = await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_members", { p_limit: 200 }),
     supabase.rpc("admin_contact_messages", { p_limit: 100 }),
+    supabase.rpc("admin_plan_kpis"),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
   const members = (memberRes.data ?? []) as Member[];
   const messages = (messageRes.data ?? []) as Message[];
+  // Added by migration 0015. Absent rather than fatal on an older database, so
+  // a deployment that has not run it yet still gets the rest of the dashboard.
+  const plans = (Array.isArray(planRes.data) ? planRes.data[0] : null) as PlanKpis | null;
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -158,6 +169,36 @@ export default async function AdminPage() {
               <Kpi label={t.adKpiOpenContact} value={k.contact_open} />
             </dl>
           </section>
+
+          {/* Paid conversion is the first number anyone valuing this business
+              asks for, so it sits in the dashboard rather than in a query
+              somebody has to remember to run. */}
+          {plans && (
+            <section className="card p-5">
+              <h2 className="text-sm font-semibold">{t.adKpiPlans}</h2>
+              <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Kpi label={t.adKpiPaid} value={Number(plans.paid_total)} />
+                <Kpi label={t.adKpiPaid30} value={Number(plans.paid_30d)} />
+                <Kpi
+                  label={t.adKpiConversion}
+                  value={
+                    k.users_total > 0
+                      ? `${((Number(plans.paid_total) / k.users_total) * 100).toFixed(1)}%`
+                      : "—"
+                  }
+                />
+                {/* Free accounts sitting on the ceiling: the people the upgrade
+                    prompt is actually in front of, and the best leading
+                    indicator of revenue available before payments are live. */}
+                <Kpi
+                  label={t.adKpiAtLimit}
+                  value={Number(plans.at_limit)}
+                  tone={Number(plans.at_limit) > 0 ? "text-accent" : ""}
+                />
+                <Kpi label={t.adKpiNearLimit} value={Number(plans.near_limit)} />
+              </dl>
+            </section>
+          )}
 
           <section className="card p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">

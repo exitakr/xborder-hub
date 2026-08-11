@@ -78,6 +78,18 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       適用直後は空で、**次回の価格更新が走ったカードから順に画像が付きます**
       （`/admin` の「価格を今すぐ更新」で即座に反映できます）。
       カード以外（時計・バッグ・車等）は仕様上ずっと空のままです（`docs/RESEARCH.md` §13.4）
+- [ ] `supabase/migrations/0015_plans_and_limits.sql`
+      **登録件数の上限（無料20件）と、無制限プランの権利管理**を追加します。
+      上限は **DBのトリガーで強制**されます（アプリはPostgRESTに直接書き込むため、
+      UI側のチェックだけでは迂回できてしまいます）。
+      ⚠️ **決済は未接続です。** 購入ボタンは意図的に置いていません。
+      自分のアカウントを無制限にするには SQL Editor で:
+```sql
+select public.grant_unlimited(
+  (select id from auth.users where email = 'あなたのメールアドレス'),
+  'admin', null, null, 'owner'
+);
+```
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration

@@ -42,6 +42,25 @@ const ja = {
   landingF2Body: "買った日・売った日が価格推移の上にマークされ、判断の履歴が残ります。",
   landingF3Title: "出どころのわかる価格",
   landingF3Body: "価格には必ず参照元と取得日時が付きます。推測値は「データ不足」と表示します。",
+  landingShotPortfolio: "評価額合計",
+  landingShotPicker: "ボッテガヴェネタ カセ",
+  landingShotItem: "楽天市場・2026年8月11日 取得",
+  landingShotNote: "※ 画面はイメージです。数値はサンプルです。",
+  landingSeeTitle: "登録すると、こう見えます",
+  landingSeeBody:
+    "合計評価額と推移がひとつの画面にまとまります。そのままスクリーンショットして共有できます。",
+  landingPickTitle: "名前を打つだけ",
+  landingPickBody:
+    "入力すると、画像と現在価格つきの候補が出ます。カードは絵柄で見分けられるので、同名の別バージョンを選び間違えません。",
+  landingTradeTitle: "売買が推移の上に残る",
+  landingTradeBody:
+    "買った日と売った日が価格チャートに重なります。いくらで入っていくらで出たかが、あとから一目でわかります。",
+  landingPriceTitle: "価格の出どころ",
+  landingPriceBody:
+    "カードは Scryfall と Pokémon TCG API、日本の相場は楽天市場、海外は eBay から取得しています。銘柄ごとに出典と取得日時を表示し、根拠が足りないときは数字を出しません。",
+  landingPlanTitle: "無料でどこまで使えるか",
+  landingPlanBody:
+    "{max}件まで無料です。価格・グラフ・出典表示に制限はありません。それ以上登録したい場合のみ、買い切り{price}で無制限になります。",
 
   // --- auth ---
   authEmail: "メールアドレス",
@@ -63,6 +82,23 @@ const ja = {
   pfValueChartEmpty:
     "価格履歴を蓄積中です。1日1回の自動更新で1点ずつ記録され、数日で推移として表示されます。",
   // --- contact ---
+  dsTitle: "価格データについて",
+  dsLead:
+    "このアプリが表示する価格が、どこから来て、どう計算され、どんなときに表示されないかをすべて記載します。",
+  dsSourcesTitle: "利用しているデータソース",
+  dsMethodTitle: "価格の決め方",
+  dsMethodBody:
+    "出品一覧から価格を作る場合は、上下10%を除いた中央値を採用します。件数が5件未満のとき、または四分位範囲が中央値を超えるほど価格がばらついているときは、価格を表示しません。銘柄ごとに設定した下限価格を下回る結果も、付属品を拾ったものとみなして破棄します。",
+  dsLimitsTitle: "限界と、正直に言えること",
+  dsLimitsBody:
+    "eBay と楽天市場から取得しているのは出品価格であり、実際に売れた価格ではありません。実売価格を無料で提供する公開 API は、時計・バッグ・スニーカーには存在しません。そのため利用者が登録した売却実績を併記し、3人以上の投稿が集まった銘柄でのみ公開しています。",
+  dsHistoryTitle: "価格履歴の作り方",
+  dsHistoryBody:
+    "1日1回の自動更新で1点ずつ記録します。過去の相場をさかのぼって購入することはできないため、登録直後の銘柄はグラフが短くなります。Pokémon TCG API のみ、過去平均から数週間分をさかのぼって記録できます。",
+  dsImagesTitle: "画像について",
+  dsImagesBody:
+    "カード画像は Scryfall と Pokémon TCG API が配信しているものです。時計・バッグ・スニーカー・車は、出品者の撮影した写真を再配布しないため、画像を表示していません。",
+
   ctTitle: "お問い合わせ",
   ctLead: "ご質問・不具合のご報告はこちらから。内容は運営に直接届きます。",
   ctSubject: "件名",
@@ -90,6 +126,9 @@ const ja = {
   pfValue: "評価額",
   pfPl: "損益",
   pfExcluded: "価格データがない銘柄は合計に含めていません。",
+  pfViewList: "リスト",
+  pfViewGrid: "画像",
+  pfViewLabel: "表示形式",
 
   // --- market ---
   mkTitle: "銘柄をさがす",
@@ -226,6 +265,34 @@ const ja = {
   txErrGeneric: "保存できませんでした。時間をおいて再度お試しください。",
 
   // --- mypage ---
+  // --- plans & billing ---
+  planTitle: "プラン",
+  planLead: "登録できる銘柄数が変わります。価格・グラフ・出典はどのプランでも同じです。",
+  planCurrent: "現在のプラン",
+  planFree: "無料プラン",
+  planUnlimited: "無制限プラン",
+  planRegistered: "登録数",
+  planUnitItems: "件",
+  planUpgradeTitle: "無制限プラン",
+  planPrice: "¥500",
+  planPriceNote: "買い切り・月額なし",
+  planBenefit1: "銘柄の登録数が無制限",
+  planBenefit2: "追加費用なし。一度のお支払いのみ",
+  planBenefit3: "価格・グラフ・出典表示は無料プランと同じ",
+  planUpgrade: "アップグレード",
+  planComingSoon: "決済は準備中です",
+  planComingSoonBody:
+    "現在プランを購入いただくことはできません。上限に達した場合はお問い合わせください。",
+  planActive: "ご利用中",
+  planFullTitle: "無料プランの上限に達しました",
+  planFullBody:
+    "無料プランでは{max}件まで登録できます。これ以上追加するには無制限プランへ変更してください。",
+  planWhyTitle: "なぜ登録数で区切るのか",
+  planWhyBody:
+    "価格やグラフを有料にすると、無料プランをわざと悪くする動機が生まれます。数字の正確さがこのアプリの価値なので、機能ではなく規模で区切っています。",
+  planNearLimit: "残り{left}件で上限です。",
+  planContact: "お問い合わせ",
+
   myTitle: "マイページ",
   myDisplayName: "表示名",
   myCurrency: "表示通貨",
@@ -253,6 +320,12 @@ const ja = {
   // --- admin dashboard ---
   adDashTitle: "管理ダッシュボード",
   adDashLead: "利用状況・データ品質・お問い合わせをまとめて確認できます。",
+  adKpiPlans: "課金",
+  adKpiPaid: "有料会員",
+  adKpiPaid30: "新規有料（30日）",
+  adKpiAtLimit: "上限到達",
+  adKpiNearLimit: "上限間近",
+  adKpiConversion: "有料転換率",
   adSetupTitle: "集計関数が見つかりません",
   adSetupBody:
     "Supabase の SQL Editor で 0011_contact_and_admin_kpis.sql（および未適用のマイグレーション）を実行してください。実行後にこのページを再読み込みすると数値が表示されます。",
@@ -347,6 +420,25 @@ const en: Dict = {
   landingF2Title: "Your trades on the chart",
   landingF2Body:
     "Buys and sells are marked directly on the price history, so your decisions stay visible.",
+  landingShotPortfolio: "Total value",
+  landingShotPicker: "Bottega Veneta Casse",
+  landingShotItem: "Rakuten · fetched 11 Aug 2026",
+  landingShotNote: "Illustrative screens. Figures are samples.",
+  landingSeeTitle: "This is what you get",
+  landingSeeBody:
+    "Your total and its trend in one card — ready to screenshot and send to someone.",
+  landingPickTitle: "Just type the name",
+  landingPickBody:
+    "Suggestions come back with the artwork and the current price, so you pick the right printing rather than one that shares its name.",
+  landingTradeTitle: "Your trades sit on the chart",
+  landingTradeBody:
+    "The day you bought and the day you sold are marked on the price history, so what you paid and what you got is legible at a glance.",
+  landingPriceTitle: "Where the prices come from",
+  landingPriceBody:
+    "Cards from Scryfall and the Pokémon TCG API, Japanese market prices from Rakuten, everything else from eBay. Every item shows its source and when it was fetched — and when the evidence is thin, we show no number at all.",
+  landingPlanTitle: "What you get for nothing",
+  landingPlanBody:
+    "{max} items free, with no limits on prices, charts or sources. Only if you want more than that does unlimited cost {price}, once.",
   landingF3Title: "Prices you can trace",
   landingF3Body:
     "Every price carries its source and the time it was fetched. Thin data is labelled, never guessed.",
@@ -369,6 +461,23 @@ const en: Dict = {
   pfValueChartEmpty:
     "Building price history. The daily refresh records one point per day, so a trend appears within a few days.",
   // --- contact ---
+  dsTitle: "About our price data",
+  dsLead:
+    "Where every price comes from, how it is calculated, and when we deliberately show none.",
+  dsSourcesTitle: "Sources we use",
+  dsMethodTitle: "How a price is decided",
+  dsMethodBody:
+    "Where a price is built from listings, we take the median after trimming the top and bottom 10%. If there are fewer than five listings, or the interquartile spread exceeds the median, we publish nothing. Results below an item's floor price are discarded as accessory matches rather than the item.",
+  dsLimitsTitle: "Limits, stated plainly",
+  dsLimitsBody:
+    "eBay and Rakuten give us asking prices, not realised sale prices. No free public API publishes realised prices for watches, bags or sneakers. We therefore also collect sale prices reported by users, and publish them only once at least three people have reported on an item.",
+  dsHistoryTitle: "How the history is built",
+  dsHistoryBody:
+    "One point a day, from the scheduled refresh. Past market history cannot be bought back, so a newly added item starts with a short chart. The Pokémon TCG API is the exception: its trailing averages let us seed a few weeks immediately.",
+  dsImagesTitle: "About images",
+  dsImagesBody:
+    "Card artwork is published by Scryfall and the Pokémon TCG API. Watches, bags, sneakers and cars show no image: their prices come from marketplaces whose photographs belong to the sellers who took them.",
+
   ctTitle: "Contact",
   ctLead: "Questions or bug reports go straight to the people running this.",
   ctSubject: "Subject",
@@ -395,6 +504,9 @@ const en: Dict = {
   pfValue: "Value",
   pfPl: "P/L",
   pfExcluded: "Items without price data are excluded from the totals.",
+  pfViewList: "List",
+  pfViewGrid: "Gallery",
+  pfViewLabel: "Layout",
 
   mkTitle: "Browse items",
   mkSearch: "Search by name or reference",
@@ -528,6 +640,35 @@ const en: Dict = {
   txErrOversell: "Sell quantity exceeds the quantity you hold.",
   txErrGeneric: "Could not save. Please try again shortly.",
 
+  // --- plans & billing ---
+  planTitle: "Plan",
+  planLead:
+    "Plans differ only in how many items you can track. Prices, charts and sources are identical on both.",
+  planCurrent: "Current plan",
+  planFree: "Free",
+  planUnlimited: "Unlimited",
+  planRegistered: "Registered",
+  planUnitItems: "items",
+  planUpgradeTitle: "Unlimited",
+  planPrice: "¥500",
+  planPriceNote: "One-time. No subscription.",
+  planBenefit1: "Track as many items as you like",
+  planBenefit2: "Pay once. Nothing recurring",
+  planBenefit3: "Same prices, charts and sources as the free plan",
+  planUpgrade: "Upgrade",
+  planComingSoon: "Payments are not live yet",
+  planComingSoonBody:
+    "You cannot buy a plan just yet. If you have hit the limit, get in touch and we will sort it out.",
+  planActive: "Active",
+  planFullTitle: "Your free plan is full",
+  planFullBody:
+    "The free plan holds {max} items. Upgrade to unlimited to add more.",
+  planWhyTitle: "Why the limit is a count",
+  planWhyBody:
+    "Charging for prices or charts would give us a reason to make the free tier worse. The honesty of the numbers is the product, so the plans differ in scale rather than in features.",
+  planNearLimit: "{left} left before the limit.",
+  planContact: "Contact us",
+
   myTitle: "Account",
   myDisplayName: "Display name",
   myCurrency: "Display currency",
@@ -554,6 +695,12 @@ const en: Dict = {
   // --- admin dashboard ---
   adDashTitle: "Admin dashboard",
   adDashLead: "Usage, data quality and support enquiries in one place.",
+  adKpiPlans: "Billing",
+  adKpiPaid: "Paid members",
+  adKpiPaid30: "New paid (30d)",
+  adKpiAtLimit: "At limit",
+  adKpiNearLimit: "Near limit",
+  adKpiConversion: "Paid conversion",
   adSetupTitle: "Aggregate functions not found",
   adSetupBody:
     "Run 0011_contact_and_admin_kpis.sql — and any other pending migrations — in the Supabase SQL editor, then reload this page.",

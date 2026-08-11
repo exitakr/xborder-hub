@@ -20,6 +20,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/market`, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/signup`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/contact`, changeFrequency: "yearly", priority: 0.3 },
+    // Ranks for "where does <app> get its prices", which is a question people
+    // search before trusting a portfolio tool.
+    { url: `${base}/data-sources`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/legal/terms`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/legal/privacy`, changeFrequency: "yearly", priority: 0.2 },
   ];

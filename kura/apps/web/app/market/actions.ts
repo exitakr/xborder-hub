@@ -7,6 +7,18 @@ import { createClient } from "@/lib/supabase/server";
 import { newItemSchema } from "@oma/core";
 
 /**
+ * Did this write fail because the free plan is full?
+ *
+ * The trigger in migration 0015 raises P0001 with a fixed message. Matching on
+ * the message rather than only the code because P0001 is Postgres's generic
+ * `raise exception` code — other checks could use it, and silently routing an
+ * unrelated failure to the upgrade screen would be worse than showing nothing.
+ */
+function isLimitReached(error: { code?: string; message?: string } | null): boolean {
+  return Boolean(error?.message?.includes("holding_limit_reached"));
+}
+
+/**
  * Add a catalogue item to the signed-in user's holdings.
  *
  * user_id is taken from the session, never from the form — a client-supplied
@@ -26,6 +38,11 @@ export async function addHolding(formData: FormData) {
   const { error } = await supabase
     .from("holdings")
     .insert({ user_id: user.id, market_item_id: parsed.data });
+
+  // The free-plan ceiling, raised by the trigger in migration 0015. Sending the
+  // user to the plan screen is the only useful response: the item was not added
+  // and no amount of retrying this form will add it.
+  if (isLimitReached(error)) redirect("/plan?full=1");
 
   // 23505 = already held. Landing on the item page is the right outcome either way.
   if (error && error.code !== "23505") return;
@@ -86,7 +103,13 @@ export async function createAndHoldItem(
   // Best-effort: the item exists either way, and 23505 (already held — not
   // reachable here since the row is brand new, but kept for symmetry with
   // addHolding) is not worth failing the whole action over.
-  await supabase.from("holdings").insert({ user_id: user.id, market_item_id: itemId });
+  const { error: holdError } = await supabase
+    .from("holdings")
+    .insert({ user_id: user.id, market_item_id: itemId });
+
+  // The catalogue row was still created and is now available to everyone, so
+  // this is not rolled back — only the holding is refused.
+  if (isLimitReached(holdError)) redirect("/plan?full=1");
 
   revalidatePath("/market");
   revalidatePath("/portfolio");

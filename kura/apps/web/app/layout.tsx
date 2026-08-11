@@ -130,6 +130,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/contact" className="rounded hover:text-ink">
                 {t.legalContact}
               </Link>
+              {/* Public on purpose: "where does this get its prices" is the
+                  question a sceptical visitor asks before trusting any of the
+                  numbers, and it deserves an answer they can link to. */}
+              <Link href="/data-sources" className="rounded hover:text-ink">
+                {t.dsTitle}
+              </Link>
             </div>
           </div>
         </footer>

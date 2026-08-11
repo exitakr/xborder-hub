@@ -28,9 +28,17 @@ export function HoldingPhoto({
   artUrl?: string | null;
   category: Category;
   alt: string;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "tile";
 }) {
-  const box = size === "lg" ? "h-24 w-24" : "h-11 w-11";
+  // `tile` fills the width of a gallery cell rather than being a fixed square:
+  // in a grid the picture IS the row, so a 44px thumbnail floating in a card
+  // would waste the only thing that view exists to show.
+  const box =
+    size === "tile"
+      ? "aspect-[3/4] w-full"
+      : size === "lg"
+        ? "h-24 w-24"
+        : "h-11 w-11";
 
   if (!signedUrl && artUrl) {
     return (
@@ -64,7 +72,10 @@ export function HoldingPhoto({
     <div
       className={`${box} flex shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-muted`}
     >
-      <CategoryGlyph category={category} className={size === "lg" ? "h-9 w-9" : "h-5 w-5"} />
+      <CategoryGlyph
+        category={category}
+        className={size === "md" ? "h-5 w-5" : "h-9 w-9"}
+      />
     </div>
   );
 }

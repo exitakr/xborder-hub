@@ -13,8 +13,17 @@ import { CategoryGlyph } from "@/components/CategoryGlyph";
 
 export const metadata: Metadata = { title: "Portfolio" };
 
-export default async function PortfolioPage() {
+export default async function PortfolioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const profile = await requireProfile();
+  // Layout in the URL rather than in state: it survives a reload, it can be
+  // bookmarked, and it works with JavaScript off — all of which a client-side
+  // toggle on a server-rendered list would give up for nothing.
+  const { view: viewParam } = await searchParams;
+  const gallery = viewParam === "grid";
   const t = getDict(profile.locale);
   const supabase = await createClient();
   const [view, series] = await Promise.all([
@@ -139,8 +148,61 @@ export default async function PortfolioPage() {
       )}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold">{t.pfHoldings}</h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold">{t.pfHoldings}</h2>
 
+          <div className="flex gap-1" role="group" aria-label={t.pfViewLabel}>
+            <LayoutLink href="/portfolio" active={!gallery}>
+              {t.pfViewList}
+            </LayoutLink>
+            <LayoutLink href="/portfolio?view=grid" active={gallery}>
+              {t.pfViewGrid}
+            </LayoutLink>
+          </div>
+        </div>
+
+        {gallery ? (
+          /* Bigger pictures, fewer words. For a collection this is the view
+             that reads as a collection rather than as a spreadsheet — and with
+             card artwork now stored, it is finally worth having. */
+          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {view.holdings.map((h, i) => (
+              <li key={h.holdingId}>
+                <Link
+                  href={`/items/${h.item.id}`}
+                  className="card flex h-full flex-col gap-2 p-2.5 transition-colors hover:bg-canvas"
+                >
+                  <HoldingPhoto
+                    signedUrl={photos[i]}
+                    artUrl={h.item.image_url}
+                    category={h.item.category}
+                    alt={h.item.name}
+                    size="tile"
+                  />
+
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium">{h.item.name}</p>
+                    <p className="tnum truncate text-[11px] text-muted">
+                      ×{h.summary.quantity}
+                    </p>
+                  </div>
+
+                  <div className="mt-auto">
+                    <p className="tnum text-sm font-semibold">
+                      {formatMoney(h.summary.marketValue, view.currency, profile.locale)}
+                    </p>
+                    <p className={`tnum text-[11px] ${toneFor(h.summary.unrealized)}`}>
+                      {h.summary.unrealizedPct === null
+                        ? t.mkNoPrice
+                        : formatPercent(h.summary.unrealizedPct, profile.locale)}
+                      {h.selfReported && <span className="ml-1 text-muted">{t.srBadge}</span>}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
         <ul className="space-y-2">
           {view.holdings.map((h, i) => (
             <li key={h.holdingId}>
@@ -184,6 +246,7 @@ export default async function PortfolioPage() {
             </li>
           ))}
         </ul>
+        )}
 
         <Link
           href="/market"
@@ -194,6 +257,29 @@ export default async function PortfolioPage() {
         </Link>
       </section>
     </div>
+  );
+}
+
+/** Segmented control for the holdings layout. */
+function LayoutLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "true" : undefined}
+      className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+        active ? "bg-accent text-white" : "text-muted hover:bg-canvas hover:text-ink"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }
 

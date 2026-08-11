@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@oma/core";
 import { DeleteAccount, ProfileForm } from "./ProfileForm";
 import { LogoutButton } from "@/components/LogoutButton";
+import { PlanCard } from "./PlanCard";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -78,6 +79,8 @@ export default async function MyPage() {
           </dl>
         </section>
       )}
+
+      <PlanCard t={t} />
 
       {/* Between the everyday settings and the irreversible one. Signing out is
           the ordinary way to leave, and it needs to be findable without sitting
