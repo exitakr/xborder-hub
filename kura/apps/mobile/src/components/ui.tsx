@@ -161,22 +161,34 @@ export function CategoryGlyph({
   );
 }
 
-/** Thumbnail: the user's own photo, or the category glyph. Never a brand image. */
+/**
+ * Thumbnail, in order of preference: the user's own photo, the card's artwork,
+ * then the category glyph.
+ *
+ * Still never a brand's product image — a marketplace listing photo belongs to
+ * its seller. Card art is different: Scryfall and pokemontcg.io publish it so
+ * collection software can show it, both are credited on the item screen, and
+ * the picture is how you recognise the card. Cards therefore have `artUri`;
+ * every other category passes null and keeps the glyph.
+ */
 export function Thumb({
   uri,
+  artUri = null,
   category,
   size = 44,
 }: {
   uri: string | null;
+  artUri?: string | null;
   category: Category;
   size?: number;
 }) {
   const col = useColors();
+  const source = uri ?? artUri;
 
-  if (uri) {
+  if (source) {
     return (
       <Image
-        source={{ uri }}
+        source={{ uri: source }}
         accessibilityIgnoresInvertColors
         style={{
           width: size,

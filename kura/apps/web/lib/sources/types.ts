@@ -34,4 +34,15 @@ export interface SourceSeries {
   current: SourcePrice;
   /** Oldest first. Empty when the source publishes no history. */
   history: HistoricalPrice[];
+  /**
+   * Canonical artwork for the item, when the source publishes one.
+   *
+   * Only the card APIs set this. They serve card images precisely so that
+   * collection apps can show them, and a card's artwork IS its identity — two
+   * printings with the same name are told apart by the picture faster than by
+   * any text. Marketplace sources (eBay, Rakuten) deliberately do not set it:
+   * their images are sellers' own photographs of goods, and a listing photo is
+   * neither ours to republish nor a reliable depiction of the catalogue entry.
+   */
+  imageUrl?: string;
 }

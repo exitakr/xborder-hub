@@ -141,3 +141,40 @@ test("rejects non-positive prices instead of charting them", async () => {
     restore();
   }
 });
+
+test("carries the small card image through", async () => {
+  const restore = respondWith(
+    card({
+      images: { small: "https://images.pokemontcg.io/base1/4.png", large: "https://x/big.png" },
+      tcgplayer: { prices: { holofoil: { market: 100 } } },
+    }),
+  );
+  try {
+    const series = await fetchPokemonTcgSeries('name:"Charizard"');
+    // `small`, not `large`: this is drawn at thumbnail size.
+    assert.equal(series?.imageUrl, "https://images.pokemontcg.io/base1/4.png");
+  } finally {
+    restore();
+  }
+});
+
+test("a non-https or missing image is dropped, not passed on", async () => {
+  for (const images of [
+    { small: "http://insecure.example/1.png" },
+    { small: 42 },
+    {},
+    undefined,
+  ]) {
+    const restore = respondWith(
+      card({ images, tcgplayer: { prices: { holofoil: { market: 100 } } } }),
+    );
+    try {
+      const series = await fetchPokemonTcgSeries('name:"Charizard"');
+      // The price still stands on its own — a bad image must not lose it.
+      assert.equal(series?.current.price, 100);
+      assert.equal(series?.imageUrl, undefined);
+    } finally {
+      restore();
+    }
+  }
+});

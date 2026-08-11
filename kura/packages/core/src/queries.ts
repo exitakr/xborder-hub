@@ -15,7 +15,7 @@ import type { Category, HoldingRow, MarketItem, TransactionRow } from "./types.t
  */
 
 const ITEM_COLUMNS =
-  "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence";
+  "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence, image_url";
 
 /**
  * A valuation the holder entered themselves, for an item with no automatic

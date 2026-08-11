@@ -280,7 +280,7 @@ export default function PortfolioScreen() {
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <Card style={{ flexDirection: "row", alignItems: "center", gap: theme.space(3) }}>
-                <Thumb uri={photos[i] ?? null} category={h.item.category} />
+                <Thumb uri={photos[i] ?? null} artUri={h.item.image_url} category={h.item.category} />
 
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: "600" }}>

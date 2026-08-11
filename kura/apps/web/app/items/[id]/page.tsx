@@ -89,6 +89,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       <header className="flex items-start gap-4">
         <HoldingPhoto
           signedUrl={photoUrl}
+          artUrl={item.image_url}
           category={item.category}
           alt={item.name}
           size="lg"

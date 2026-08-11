@@ -25,12 +25,25 @@
  * ("no data") rather than an exception or a wrong number.
  */
 
-import type { SourcePrice } from "./types";
+import type { SourcePrice, SourceSeries } from "./types";
 
 export type { SourcePrice };
 
 const ENDPOINT = "https://api.scryfall.com/cards/named";
 const USER_AGENT = "OhMyAsset/1.0 (collectible portfolio tracker)";
+
+/**
+ * Price plus artwork in one call.
+ *
+ * Kept separate from `fetchScryfallPrice` so the existing price path and its
+ * tests are untouched; both read the same response, so asking for the image
+ * costs no extra request. Scryfall publishes no history, hence the empty array.
+ */
+export async function fetchScryfallSeries(cardName: string): Promise<SourceSeries | null> {
+  const card = await fetchScryfallCard(cardName);
+  if (!card) return null;
+  return { current: card.current, history: [], imageUrl: card.imageUrl };
+}
 
 export async function fetchScryfallPrice(cardName: string): Promise<SourcePrice | null> {
   const url = new URL(ENDPOINT);
@@ -56,6 +69,53 @@ export async function fetchScryfallPrice(cardName: string): Promise<SourcePrice 
     sampleSize: 1,
     source: "scryfall",
   };
+}
+
+/** One request, read twice: the price and the artwork come from one card. */
+async function fetchScryfallCard(
+  cardName: string,
+): Promise<{ current: SourcePrice; imageUrl?: string } | null> {
+  const url = new URL(ENDPOINT);
+  url.searchParams.set("exact", cardName);
+
+  const res = await fetch(url.toString(), {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+
+  const json: unknown = await res.json();
+  const usd = readPrice(json, "usd");
+  if (usd === null) return null;
+
+  return {
+    current: { price: usd, currency: "USD", sampleSize: 1, source: "scryfall" },
+    imageUrl: readImage(json),
+  };
+}
+
+/**
+ * `normal` rather than `png` or `large`: this is drawn at thumbnail size, and
+ * the high-resolution scans are several times the bytes for pixels nobody sees.
+ * Double-faced cards carry their images one level down, under `card_faces`.
+ */
+function readImage(json: unknown): string | undefined {
+  if (typeof json !== "object" || json === null) return undefined;
+
+  const direct = pickNormal((json as { image_uris?: unknown }).image_uris);
+  if (direct) return direct;
+
+  const faces = (json as { card_faces?: unknown }).card_faces;
+  if (!Array.isArray(faces) || faces.length === 0) return undefined;
+  const front = faces[0];
+  if (typeof front !== "object" || front === null) return undefined;
+  return pickNormal((front as { image_uris?: unknown }).image_uris);
+}
+
+function pickNormal(imageUris: unknown): string | undefined {
+  if (typeof imageUris !== "object" || imageUris === null) return undefined;
+  const normal = (imageUris as { normal?: unknown }).normal;
+  return typeof normal === "string" && normal.startsWith("https://") ? normal : undefined;
 }
 
 function readPrice(json: unknown, key: string): number | null {

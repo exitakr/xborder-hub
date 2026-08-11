@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { confidenceFor } from "@oma/core";
 import { fetchPrice, sleep } from "@/lib/ebay";
-import { fetchScryfallPrice } from "@/lib/sources/scryfall";
+import { fetchScryfallSeries } from "@/lib/sources/scryfall";
 import { fetchPokemonTcgSeries } from "@/lib/sources/pokemontcg";
 import { fetchRakutenPrice } from "@/lib/sources/rakuten";
 import type { SourceSeries } from "@/lib/sources/types";
@@ -277,6 +277,9 @@ export async function GET(request: NextRequest) {
           currency: series.current.currency,
           data_confidence: confidenceOf(candidate.sourceType, series.current),
           price_updated_at: new Date().toISOString(),
+          // Only when the source supplied one, so a run against a source that
+          // publishes no artwork never blanks an image an earlier run stored.
+          ...(series.imageUrl ? { image_url: series.imageUrl } : {}),
         })
         .eq("id", id);
 
@@ -396,10 +399,8 @@ async function writeHistory(
 /** Dispatch to whichever source this item is configured for. */
 async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSeries | null> {
   switch (candidate.sourceType) {
-    case "scryfall": {
-      const current = await fetchScryfallPrice(candidate.query);
-      return current ? { current, history: [] } : null;
-    }
+    case "scryfall":
+      return fetchScryfallSeries(candidate.query);
 
     case "pokemontcg":
       return fetchPokemonTcgSeries(candidate.query, fx.eurToUsd);

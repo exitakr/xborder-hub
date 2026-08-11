@@ -150,6 +150,7 @@ export default async function PortfolioPage() {
               >
                 <HoldingPhoto
                   signedUrl={photos[i]}
+                  artUrl={h.item.image_url}
                   category={h.item.category}
                   alt={h.item.name}
                 />

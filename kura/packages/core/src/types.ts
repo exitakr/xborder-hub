@@ -59,6 +59,14 @@ export interface MarketItem {
   currency: Currency;
   price_updated_at: string | null;
   data_confidence: Confidence | null;
+  /**
+   * Card artwork from the pricing source, or null.
+   *
+   * Only Scryfall and pokemontcg.io supply this; every other category is null
+   * by design, since marketplace listing photos belong to their sellers. UI
+   * that shows it must have a non-image fallback — see migration 0014.
+   */
+  image_url: string | null;
 }
 
 /**

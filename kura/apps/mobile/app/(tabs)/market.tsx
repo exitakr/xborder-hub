@@ -15,7 +15,7 @@ import {
 } from "@oma/core";
 import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
-import { Button, Card, CategoryGlyph, Disclaimer } from "../../src/components/ui";
+import { Button, Card, CategoryGlyph, Disclaimer, Thumb } from "../../src/components/ui";
 import { AddItemSheet } from "../../src/components/AddItemSheet";
 import { numericFont, theme } from "../../src/theme";
 import { useColors } from "../../src/ThemeProvider";
@@ -150,20 +150,10 @@ export default function MarketScreen() {
               key={item.id}
               style={{ flexDirection: "row", alignItems: "center", gap: theme.space(3) }}
             >
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: theme.radius.md,
-                  borderWidth: 1,
-                  borderColor: col.line,
-                  backgroundColor: col.canvas,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CategoryGlyph category={item.category} />
-              </View>
+              {/* Artwork where the source publishes it, glyph otherwise. In a
+                  list of same-named printings the picture is what tells them
+                  apart, which is the whole reason to show one here. */}
+              <Thumb uri={null} artUri={item.image_url} category={item.category} />
 
               <Pressable
                 accessibilityRole="button"

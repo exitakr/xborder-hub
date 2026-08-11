@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CATEGORIES, CATEGORY_LABEL_KEY, type getDict } from "@oma/core";
+import { CATEGORIES, CATEGORY_LABEL_KEY, type Locale, type getDict } from "@oma/core";
 import { createAndHoldItem, type NewItemState } from "./actions";
 import { SuggestField } from "./SuggestField";
 
@@ -14,11 +14,13 @@ import { SuggestField } from "./SuggestField";
  */
 export function AddItemForm({
   t,
+  locale,
   defaultName = "",
   defaultCategory,
   open: openProp,
 }: {
   t: ReturnType<typeof getDict>;
+  locale: Locale;
   defaultName?: string;
   defaultCategory?: (typeof CATEGORIES)[number];
   open?: boolean;
@@ -77,6 +79,8 @@ export function AddItemForm({
           category={category}
           hint={t.mkAddOwnNameHint}
           pickLabel={t.mkAddOwnPickExisting}
+          locale={locale}
+          noPriceLabel={t.mkNoPrice}
         />
 
         <div>

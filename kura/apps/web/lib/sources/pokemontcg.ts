@@ -67,8 +67,10 @@ export async function fetchPokemonTcgSeries(
   const card = firstCard(await res.json());
   if (!card) return null;
 
+  const imageUrl = readImage(card);
+
   const cardmarket = readCardmarketSeries(card, eurToUsd, Date.now());
-  if (cardmarket) return cardmarket;
+  if (cardmarket) return { ...cardmarket, imageUrl };
 
   // No Cardmarket data: TCGplayer still gives a defensible current price, but
   // the chart for this item can only build forward from here.
@@ -78,7 +80,20 @@ export async function fetchPokemonTcgSeries(
   return {
     current: { price: market, currency: "USD", sampleSize: 1, source: "pokemontcg_tcgplayer" },
     history: [],
+    imageUrl,
   };
+}
+
+/**
+ * Card artwork. `small` rather than `large`: this is shown at thumbnail size in
+ * a list of search results, and the large scan is roughly ten times the bytes
+ * for pixels nobody sees.
+ */
+function readImage(card: Record<string, unknown>): string | undefined {
+  const images = card.images;
+  if (typeof images !== "object" || images === null) return undefined;
+  const small = (images as { small?: unknown }).small;
+  return typeof small === "string" && small.startsWith("https://") ? small : undefined;
 }
 
 function firstCard(json: unknown): Record<string, unknown> | null {

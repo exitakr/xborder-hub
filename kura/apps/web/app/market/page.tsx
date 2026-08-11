@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { convert, formatMoney, heldItemIds, loadFxRates, searchItems } from "@oma/core";
 import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory } from "@oma/core";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
+import { ItemArt } from "@/components/ItemArt";
 import { AddItemForm } from "./AddItemForm";
 import { SubmitButton } from "@/components/SubmitButton";
 import { addHolding } from "./actions";
@@ -59,7 +60,7 @@ export default async function MarketPage({
           nothing, and only then discover this is where to add it. Adding
           writes to an account, so a visitor is offered one instead. */}
       {profile ? (
-        <AddItemForm t={t} defaultCategory={category ?? undefined} />
+        <AddItemForm t={t} locale={locale} defaultCategory={category ?? undefined} />
       ) : (
         <Link href="/signup" className="btn-secondary w-full">
           {t.mkAddOwn}
@@ -89,6 +90,7 @@ export default async function MarketPage({
             <div className="mx-auto max-w-sm text-left">
               <AddItemForm
                 t={t}
+                locale={locale}
                 defaultName={term}
                 defaultCategory={category ?? undefined}
                 open
@@ -109,9 +111,7 @@ export default async function MarketPage({
 
             return (
               <li key={item.id} className="card flex items-center gap-3 p-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-muted">
-                  <CategoryGlyph category={item.category} className="h-5 w-5" />
-                </div>
+                <ItemArt category={item.category} name={item.name} url={item.image_url} />
 
                 <div className="min-w-0 flex-1">
                   <Link

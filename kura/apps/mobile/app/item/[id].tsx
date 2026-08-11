@@ -151,7 +151,7 @@ export default function ItemScreen() {
     <>
       <ScrollView contentContainerStyle={{ padding: theme.space(4), gap: theme.space(4) }}>
         <View style={{ flexDirection: "row", gap: theme.space(4) }}>
-          <Thumb uri={photoUrl ?? null} category={item.category} size={88} />
+          <Thumb uri={photoUrl ?? null} artUri={item.image_url} category={item.category} size={88} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontSize: 11, color: col.muted }}>
               {t[CATEGORY_LABEL_KEY[item.category]]}
