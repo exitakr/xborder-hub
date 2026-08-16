@@ -21,7 +21,7 @@ const ja = {
   navPortfolio: "資産",
   navMarket: "さがす",
   navMypage: "マイページ",
-  navAdmin: "価格管理",
+  navAdmin: "管理",
   navLogin: "ログイン",
   navLogout: "ログアウト",
   navSignup: "はじめる",
@@ -158,6 +158,19 @@ const ja = {
   pfViewList: "リスト",
   pfViewGrid: "画像",
   pfViewLabel: "表示形式",
+  shareTitle: "ポートフォリオを共有",
+  shareButton: "共有",
+  shareCopy: "リンクをコピー",
+  shareCopied: "コピーしました",
+  shareX: "X に投稿",
+  shareLine: "LINE で送る",
+  shareText: "総資産 {value}（{change}）｜{count}点を記録中",
+  shareNote:
+    "共有されるのは合計評価額・推移・カテゴリ構成のみです。銘柄名・取得価格・写真は含まれません。",
+  shareOff: "共有を停止",
+  shareOn: "共有リンクを作成",
+  shareOffNote: "停止すると、共有済みのリンクは開けなくなります。",
+
 
   // --- market ---
   mkTitle: "銘柄をさがす",
@@ -212,19 +225,19 @@ const ja = {
     "無料で登録すると、この銘柄を保有資産として記録し、価格の推移を追えます。",
 
   // --- community-reported prices ---
-  cmTitle: "みんなの売却実績",
-  cmLead: "利用者が実際に売れた価格として登録したものの中央値です。",
+  cmTitle: "みんなの取引実績",
+  cmLead: "利用者が実際に売買した価格として登録したものの中央値です。購入・売却のどちらも登録できます。",
   cmContributors: "投稿者数",
   cmReports: "投稿件数",
   cmMarker: "売却実績",
-  cmNone: "まだ公開できる売却実績がありません。3人以上の投稿が集まると表示されます。",
+  cmNone: "まだ公開できる取引実績がありません。3人以上の投稿が集まると表示されます。",
   cmWhyThreshold: "1人や2人の投稿は相場ではなく個別の事例のため、公開していません。",
   cmAsking: "出品価格",
   cmRealised: "売却実績",
-  cmReport: "売却実績を登録",
-  cmReportTitle: "売却実績の登録",
+  cmReport: "取引実績を登録",
+  cmReportTitle: "あなたの取引を登録",
   cmReportLead:
-    "実際に売れた価格を登録すると、同じ銘柄を持つ人の参考になります。個々の投稿が他の人に見えることはありません。",
+    "実際に売買した価格を登録すると、同じ銘柄を持つ人の参考になります。個々の投稿が他の人に見えることはありません。",
   cmKind: "種別",
   cmKindSold: "売却した",
   cmKindBought: "購入した",
@@ -437,6 +450,7 @@ const ja = {
   catBag: "バッグ",
   catSneaker: "スニーカー",
   catCar: "高級車",
+  catOther: "その他",
 
   // --- legal (SPEC §1.3 — must appear on every screen) ---
   disclaimer:
@@ -457,7 +471,7 @@ const en: Dict = {
   navPortfolio: "Portfolio",
   navMarket: "Browse",
   navMypage: "Account",
-  navAdmin: "Prices",
+  navAdmin: "Admin",
   navLogin: "Log in",
   navLogout: "Log out",
   navSignup: "Get started",
@@ -590,6 +604,19 @@ const en: Dict = {
   pfViewList: "List",
   pfViewGrid: "Gallery",
   pfViewLabel: "Layout",
+  shareTitle: "Share your portfolio",
+  shareButton: "Share",
+  shareCopy: "Copy link",
+  shareCopied: "Copied",
+  shareX: "Post on X",
+  shareLine: "Send on LINE",
+  shareText: "Total {value} ({change}) · tracking {count} items",
+  shareNote:
+    "Only the total, the trend and the category mix are shared. Item names, what you paid and your photos are not.",
+  shareOff: "Stop sharing",
+  shareOn: "Create share link",
+  shareOffNote: "Existing links stop working as soon as you turn this off.",
+
 
   mkTitle: "Browse items",
   mkSearch: "Search by name or reference",
@@ -642,7 +669,7 @@ const en: Dict = {
     "Create a free account to track this item as part of your portfolio and follow its price.",
 
   // --- community-reported prices ---
-  cmTitle: "Community sale prices",
+  cmTitle: "Community trades",
   cmLead: "The median of what users reported actually selling this for.",
   cmContributors: "Contributors",
   cmReports: "Reports",
@@ -652,8 +679,8 @@ const en: Dict = {
     "One or two reports describe individual sales rather than a market, so they are not published.",
   cmAsking: "Asking price",
   cmRealised: "Sold for",
-  cmReport: "Report a sale",
-  cmReportTitle: "Report a sale",
+  cmReport: "Report a trade",
+  cmReportTitle: "Report your trade",
   cmReportLead:
     "Reporting what you sold for helps others holding the same item. Individual reports are never shown to anyone else.",
   cmKind: "Type",
@@ -865,6 +892,7 @@ const en: Dict = {
   catBag: "Bags",
   catSneaker: "Sneakers",
   catCar: "Cars",
+  catOther: "Others",
 
   disclaimer:
     "Prices shown are reference values derived from past transaction data and do not guarantee any sale price. This app is not an investment advisory or financial instruments business.",

@@ -169,6 +169,17 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         )}
       </section>
 
+      {/*
+        * Hidden when there is no price series to draw.
+        *
+        * Trade markers alone are not a chart. With no observations the line has
+        * nothing to connect, the time axis collapses onto the trade dates, and
+        * the result is two floating dots in an empty box — which reads as a
+        * broken graph rather than as an item nothing prices automatically.
+        * A self-reported valuation has one figure, not a history, so for those
+        * items the trade list below is the honest presentation.
+        */}
+      {points.length + detail.communitySeries.length > 0 && (
       <section className="card p-4">
         <h2 className="mb-2 text-sm font-semibold">{t.itChart}</h2>
         <PriceChart
@@ -186,6 +197,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           }}
         />
       </section>
+      )}
 
       {/* Realised prices sit in their own card rather than beside the asking
           price: they answer a different question, from a different source, and

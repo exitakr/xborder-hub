@@ -685,3 +685,67 @@ export async function heldItemIds(
     .eq("user_id", userId);
   return new Set((data ?? []).map((r) => r.market_item_id as string));
 }
+
+/** A trade, positioned for the portfolio chart. */
+export interface PortfolioTrade {
+  ts: number;
+  type: "buy" | "sell";
+  /** Total for the trade in the display currency: quantity × unit price. */
+  amount: number;
+  itemName: string;
+}
+
+/**
+ * The user's trades, for marking on the total-value chart.
+ *
+ * A portfolio line with nothing on it only says "this went up". With the buys
+ * and sells marked, it says what you did and what happened next — which is the
+ * only reason to keep looking at it. Amounts are trade totals rather than unit
+ * prices, because on this chart the y-axis is a portfolio, and a unit price
+ * plotted against it would be a number in the wrong unit.
+ *
+ * Anything that cannot be converted is dropped rather than shown at face value
+ * in the wrong currency.
+ */
+export async function loadPortfolioTrades(
+  supabase: SupabaseClient,
+  userId: string,
+  displayCurrency: Currency,
+): Promise<PortfolioTrade[]> {
+  const [txRes, fx] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("type, traded_on, quantity, unit_price, currency, holdings(market_items(name))")
+      .eq("user_id", userId)
+      .order("traded_on", { ascending: true })
+      .limit(500),
+    loadFxRates(supabase),
+  ]);
+
+  reportQueryError("loadPortfolioTrades", txRes.error);
+
+  const out: PortfolioTrade[] = [];
+  for (const row of (txRes.data ?? []) as Array<Record<string, unknown>>) {
+    const amount = convert(
+      Number(row.quantity) * Number(row.unit_price),
+      row.currency as Currency,
+      displayCurrency,
+      fx,
+    );
+    if (amount === null) continue;
+
+    // PostgREST nests embedded rows; the shape differs between one-to-one and
+    // one-to-many resolution, so both are accepted rather than assumed.
+    const holding = row.holdings as { market_items?: { name?: string } | Array<{ name?: string }> } | null;
+    const items = holding?.market_items;
+    const name = Array.isArray(items) ? items[0]?.name : items?.name;
+
+    out.push({
+      ts: new Date(`${row.traded_on as string}T00:00:00Z`).getTime(),
+      type: row.type as "buy" | "sell",
+      amount,
+      itemName: name ?? "",
+    });
+  }
+  return out;
+}

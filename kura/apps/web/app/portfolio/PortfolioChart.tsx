@@ -5,6 +5,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,6 +18,7 @@ import {
   windowSeries,
   type Currency,
   type Locale,
+  type PortfolioTrade,
   type Range,
 } from "@oma/core";
 
@@ -54,12 +56,15 @@ function themeColor(name: string, fallback: string): string {
  */
 export function PortfolioChart({
   points,
+  trades = [],
   currency,
   locale,
   emptyLabel,
   rangeLabels,
 }: {
   points: ValuePoint[];
+  /** Buys and sells, marked on the line at the day they happened. */
+  trades?: PortfolioTrade[];
   currency: Currency;
   locale: Locale;
   emptyLabel: string;
@@ -97,6 +102,21 @@ export function PortfolioChart({
       </>
     );
   }
+
+  /*
+   * Trades inside the window, placed on the line rather than at their own
+   * price.
+   *
+   * The y-axis here is a portfolio total, so plotting a trade at its own
+   * amount would put a ¥50,000 purchase near the floor of a ¥3,000,000 chart —
+   * a dot in the wrong unit, pretending to be a data point. Snapping each
+   * marker to the portfolio's value on that day keeps the axis honest and
+   * still answers the question the marker exists for: what did I do, and when.
+   */
+  const marks = trades
+    .filter((tr) => tr.ts >= shown[0].ts && tr.ts <= shown[shown.length - 1].ts)
+    .map((tr) => ({ ...tr, value: valueAt(shown, tr.ts) }))
+    .filter((tr): tr is PortfolioTrade & { value: number } => tr.value !== null);
 
   const first = shown[0].value;
   const last = shown[shown.length - 1].value;
@@ -198,6 +218,26 @@ export function PortfolioChart({
             activeDot={{ r: 4 }}
             isAnimationActive={false}
           />
+
+          {marks.map((m, i) => (
+            <ReferenceDot
+              key={`${m.ts}-${i}`}
+              x={m.ts}
+              y={m.value}
+              r={8}
+              fill={m.type === "buy" ? themeColor("buy", "#1F6FEB") : themeColor("sell", "#F59E0B")}
+              stroke={panel}
+              strokeWidth={2}
+              isFront
+              label={{
+                value: m.type === "buy" ? "B" : "S",
+                fill: "#FFFFFF",
+                fontSize: 9,
+                fontWeight: 700,
+                position: "center",
+              }}
+            />
+          ))}
         </AreaChart>
       </ResponsiveContainer>
       </div>
@@ -229,4 +269,28 @@ function compact(value: number, locale: Locale): string {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
+}
+
+/**
+ * The portfolio's value on a given day, interpolated between the surrounding
+ * observations.
+ *
+ * The series is daily and trades are not, so an exact match is the exception.
+ * Interpolating puts the marker on the line instead of near it; outside the
+ * series entirely it returns null and the marker is dropped, rather than being
+ * pinned to an endpoint where it would claim a date it does not have.
+ */
+function valueAt(points: readonly ValuePoint[], ts: number): number | null {
+  if (points.length === 0) return null;
+  if (points.length === 1) return points[0].value;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (ts < a.ts || ts > b.ts) continue;
+    const span = b.ts - a.ts;
+    if (span === 0) return a.value;
+    return a.value + ((b.value - a.value) * (ts - a.ts)) / span;
+  }
+  return null;
 }

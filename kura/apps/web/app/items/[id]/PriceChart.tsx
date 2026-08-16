@@ -191,7 +191,7 @@ export function PriceChart({
               y={m.unitPrice}
               r={9}
               fill={m.type === "buy" ? ASKING : SELL}
-              stroke="#FFFFFF"
+              stroke={panel}
               strokeWidth={2}
               isFront
               label={{
@@ -200,6 +200,34 @@ export function PriceChart({
                 fontSize: 10,
                 fontWeight: 700,
                 position: "center",
+              }}
+            />
+          ))}
+
+          {/*
+            * The price beside the dot, drawn rather than revealed on hover.
+            *
+            * Recharts' tooltip follows the data series; a ReferenceDot is an
+            * annotation and never triggers it, so hovering a marker showed
+            * nothing at all. Rebuilding the trades as a real series to inherit
+            * the tooltip would put them on the price line, which is the one
+            * thing they must not be confused with. And half the readers are on
+            * a phone, where there is no hover to reveal anything with — so the
+            * figure is simply always on screen.
+            */}
+          {markers.map((m, i) => (
+            <ReferenceDot
+              key={`label-${m.ts}-${i}`}
+              x={m.ts}
+              y={m.unitPrice}
+              r={0}
+              isFront
+              label={{
+                value: `${compact(m.unitPrice, locale)} · ${shortDate(m.ts, locale)}`,
+                fill: axis,
+                fontSize: 10,
+                position: "top",
+                offset: 12,
               }}
             />
           ))}

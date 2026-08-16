@@ -2,10 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getDict } from "@oma/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
-import { loadPortfolio, loadPortfolioSeries } from "@oma/core";
+import { loadPortfolio, loadPortfolioSeries, loadPortfolioTrades } from "@oma/core";
 import { PortfolioChart } from "./PortfolioChart";
 import { createClient } from "@/lib/supabase/server";
 import { fill, formatMoney, formatPercent } from "@oma/core";
+import { site } from "@/lib/site";
+import { ShareButton } from "./ShareButton";
 import { CATEGORY_LABEL_KEY } from "@oma/core";
 import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { Sparkline } from "@/components/Sparkline";
@@ -26,10 +28,19 @@ export default async function PortfolioPage({
   const gallery = viewParam === "grid";
   const t = getDict(profile.locale);
   const supabase = await createClient();
-  const [view, series] = await Promise.all([
+  const [view, series, trades] = await Promise.all([
     loadPortfolio(supabase, profile.userId, profile.currency),
     loadPortfolioSeries(supabase, profile.userId, profile.currency),
+    loadPortfolioTrades(supabase, profile.userId, profile.currency),
   ]);
+
+  // Absent until migration 0019 runs, and absent whenever sharing is off —
+  // both are the same thing to this page: there is no link yet.
+  const { data: shareRow } = await supabase
+    .from("portfolio_shares")
+    .select("token")
+    .maybeSingle();
+  const shareToken = (shareRow?.token as string | undefined) ?? null;
 
   const photos = await Promise.all(
     view.holdings.map((h) => signedPhotoUrl(h.photoPath)),
@@ -65,7 +76,22 @@ export default async function PortfolioPage({
         bottom because they qualify the number rather than compete with it.
       */}
       <section className="card p-5 sm:p-6">
-        <p className="text-sm text-muted">{t.pfTotalValue}</p>
+        {/* The share control sits beside the label, not below the card: this is
+            the thing being shared, and putting the button anywhere else made it
+            ambiguous what "share" referred to. */}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-muted">{t.pfTotalValue}</p>
+          <ShareButton
+            t={t}
+            initialToken={shareToken}
+            origin={site.domain}
+            shareText={fill(t.shareText, {
+              value: formatMoney(totals.totalValue, view.currency, profile.locale),
+              change: formatPercent(totals.unrealizedPct, profile.locale),
+              count: view.holdings.length,
+            })}
+          />
+        </div>
         <p className="tnum mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
           {formatMoney(totals.totalValue, view.currency, profile.locale)}
         </p>
@@ -77,6 +103,7 @@ export default async function PortfolioPage({
         <div className="mt-5">
           <PortfolioChart
             points={series}
+            trades={trades}
             currency={view.currency}
             locale={profile.locale}
             emptyLabel={t.pfValueChartEmpty}

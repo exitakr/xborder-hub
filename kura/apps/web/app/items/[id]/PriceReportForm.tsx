@@ -54,7 +54,11 @@ export function PriceReportForm({
   }
 
   return (
-    <div className="card space-y-4 p-4">
+    // A nested panel inside the community card, not a second card. The form and
+    // the aggregate it feeds are one thing — reading your own trade and the
+    // median it joins as two separate features is what made them look like
+    // duplicates of each other.
+    <div className="space-y-4 rounded-lg border border-line bg-canvas p-3">
       <div>
         <h3 className="text-sm font-semibold">{t.cmReportTitle}</h3>
         <p className="mt-1 text-xs text-muted">{t.cmReportLead}</p>

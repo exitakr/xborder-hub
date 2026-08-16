@@ -84,10 +84,12 @@ export {
   loadItemDetail,
   loadPortfolio,
   loadPortfolioSeries,
+  loadPortfolioTrades,
   searchItems,
   type HoldingView,
   type ItemDetail,
   type PortfolioPoint,
+  type PortfolioTrade,
   type PortfolioView,
   type SelfReportedPrice,
 } from "./queries.ts";
