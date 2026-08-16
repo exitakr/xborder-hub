@@ -21,10 +21,18 @@ export const brand = {
    * shortening the nav labels instead.
    */
   shortName: "OMA",
-  /** Short tagline. Deliberately factual — no investment-advice framing. */
+  /**
+   * Short tagline.
+   *
+   * Describes a record-keeping tool, not a way to make money. "See your
+   * collection as a portfolio" invited exactly the reading we must not invite —
+   * that holding these things is an investment strategy with a return. What the
+   * app actually does is catalogue what you own and show an estimate of what it
+   * is worth today, so that is what the line says.
+   */
   tagline: {
-    ja: "コレクションを、資産として見る。",
-    en: "See your collection as a portfolio.",
+    ja: "コレクションを記録して、推定市場価値を把握する。",
+    en: "Catalogue your collectibles and follow their estimated market value.",
   },
   /**
    * Reverse-DNS identifier, used for the iOS bundle identifier, the Android

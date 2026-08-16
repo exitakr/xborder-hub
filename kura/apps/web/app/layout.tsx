@@ -116,6 +116,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="mt-8 border-t border-line bg-surface">
           <div className="mx-auto flex max-w-app flex-col gap-3 px-4 py-6">
             <Disclaimer t={t} />
+
+            {/* Brand names appear all over this catalogue — Hermès, Cartier,
+                Rolex — and every one of them is somebody else's mark. Saying so
+                on every page is what keeps "we list it" from reading as "they
+                endorse us", and it is the cheapest possible insurance against
+                the complaint that follows otherwise. */}
+            <p className="text-xs leading-relaxed text-muted">{t.trademarkNotice}</p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted">
               <span>© {new Date().getFullYear()} {wordmark(locale)}</span>
               <Link href="/legal/terms" className="rounded hover:text-ink">

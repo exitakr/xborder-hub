@@ -33,11 +33,11 @@ const ja = {
   // --- landing ---
   landingHeadline: "手持ちのコレクションを、ひと目で。",
   landingSub:
-    "カード・時計・バッグ・スニーカー。買った値段と今の相場を並べて、資産としてまとめて見られます。",
+    "カード・時計・バッグ・スニーカー。買った値段と現在の推定市場価値を並べて記録できます。値上がりや収益を約束するものではありません。",
   landingCta: "無料ではじめる",
   landingLogin: "ログイン",
   landingF1Title: "ひと画面で全部わかる",
-  landingF1Body: "カテゴリをまたいだ合計評価額と損益を、開いた瞬間に表示します。",
+  landingF1Body: "カテゴリをまたいだ合計評価額と増減を、開いた瞬間に表示します。",
   landingF2Title: "売買をチャートに重ねる",
   landingF2Body: "買った日・売った日が価格推移の上にマークされ、判断の履歴が残ります。",
   landingF3Title: "出どころのわかる価格",
@@ -158,25 +158,7 @@ const ja = {
   pfViewList: "リスト",
   pfViewGrid: "画像",
   pfViewLabel: "表示形式",
-  shareTitle: "ポートフォリオを共有",
-  shareImageTitle: "画像で共有",
-  shareSave: "画像を保存",
-  shareSaving: "作成中…",
-  shareSystem: "共有",
-  shareLinkSection: "リンクで共有",
-  shareImageNote: "この画像には銘柄名・取得価格・写真は含まれません。",
 
-  shareButton: "共有",
-  shareCopy: "リンクをコピー",
-  shareCopied: "コピーしました",
-  shareX: "X に投稿",
-  shareLine: "LINE で送る",
-  shareText: "総資産 {value}（{change}）｜{count}点を記録中",
-  shareNote:
-    "共有されるのは合計評価額・推移・カテゴリ構成のみです。銘柄名・取得価格・写真は含まれません。",
-  shareOff: "共有を停止",
-  shareOn: "共有リンクを作成",
-  shareOffNote: "停止すると、共有済みのリンクは開けなくなります。",
 
 
   // --- market ---
@@ -461,7 +443,10 @@ const ja = {
 
   // --- legal (SPEC §1.3 — must appear on every screen) ---
   disclaimer:
-    "表示価格は過去の取引データに基づく参考値であり、売買価格を保証するものではありません。本アプリは投資助言・金融商品取引業に該当するサービスではありません。",
+    "本サービスの情報は、コレクションの記録・管理を目的とした参考情報です。投資・金融・税務・法務その他の専門的助言を構成するものではありません。" +
+    "表示価格は公開されている市場情報に基づく推定値であり、実際の取引価格と異なる場合があります。将来の価値・値上がり・運用成果について、いかなる保証も表明も行いません。",
+  trademarkNotice:
+    "記載されている商標・ブランド名は、すべて各権利者に帰属します。Oh My Asset は、本サービスに掲載されるいかなるブランドとも提携・推奨・後援の関係にありません。",
   legalTerms: "利用規約",
   legalPrivacy: "プライバシーポリシー",
   legalContact: "お問い合わせ",
@@ -489,7 +474,7 @@ const en: Dict = {
 
   landingHeadline: "Your collection, at a glance.",
   landingSub:
-    "Cards, watches, bags, sneakers. Put what you paid next to what it trades for today, and see the whole thing as one portfolio.",
+    "Cards, watches, bags, sneakers. Catalogue, organise and monitor the estimated market value of your collectibles in one place. Not a forecast, and no promise of any gain.",
   landingCta: "Start free",
   landingLogin: "Log in",
   landingF1Title: "One screen, everything",
@@ -611,25 +596,7 @@ const en: Dict = {
   pfViewList: "List",
   pfViewGrid: "Gallery",
   pfViewLabel: "Layout",
-  shareTitle: "Share your portfolio",
-  shareImageTitle: "Share as an image",
-  shareSave: "Save image",
-  shareSaving: "Creating…",
-  shareSystem: "Share",
-  shareLinkSection: "Share a link",
-  shareImageNote: "The image contains no item names, purchase prices or photos.",
 
-  shareButton: "Share",
-  shareCopy: "Copy link",
-  shareCopied: "Copied",
-  shareX: "Post on X",
-  shareLine: "Send on LINE",
-  shareText: "Total {value} ({change}) · tracking {count} items",
-  shareNote:
-    "Only the total, the trend and the category mix are shared. Item names, what you paid and your photos are not.",
-  shareOff: "Stop sharing",
-  shareOn: "Create share link",
-  shareOffNote: "Existing links stop working as soon as you turn this off.",
 
 
   mkTitle: "Browse items",
@@ -909,7 +876,11 @@ const en: Dict = {
   catOther: "Others",
 
   disclaimer:
-    "Prices shown are reference values derived from past transaction data and do not guarantee any sale price. This app is not an investment advisory or financial instruments business.",
+    "Information provided on this platform is for informational and collection management purposes only. It does not constitute investment, financial, tax, legal or professional advice. " +
+    "Asset values are estimates based on publicly available market information and may differ from actual transaction prices. " +
+    "No representation or warranty is made regarding future value, appreciation, or investment performance.",
+  trademarkNotice:
+    "All trademarks belong to their respective owners. Oh My Asset is not affiliated with, endorsed by, or sponsored by any brand listed on the platform.",
   legalTerms: "Terms of Service",
   legalPrivacy: "Privacy Policy",
   legalContact: "Contact",

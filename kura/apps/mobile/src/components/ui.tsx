@@ -100,21 +100,22 @@ export function Button({
  * SPEC §1.3: this text must appear on every screen. Each screen renders it at
  * the end of its scroll content.
  */
-export function Disclaimer({ text }: { text: string }) {
+export function Disclaimer({ text, trademark }: { text: string; trademark?: string }) {
   const col = useColors();
+  const style = {
+    fontSize: 11,
+    lineHeight: 16,
+    color: col.muted,
+  } as const;
 
   return (
-    <Text
-      style={{
-        fontSize: 11,
-        lineHeight: 16,
-        color: col.muted,
-        marginTop: theme.space(6),
-        marginBottom: theme.space(4),
-      }}
-    >
-      {text}
-    </Text>
+    <View style={{ marginTop: theme.space(6), marginBottom: theme.space(4), gap: theme.space(2) }}>
+      <Text style={style}>{text}</Text>
+      {/* Every brand name in this catalogue belongs to somebody else. Carrying
+          the notice alongside the disclaimer means it appears wherever the
+          disclaimer does, which SPEC §1.3 already requires to be everywhere. */}
+      {trademark ? <Text style={style}>{trademark}</Text> : null}
+    </View>
   );
 }
 

@@ -212,7 +212,7 @@ export default function MarketScreen() {
         })
       )}
 
-      <Disclaimer text={t.disclaimer} />
+      <Disclaimer text={t.disclaimer} trademark={t.trademarkNotice} />
 
       {adding && userId && (
         <AddItemSheet

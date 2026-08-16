@@ -164,7 +164,7 @@ export default function AccountScreen() {
         <Button label={t.myDeleteAccount} variant="danger" onPress={confirmDelete} busy={busy} />
       </Card>
 
-      <Disclaimer text={t.disclaimer} />
+      <Disclaimer text={t.disclaimer} trademark={t.trademarkNotice} />
     </ScrollView>
   );
 }

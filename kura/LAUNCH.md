@@ -78,10 +78,6 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       適用直後は空で、**次回の価格更新が走ったカードから順に画像が付きます**
       （`/admin` の「価格を今すぐ更新」で即座に反映できます）。
       カード以外（時計・バッグ・車等）は仕様上ずっと空のままです（`docs/RESEARCH.md` §13.4）
-- [ ] `supabase/migrations/0019_portfolio_sharing.sql`
-      ポートフォリオの**共有リンク**。共有されるのは合計額・損益・カテゴリのみで、
-      銘柄名・取得価格・写真・メールは関数の戻り値に含まれません。
-      既定は共有オフ、再有効化のたびにトークンを再発行します
 - [ ] `supabase/migrations/0018_other_category.sql`
       カテゴリ「その他」を追加。価格ソースを持たないため自己申告評価で運用します
 - [ ] `supabase/migrations/0017_admin_portfolios_and_owner.sql`

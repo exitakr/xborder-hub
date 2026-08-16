@@ -70,7 +70,7 @@ export default function LegalScreen() {
         />
       </View>
 
-      <Disclaimer text={t.disclaimer} />
+      <Disclaimer text={t.disclaimer} trademark={t.trademarkNotice} />
     </ScrollView>
   );
 }

@@ -74,12 +74,12 @@ com.ohmyasset.app
 
 **アプリ名（30字以内）**
 ```
-Oh My Asset - コレクション資産管理
+Oh My Asset - コレクション管理
 ```
 
 **サブタイトル（30字以内 / iOS）**
 ```
-カード・時計・スニーカーの資産管理
+カード・時計・スニーカーを記録
 ```
 
 **短い説明（80字以内 / Google Play）**
@@ -89,7 +89,7 @@ Oh My Asset - コレクション資産管理
 
 **説明文**
 ```
-手持ちのコレクションを、株式のポートフォリオのように管理できるアプリです。
+手持ちのコレクションを記録し、推定市場価値を把握できる管理アプリです。
 
 ■ ひと画面で全部わかる
 カテゴリをまたいだ合計評価額と損益を、開いた瞬間に表示します。
@@ -124,25 +124,25 @@ Oh My Asset - コレクション資産管理
 
 **App name**
 ```
-Oh My Asset - Collection Portfolio
+Oh My Asset - Collectibles Tracker
 ```
 
 **Subtitle**
 ```
-Track cards, watches & sneakers
+Track your collectibles' value
 ```
 
 **Short description (Google Play, 80 chars)**
 ```
-See what your cards, watches, bags and sneakers are worth, all in one portfolio.
+Catalog, organize and monitor the estimated market value of your collectibles.
 ```
 
 **Description**
 ```
-Manage your collection the way you'd manage a stock portfolio.
+Catalog, organize and monitor the estimated market value of your collectibles.
 
 ■ Everything on one screen
-Total value and gain/loss across every category, the moment you open the app.
+Estimated total value and change across every category, the moment you open the app.
 Trading cards, watches, bags and sneakers, together.
 
 ■ Your trades, on the chart
@@ -161,14 +161,20 @@ Your holdings and prices are readable only by you. Photos are kept in private
 storage. You can delete everything from inside the app at any time.
 
 ―――
-Prices shown are reference values derived from past transaction data and do not
-guarantee any sale price. This app is not an investment advisory or financial
-instruments business.
+Information provided in this app is for informational and collection management
+purposes only. It does not constitute investment, financial, tax, legal or
+professional advice. Asset values are estimates based on publicly available
+market information and may differ from actual transaction prices. No
+representation or warranty is made regarding future value, appreciation, or
+investment performance.
+
+All trademarks belong to their respective owners. Oh My Asset is not affiliated
+with, endorsed by, or sponsored by any brand listed on the platform.
 ```
 
 **Keywords (iOS)**
 ```
-collection,trading cards,pokemon,watches,sneakers,portfolio,collectibles,tracker,resale,asset
+collection,trading cards,pokemon,watches,sneakers,collectibles,tracker,catalog,inventory,resale
 ```
 
 ---

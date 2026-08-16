@@ -323,7 +323,7 @@ export default function PortfolioScreen() {
         </>
       )}
 
-      <Disclaimer text={t.disclaimer} />
+      <Disclaimer text={t.disclaimer} trademark={t.trademarkNotice} />
     </ScrollView>
   );
 }

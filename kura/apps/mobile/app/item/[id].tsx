@@ -427,7 +427,7 @@ export default function ItemScreen() {
           <Button label={t.itAddToHoldings} onPress={addToHoldings} busy={busy} />
         )}
 
-        <Disclaimer text={t.disclaimer} />
+        <Disclaimer text={t.disclaimer} trademark={t.trademarkNotice} />
       </ScrollView>
 
       {sheet && holdingId && (
