@@ -67,3 +67,45 @@ export async function refreshPricesNow(
     return { error: err instanceof Error ? err.message : "request failed" };
   }
 }
+
+export interface TestEmailState {
+  ok?: boolean;
+  error?: string;
+}
+
+/**
+ * Prove the SMTP configuration end to end, without creating a junk account.
+ *
+ * `shouldCreateUser: false` is the whole trick: this sends a magic link to an
+ * address that ALREADY has an account, so it exercises the exact path a
+ * confirmation email takes — Supabase's own mailer, with whatever SMTP the
+ * project is configured for — and leaves no new user behind. Point it at your
+ * own address: if the mail arrives, delivery works; if it does not, the error
+ * below says why.
+ *
+ * The raw provider error is returned rather than a friendly message. This is an
+ * admin-only diagnostic, and "Error sending confirmation email" versus a 429 is
+ * exactly the distinction that decides what to go and fix.
+ */
+export async function sendTestEmail(
+  _prev: TestEmailState,
+  formData: FormData,
+): Promise<TestEmailState> {
+  const email = z.string().email().safeParse(formData.get("email"));
+  if (!email.success) return { error: "invalid email address" };
+
+  const supabase = await createClient();
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (!isAdmin) return { error: "forbidden" };
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.data,
+    options: { shouldCreateUser: false },
+  });
+
+  if (error) {
+    console.error("[admin] test email failed:", error.message);
+    return { error: error.message };
+  }
+  return { ok: true };
+}

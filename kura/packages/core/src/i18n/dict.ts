@@ -344,6 +344,19 @@ const ja = {
   adKpiAtLimit: "上限到達",
   adKpiNearLimit: "上限間近",
   adKpiConversion: "有料転換率",
+  adEmailTitle: "確認メールの到達状況",
+  adEmailUnconfirmed: "未確認アカウント",
+  adEmailUnconfirmed7: "未確認（7日）",
+  adEmailConfirmRate: "7日間の確認率",
+  adEmailOldest: "最古の未確認",
+  adEmailHours: "時間",
+  adEmailWarn:
+    "未確認が多い場合、確認メールが届いていない可能性があります。Supabase の Custom SMTP 設定をご確認ください（LAUNCH.md A-2.5）。",
+  adEmailTestTitle: "テスト送信",
+  adEmailTestLead:
+    "既存アカウントのメールアドレスにログインリンクを送ります。新規アカウントは作成されません。届けば送信設定は正常です。",
+  adEmailTestSend: "送信",
+  adEmailTestOk: "送信しました。受信箱と迷惑メールをご確認ください。",
   adSetupTitle: "集計関数が見つかりません",
   adSetupBody:
     "Supabase の SQL Editor で 0011_contact_and_admin_kpis.sql（および未適用のマイグレーション）を実行してください。実行後にこのページを再読み込みすると数値が表示されます。",
@@ -735,6 +748,19 @@ const en: Dict = {
   adKpiAtLimit: "At limit",
   adKpiNearLimit: "Near limit",
   adKpiConversion: "Paid conversion",
+  adEmailTitle: "Confirmation email delivery",
+  adEmailUnconfirmed: "Unconfirmed accounts",
+  adEmailUnconfirmed7: "Unconfirmed (7d)",
+  adEmailConfirmRate: "Confirm rate (7d)",
+  adEmailOldest: "Oldest pending",
+  adEmailHours: "h",
+  adEmailWarn:
+    "A high unconfirmed count usually means the email is not arriving. Check Custom SMTP in Supabase (LAUNCH.md A-2.5).",
+  adEmailTestTitle: "Send a test",
+  adEmailTestLead:
+    "Sends a login link to an address that already has an account. No new account is created. If it arrives, sending works.",
+  adEmailTestSend: "Send",
+  adEmailTestOk: "Sent. Check the inbox and the spam folder.",
   adSetupTitle: "Aggregate functions not found",
   adSetupBody:
     "Run 0011_contact_and_admin_kpis.sql — and any other pending migrations — in the Supabase SQL editor, then reload this page.",

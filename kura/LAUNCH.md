@@ -78,6 +78,9 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       適用直後は空で、**次回の価格更新が走ったカードから順に画像が付きます**
       （`/admin` の「価格を今すぐ更新」で即座に反映できます）。
       カード以外（時計・バッグ・車等）は仕様上ずっと空のままです（`docs/RESEARCH.md` §13.4）
+- [ ] `supabase/migrations/0016_email_health.sql`
+      `/admin` に**確認メールの到達状況**（未確認アカウント数・確認率）を表示します。
+      確認メールが届いていないことに気づくための唯一の指標です
 - [ ] `supabase/migrations/0015_plans_and_limits.sql`
       **登録件数の上限（無料20件）と、無制限プランの権利管理**を追加します。
       上限は **DBのトリガーで強制**されます（アプリはPostgRESTに直接書き込むため、
@@ -91,28 +94,73 @@ select public.grant_unlimited(
 );
 ```
 
-### A-2.5. ⚠️ メール送信（SMTP）— 新規登録が失敗する最大の原因
+### A-2.5. ⚠️ メール送信（Resend + Supabase SMTP）
 
-**Supabase の標準メール送信は「1時間に数通」しか送れません。**
-これを超えると新規登録が `429 rate limit` で失敗します。テスト中に
-アカウントを2〜3個作っただけで到達するため、**本番公開前に必ず独自SMTPへ
-切り替えてください。**（切り替えるまで、2人目以降の登録は高確率で失敗します）
+**新規登録が失敗する最大の原因がここです。必ず実施してください。**
 
-- [ ] メール配信サービスに登録（**Resend** 推奨。無料枠 月3,000通・設定が最短）
-      代替: SendGrid / Amazon SES / Postmark
-- [ ] **送信ドメインを認証**する（SPF / DKIM / DMARC の DNS レコードを追加）。
-      これをしないと Gmail に届かず迷惑メール行きになります
-- [ ] Supabase → Project Settings → **Authentication → SMTP Settings** で
-      `Enable Custom SMTP` を有効化し、以下を設定
-      - Sender email: `noreply@<あなたのドメイン>`
-      - Sender name: `Oh My Asset`
-      - Host / Port / Username / Password: 配信サービスの値
-- [ ] Authentication → Rate Limits で `Emails per hour` を引き上げる
-      （独自SMTPにしても、ここが低いままだと同じ症状が続きます）
-- [ ] 実際に別アドレスで新規登録し、**自分のドメインから**メールが届くことを確認
+#### なぜ必要か
 
-> 独自SMTPにすると、確認メールの差出人が `noreply@mail.app.supabase.io` から
-> **自分のドメイン**に変わります。到達率・ブランド・信頼のすべてが改善します。
+Supabase の標準メール送信は **1時間に数通**しか送れず、テストでアカウントを
+2〜3個作るだけで `429 rate limit` に達します。差出人も
+`noreply@mail.app.supabase.io` のままです。
+
+> ⚠️ **重要な前提**: 確認メールを送っているのは**このアプリではなく Supabase 本体**です。
+> アプリ側に Resend の API キーを入れるコードを書いても、認証メールには一切影響しません。
+> 認証メールを変えられるのは **Supabase プロジェクトの Custom SMTP 設定だけ**です。
+> （アプリから送る通知メールを足したい場合は別途 Resend API を使いますが、それとこれは別物です）
+
+#### 手順1: Resend でドメインを認証する（ここを飛ばすと必ず失敗します）
+
+- [ ] https://resend.com に登録
+- [ ] **Domains → Add Domain** で送信ドメインを追加
+      （例: `ohmyasset.com`。まだ取得前なら `xbordercareer.com` でも可）
+- [ ] 表示された **MX / TXT（SPF）/ TXT（DKIM）** を DNS に登録
+      （Xserverドメインまたは Cloudflare の DNS 画面）
+- [ ] Resend の Domains 画面が **Verified** になるまで待つ（通常5〜30分）
+
+> ⚠️ **`onboarding@resend.dev` を使ってはいけません。**
+> Resend のテスト用差出人は、**あなた自身のアカウントのメールアドレス宛にしか送れません**。
+> 他人のアドレスへの送信は黙って失敗します。
+> 「自分では登録できたのに、別のメールアドレスだと登録できない」という症状は、
+> ほぼこれが原因です。
+
+#### 手順2: API キーを発行
+
+- [ ] Resend → **API Keys → Create API Key**（権限は `Sending access` で十分）
+- [ ] `re_` で始まるキーを控える（**再表示されません**）
+
+#### 手順3: Supabase に SMTP を設定
+
+**Oh My Asset のプロジェクト**（x-border-hub ではありません）で:
+
+- [ ] Supabase → **Project Settings → Authentication → SMTP Settings**
+- [ ] `Enable Custom SMTP` を ON にして以下を入力
+
+| 項目 | 値 |
+|---|---|
+| Sender email | `noreply@<認証したドメイン>` |
+| Sender name | `Oh My Asset` |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` ← **固定文字列。メールアドレスではありません** |
+| Password | 手順2の `re_...` API キー |
+
+- [ ] **Save** を押す（押し忘れが非常に多いです）
+
+#### 手順4: レート制限を上げる
+
+- [ ] Supabase → **Authentication → Rate Limits** →
+      `Rate limit for sending emails` を引き上げる（例: 100/時）
+
+> ⚠️ 独自SMTPにしても**ここが既定値のままだと同じ症状が続きます**。
+> SMTP 設定とレート制限は別々の設定です。
+
+#### 手順5: 確認
+
+- [ ] `/admin` の **「確認メールの到達状況」→「テスト送信」** に自分のアドレスを入れて送信
+      （新規アカウントは作られません。エラーが出た場合は原文がそのまま表示されます）
+- [ ] **別のメールアドレス**で実際に新規登録し、自分のドメインから届くことを確認
+- [ ] リンクを開いて、そのままログイン状態になることを確認
 
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration

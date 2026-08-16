@@ -5,6 +5,7 @@ import { requireProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { RefreshPricesButton } from "./RefreshPricesButton";
 import { markContactHandled } from "./actions";
+import { EmailHealth, type EmailHealthRow } from "./EmailHealth";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -72,11 +73,12 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes] = await Promise.all([
+  const [kpiRes, memberRes, messageRes, planRes, emailRes] = await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_members", { p_limit: 200 }),
     supabase.rpc("admin_contact_messages", { p_limit: 100 }),
     supabase.rpc("admin_plan_kpis"),
+    supabase.rpc("admin_email_health"),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -85,6 +87,10 @@ export default async function AdminPage() {
   // Added by migration 0015. Absent rather than fatal on an older database, so
   // a deployment that has not run it yet still gets the rest of the dashboard.
   const plans = (Array.isArray(planRes.data) ? planRes.data[0] : null) as PlanKpis | null;
+  // Migration 0016. Absent on an older database rather than fatal.
+  const emailHealth = (
+    Array.isArray(emailRes.data) ? emailRes.data[0] : null
+  ) as EmailHealthRow | null;
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -169,6 +175,10 @@ export default async function AdminPage() {
               <Kpi label={t.adKpiOpenContact} value={k.contact_open} />
             </dl>
           </section>
+
+          {emailHealth && (
+            <EmailHealth t={t} health={emailHealth} defaultEmail={profile.email ?? ""} />
+          )}
 
           {/* Paid conversion is the first number anyone valuing this business
               asks for, so it sits in the dashboard rather than in a query
