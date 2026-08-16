@@ -53,6 +53,13 @@
 
   body {
     @apply bg-canvas text-ink antialiased;
+    /*
+     * `clip`, not `hidden`: both stop a stray wide element from forcing the
+     * document wider than the screen, but `hidden` on body silently breaks
+     * `position: sticky` for every descendant. This is a backstop — anything
+     * genuinely wide (a data table) still scrolls inside its own container.
+     */
+    overflow-x: clip;
   }
 
   /* A visible focus ring on every interactive element is a launch requirement,

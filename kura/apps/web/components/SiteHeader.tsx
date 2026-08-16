@@ -28,7 +28,7 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             width reads as two different products. */}
         <Link
           href={signedIn ? "/portfolio" : "/"}
-          className="shrink-0 rounded text-sm font-semibold tracking-tight sm:text-base"
+          className="min-w-0 truncate rounded text-sm font-semibold tracking-tight sm:text-base"
         >
           {wordmark(locale)}
           <span className="sr-only"> — {brand.tagline[locale]}</span>
@@ -58,16 +58,29 @@ export function SiteHeader({ locale, signedIn, isAdmin }: Props) {
             <ThemeToggle label={t.themeToggle} />
           </nav>
         ) : (
-          <nav className="ml-auto flex shrink-0 items-center gap-2">
+          /*
+           * `min-w-0` and no `shrink-0`: with the wordmark, two toggles and two
+           * buttons, this row needs 368px in Japanese. On a 320–360px phone
+           * that forced the whole document wider than the viewport, and every
+           * page — not just the header — rendered cut off at the right edge.
+           * Letting the row shrink is what keeps the site inside the screen.
+           */
+          <nav className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
             {/* Signed-in users switch language in /mypage, where it is saved to
                 the account. A visitor has nowhere to save it yet, and choosing
                 whether to sign up is when reading the page matters most. */}
             <LocaleToggle locale={locale} />
             <ThemeToggle label={t.themeToggle} />
-            <Link href="/login" className="btn-secondary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
+            <Link
+              href="/login"
+              className="btn-secondary whitespace-nowrap px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+            >
               {t.navLogin}
             </Link>
-            <Link href="/signup" className="btn-primary px-3 py-1.5 text-sm sm:px-4 sm:py-2">
+            <Link
+              href="/signup"
+              className="btn-primary whitespace-nowrap px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm"
+            >
               {t.navSignup}
             </Link>
           </nav>

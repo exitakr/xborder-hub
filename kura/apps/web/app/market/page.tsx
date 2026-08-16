@@ -9,6 +9,7 @@ import { CATEGORIES, CATEGORY_LABEL_KEY, isCategory } from "@oma/core";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
 import { ItemArt } from "@/components/ItemArt";
 import { AddItemForm } from "./AddItemForm";
+import { SearchBox } from "./SearchBox";
 import { SubmitButton } from "@/components/SubmitButton";
 import { addHolding } from "./actions";
 
@@ -40,20 +41,7 @@ export default async function MarketPage({
     <div className="space-y-5">
       <h1 className="text-2xl font-semibold tracking-tight">{t.mkTitle}</h1>
 
-      <form method="get" role="search" className="flex gap-2">
-        {category && <input type="hidden" name="c" value={category} />}
-        <input
-          type="search"
-          name="q"
-          defaultValue={term}
-          placeholder={t.mkSearch}
-          aria-label={t.mkSearch}
-          className="field"
-        />
-        <button type="submit" className="btn-secondary shrink-0">
-          {t.mkTitle}
-        </button>
-      </form>
+      <SearchBox placeholder={t.mkSearch} initial={term} category={category} />
 
       {/* Above the search box: someone who already knows they own something
           Browse does not have should not have to search for it first, find
