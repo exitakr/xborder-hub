@@ -109,6 +109,51 @@ Supabase の標準メール送信は **1時間に数通**しか送れず、テ�
 > 認証メールを変えられるのは **Supabase プロジェクトの Custom SMTP 設定だけ**です。
 > （アプリから送る通知メールを足したい場合は別途 Resend API を使いますが、それとこれは別物です）
 
+#### 送信サービスの選択
+
+| サービス | 無料枠 | SMTP | 備考 |
+|---|---|---|---|
+| **Brevo**（推奨） | **300通/日**（≈9,000通/月） | ○ | 無期限無料・クレカ不要。この用途では最大 |
+| Mailjet | 6,000通/月（200通/日） | ○ | Brevo が使えない場合の次点 |
+| Resend | 3,000通/月（100通/日） | ○ | **x-border-hub で消費済み** |
+| MailerSend | 500通/月 | ○ | 2025年に大幅減枠。非推奨 |
+| Amazon SES | 62,000通/月 | ○ | **EC2 上のアプリ限定**。Vercel では対象外。審査も必要 |
+
+> 確認メールは1人あたり1〜2通です。**300通/日は1日300人の新規登録に耐えます**。
+> 当面この規模を超えることはないため、Brevo で十分です。
+
+#### 手順1-A: Brevo の場合（推奨）
+
+- [ ] https://www.brevo.com に登録（クレジットカード不要）
+- [ ] **Senders, Domains & Dedicated IPs → Domains → Add a domain** で
+      `ohmyasset.com` を追加
+- [ ] 表示された **DKIM / DMARC / Brevo code** の TXT レコードを Cloudflare DNS に登録
+- [ ] **Authenticated** になるまで待つ（通常10〜30分）
+- [ ] **SMTP & API → SMTP** タブを開き、次を控える
+      - **SMTP server**: `smtp-relay.brevo.com`
+      - **Port**: `587`
+      - **Login**: 表示されている `xxxxxxx@smtp-brevo.com` 形式の文字列
+        （⚠️ ログイン用メールアドレスではありません）
+      - **Password**: 「Generate a new SMTP key」で発行した鍵
+        （⚠️ アカウントのパスワードではありません）
+
+そのうえで **手順3** へ進んでください（Supabase 側の設定値は下表のとおり）。
+
+| 項目 | Brevo の値 |
+|---|---|
+| Host | `smtp-relay.brevo.com` |
+| Port | `587` |
+| Username | `xxxxxxx@smtp-brevo.com` |
+| Password | 発行した SMTP key |
+| Sender email | `noreply@ohmyasset.com` |
+
+> ⚠️ Sender email のドメインは、**Brevo 側で認証済みのドメインと一致**していなければ
+> なりません。未認証ドメインからの送信は拒否されます。
+
+---
+
+#### 手順1-B: Resend の場合（無料枠が空いていれば）
+
 #### 手順1: Resend でドメインを認証する（ここを飛ばすと必ず失敗します）
 
 - [ ] https://resend.com に登録
@@ -231,6 +276,63 @@ where id = (select id from auth.users where email = 'あなたのメールアド
 > ```bash
 > curl -H "Authorization: Bearer $CRON_SECRET" https://<本番ドメイン>/api/cron/refresh-prices
 > ```
+
+---
+
+## B-1. 独立ドメイン `ohmyasset.com` への移行
+
+> **なぜやるか**: `kura.xbordercareer.com` は無関係な親ドメインのサブドメインで、
+> 買い手に譲渡できません（親ドメインごと渡すか、全URLを捨てるかの二択）。
+> インデックスが育つほど移行コストが上がるため、**早いほど安く済みます**。
+
+### ステップ1: Cloudflare で取得
+- [ ] Cloudflare → Domain Registration → Register Domain → `ohmyasset.com`
+- [ ] 取得すると DNS ゾーンは自動作成されます（ネームサーバ変更は不要）
+
+### ステップ2: Vercel に追加
+- [ ] Vercel → **my-asset-app** → Settings → Domains → `ohmyasset.com` を Add
+- [ ] `www.ohmyasset.com` も Add し、`ohmyasset.com` への **Redirect** に設定
+- [ ] Vercel が表示する **CNAME / A レコードの値をそのまま** Cloudflare DNS に登録
+      （⚠️ 値はプロジェクトごとに異なります。他所で見た汎用値を使わないこと）
+- [ ] ⚠️ **該当レコードの Proxy を OFF（グレーの雲）にする。**
+      ON のままだと Vercel の証明書発行が失敗します
+- [ ] Vercel の Domains 画面が **Valid Configuration** になるまで待つ（5〜30分）
+
+### ステップ3: アプリ側の設定（忘れると本番が壊れます）
+
+| 場所 | 設定 | 値 |
+|---|---|---|
+| Vercel → Environment Variables | `NEXT_PUBLIC_SITE_URL` | `https://ohmyasset.com` |
+| Supabase → Authentication → URL Configuration | Site URL | `https://ohmyasset.com` |
+| 同上 → Redirect URLs | 追加 | `https://ohmyasset.com/auth/callback` |
+| 同上 → Redirect URLs | **残す** | `https://kura.xbordercareer.com/auth/callback` |
+
+- [ ] `NEXT_PUBLIC_SITE_URL` 変更後は **Redeploy**（ビルド時に埋め込まれるため）
+- [ ] 旧 Redirect URL を**すぐ消さない**。移行前に送信済みの確認メールが死にます
+
+> sitemap / robots / canonical / OG URL はすべて `NEXT_PUBLIC_SITE_URL` を
+> 参照しているため、コード側で直す箇所はありません。
+
+### ステップ4: メール送信ドメインの切り替え
+- [ ] 送信元を `noreply@ohmyasset.com` に変更（A-2.5 の SMTP 設定）
+- [ ] **新ドメインで SPF / DKIM / DMARC を再設定**
+      （ドメインが変われば認証もやり直しです。ここを忘れると迷惑メール行きになります）
+
+### ステップ5: 旧URLを捨てない
+- [ ] Vercel で `kura.xbordercareer.com` を **301 リダイレクト**として残す
+      （親ドメインを保有する限り無料。インデックスの評価が引き継がれます）
+- [ ] Google Search Console に新ドメインを登録し、**アドレス変更ツール**を実行
+
+### ステップ6: モバイルアプリ
+- [ ] `app.json` の `scheme`（`oma`）は**変更不要**（ディープリンクはスキーム経由）
+- [ ] Supabase の Redirect URLs に `oma://` が入っていることを再確認
+- [ ] ⚠️ バンドルID `com.ohmyasset.app` は**すでに新ドメインと整合**。変更不要
+
+### ステップ7: 確認
+- [ ] `https://ohmyasset.com` が表示される
+- [ ] 旧 `kura.xbordercareer.com` が新ドメインへ 301 される
+- [ ] **新規登録 → 確認メール → リンク → ログイン**が新ドメインで一通り通る
+- [ ] `https://ohmyasset.com/sitemap.xml` の URL が新ドメインになっている
 
 ---
 

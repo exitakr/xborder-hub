@@ -493,6 +493,16 @@ export interface ItemDetail {
   trades: Array<{ ts: number; type: "buy" | "sell"; quantity: number; unitPrice: number }>;
   /** Set when `price` came from the user's own entry rather than from a feed. */
   selfReported: SelfReportedPrice | null;
+  /**
+   * What this user saved, whether or not it is the figure being used.
+   *
+   * `selfReported` answers "is the total built from the user's own number",
+   * which goes null the moment a feed price appears. That made a saved
+   * valuation vanish from the very screen it was entered on — the row was
+   * still in the database, but nothing displayed it, so it read as a save
+   * that had silently failed.
+   */
+  ownValuation: SelfReportedPrice | null;
 }
 
 /**
@@ -616,6 +626,7 @@ export async function loadItemDetail(
           }
         : null,
     selfReported: usingOwn ? own : null,
+    ownValuation: own,
     trades: transactions
       .map((tx) => ({
         ts: new Date(`${tx.traded_on}T00:00:00Z`).getTime(),

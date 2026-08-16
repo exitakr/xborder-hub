@@ -116,7 +116,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
                 {t.srBadge}
               </span>
               {fill(t.srNote, {
-                asOf: detail.selfReported.asOf,
+                asOf: formatDay(detail.selfReported.asOf, locale),
                 source: detail.selfReported.source,
               })}
             </p>
@@ -239,7 +239,10 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       {/* Offered only where no feed answers. An item that already has a market
           price does not need a second one, and two figures side by side would
           just raise the question of which the portfolio total used. */}
-      {item.current_price === null && profile && (
+      {/* Shown whenever the user has one, not only when the item lacks a feed
+          price. A valuation that disappeared the moment a price arrived read
+          as data loss — the row was still there, nothing displayed it. */}
+      {(item.current_price === null || detail.ownValuation) && profile && (
         <section className="card space-y-3 p-4">
           <div>
             <h2 className="text-sm font-semibold">{t.srTitle}</h2>
@@ -250,7 +253,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             marketItemId={item.id}
             defaultCurrency={currency}
             locale={locale}
-            existing={detail.selfReported}
+            existing={detail.ownValuation}
           />
         </section>
       )}
@@ -374,4 +377,18 @@ function hostOf(url: string): string {
   } catch {
     return url;
   }
+}
+
+/**
+ * A stored `YYYY-MM-DD` in the reader's conventions. Noon UTC so a timezone
+ * west of the line cannot shift the calendar day backwards.
+ */
+function formatDay(day: string, locale: "ja" | "en"): string {
+  const parsed = new Date(`${day}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-SG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }

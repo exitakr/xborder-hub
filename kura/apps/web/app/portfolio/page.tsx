@@ -195,7 +195,11 @@ export default async function PortfolioPage({
                       {h.summary.unrealizedPct === null
                         ? t.mkNoPrice
                         : formatPercent(h.summary.unrealizedPct, profile.locale)}
-                      {h.selfReported && <span className="ml-1 text-muted">{t.srBadge}</span>}
+                      {h.selfReported && (
+                        <span className="ml-1 text-muted">
+                          {t.srBadge} · {formatDay(h.selfReported.asOf, profile.locale)}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </Link>
@@ -232,9 +236,14 @@ export default async function PortfolioPage({
                     {formatMoney(h.summary.marketValue, view.currency, profile.locale)}
                   </p>
                   {/* Marked per row so the notice above resolves to specific
-                      holdings rather than leaving the reader to guess which. */}
+                      holdings rather than leaving the reader to guess which —
+                      and dated, because a self-reported figure is only as good
+                      as the day it was checked, and that day is the one fact
+                      that tells the reader whether to trust it. */}
                   {h.selfReported && (
-                    <p className="text-[10px] text-muted">{t.srBadge}</p>
+                    <p className="tnum text-[10px] text-muted">
+                      {t.srBadge} · {formatDay(h.selfReported.asOf, profile.locale)}
+                    </p>
                   )}
                   <p className={`tnum text-xs ${toneFor(h.summary.unrealized)}`}>
                     {h.summary.unrealizedPct === null
@@ -305,4 +314,17 @@ function Stat({
       <dd className={`tnum mt-0.5 text-sm font-medium ${tone}`}>{children}</dd>
     </div>
   );
+}
+
+/**
+ * A stored `YYYY-MM-DD` in the reader's conventions. Noon UTC so a timezone
+ * west of the line cannot shift the calendar day backwards.
+ */
+function formatDay(day: string, locale: "ja" | "en"): string {
+  const parsed = new Date(`${day}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-SG", {
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }

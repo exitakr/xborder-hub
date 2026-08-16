@@ -181,7 +181,7 @@ export default function ItemScreen() {
               <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
                 {t.srBadge} ·{" "}
                 {fill(t.srNote, {
-                  asOf: detail.selfReported.asOf,
+                  asOf: formatDay(detail.selfReported.asOf, profile.locale),
                   source: detail.selfReported.source,
                 })}
               </Text>
@@ -283,17 +283,18 @@ export default function ItemScreen() {
           />
         </Card>
 
-        {/* Offered only where no feed answers. An item that already has a market
-            price does not need a second one, and two figures side by side would
-            just raise the question of which the portfolio total used. */}
-        {item.current_price === null && (
+        {/* Offered where no feed answers — and kept visible whenever the user
+            has saved one, so a valuation does not disappear the moment a market
+            price arrives. It still does not override the feed; it is simply
+            still there. */}
+        {(item.current_price === null || detail.ownValuation) && (
           <Card>
             <Text style={{ fontSize: 13, fontWeight: "600" }}>{t.srTitle}</Text>
             <Text style={{ fontSize: 11, color: col.muted, marginTop: 4 }}>
               {t.srLead}
             </Text>
             <Button
-              label={detail.selfReported ? t.srEdit : t.srAdd}
+              label={detail.ownValuation ? t.srEdit : t.srAdd}
               variant="secondary"
               onPress={() => setValuing(true)}
               style={{ marginTop: theme.space(3) }}
@@ -469,7 +470,7 @@ export default function ItemScreen() {
           t={t}
           marketItemId={id}
           defaultCurrency={profile.currency}
-          existing={detail.selfReported}
+          existing={detail.ownValuation}
           onClose={() => setValuing(false)}
           onSaved={async () => {
             setValuing(false);
@@ -529,4 +530,18 @@ function hostOf(url: string | null): string | null {
   } catch {
     return url;
   }
+}
+
+/**
+ * A stored `YYYY-MM-DD` in the reader's conventions. Noon UTC so a timezone
+ * west of the line cannot shift the calendar day backwards.
+ */
+function formatDay(day: string, locale: "ja" | "en"): string {
+  const parsed = new Date(`${day}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }

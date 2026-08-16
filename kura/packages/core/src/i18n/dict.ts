@@ -253,6 +253,8 @@ const ja = {
   srRemoveConfirm: "この評価額を削除しますか？",
   srErrSource: "情報源を入力してください。",
   srBadge: "自己申告",
+  srSaved: "保存しました。",
+  srAsOfShort: "評価日",
   srUsedFor: "この銘柄の評価額は自己申告値です",
   // {asOf} / {source} / {count} are substituted by `fill()`. Kept as plain
   // strings so the dictionary stays one flat, type-checked shape.
@@ -659,6 +661,8 @@ const en: Dict = {
   srRemoveConfirm: "Remove this valuation?",
   srErrSource: "Please enter where the figure came from.",
   srBadge: "Self-reported",
+  srSaved: "Saved.",
+  srAsOfShort: "Valued",
   srUsedFor: "This item is valued from your own figure",
   srNote: "As of {asOf} · source: {source}",
   srPrivate: "Your figure affects only your own portfolio and is never shown to other users.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { fill, formatMoney, type Currency, type getDict, type SelfReportedPrice } from "@oma/core";
 import {
   deleteSelfReportedPrice,
@@ -33,10 +33,37 @@ export function ValuationForm({
     {},
   );
   const [open, setOpen] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  /*
+   * Close the form when the save succeeds.
+   *
+   * `open` is local state, so a successful save left the filled-in form
+   * exactly as it was: the server data behind it had changed, the fields had
+   * not, and there was no confirmation anywhere. Pressing Save looked like
+   * pressing a dead button, which is why saved valuations were reported as
+   * never having saved at all.
+   */
+  useEffect(() => {
+    if (!state.ok) return;
+    setOpen(false);
+    setJustSaved(true);
+    const timer = setTimeout(() => setJustSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [state.ok]);
 
   if (!open) {
     return (
       <div className="space-y-2">
+        {/* Announced, not just shown: the confirmation replaces a form that has
+            just disappeared, and a screen-reader user gets no other signal
+            that anything happened. */}
+        {justSaved && (
+          <p role="status" className="rounded-lg bg-gain/5 px-3 py-2 text-sm text-gain">
+            {t.srSaved}
+          </p>
+        )}
+
         {existing && (
           <div className="rounded-lg bg-canvas px-3 py-2 text-xs text-muted">
             <p className="tnum text-sm font-medium text-ink">
@@ -46,7 +73,10 @@ export function ValuationForm({
               </span>
             </p>
             <p className="mt-0.5">
-              {fill(t.srNote, { asOf: existing.asOf, source: existing.source })}
+              {fill(t.srNote, {
+                asOf: formatAsOf(existing.asOf, locale),
+                source: existing.source,
+              })}
             </p>
           </div>
         )}
@@ -173,4 +203,21 @@ export function ValuationForm({
       </form>
     </div>
   );
+}
+
+/**
+ * The valuation date, in the reader's own conventions.
+ *
+ * It was rendered as the raw `YYYY-MM-DD` the input produced, which is the one
+ * date format neither launch market writes by hand. Parsed as UTC noon so a
+ * timezone west of the line cannot shift the calendar day backwards.
+ */
+function formatAsOf(asOf: string, locale: "ja" | "en"): string {
+  const parsed = new Date(`${asOf}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return asOf;
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-SG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }

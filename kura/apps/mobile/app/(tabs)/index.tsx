@@ -298,9 +298,13 @@ export default function PortfolioScreen() {
                     {formatMoney(h.summary.marketValue, profile.currency, profile.locale)}
                   </Text>
                   {/* Marked per row so the notice above resolves to specific
-                      holdings rather than leaving the reader to guess which. */}
+                      holdings rather than leaving the reader to guess which —
+                      and dated, because a self-reported figure is only as good
+                      as the day it was checked. */}
                   {h.selfReported && (
-                    <Text style={{ fontSize: 10, color: col.muted }}>{t.srBadge}</Text>
+                    <Text style={{ fontSize: 10, color: col.muted }}>
+                      {t.srBadge} · {formatDay(h.selfReported.asOf, profile.locale)}
+                    </Text>
                   )}
                   <Text
                     style={[
@@ -385,4 +389,15 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
       </Text>
     </View>
   );
+}
+
+/** A stored `YYYY-MM-DD` in the reader's conventions. Noon UTC so a timezone
+ *  west of the line cannot shift the calendar day backwards. */
+function formatDay(day: string, locale: "ja" | "en"): string {
+  const parsed = new Date(`${day}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return day;
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-SG", {
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
 }
