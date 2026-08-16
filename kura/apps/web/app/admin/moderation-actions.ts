@@ -28,6 +28,14 @@ export async function approveItem(formData: FormData) {
     p_identifier: text("identifier"),
     p_search_query: text("search_query"),
     p_category: text("category"),
+    p_aliases: text("aliases"),
+    // Null when blank, so clearing the box does not write 0 and suppress every
+    // future price for the item.
+    p_min_price: (() => {
+      const raw = text("min_price");
+      const n = raw === null ? NaN : Number(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    })(),
   });
 
   revalidatePath("/admin");

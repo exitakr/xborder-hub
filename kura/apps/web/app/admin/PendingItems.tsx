@@ -9,7 +9,11 @@ export interface PendingItem {
   identifier: string | null;
   search_query: string | null;
   source_type: string | null;
+  aliases: string | null;
+  min_price: number | null;
   holders: number;
+  current_price: number | null;
+  currency: string | null;
   created_at: string;
 }
 
@@ -55,6 +59,16 @@ export function PendingItems({
                   )}
                 </span>
                 <span className="tnum">
+                  {/* The fetched price, in the queue, because an implausible one
+                      is the clearest signal that the search query is wrong —
+                      and this is the last moment to fix it before the number
+                      reaches everybody. */}
+                  {item.current_price !== null && (
+                    <span className={item.min_price !== null && Number(item.current_price) < Number(item.min_price) ? "mr-3 text-loss" : "mr-3"}>
+                      {t.adCurrentPrice} {Number(item.current_price).toLocaleString()}{" "}
+                      {item.currency ?? ""}
+                    </span>
+                  )}
                   {t.adHolders} {Number(item.holders)}
                 </span>
               </div>
@@ -114,6 +128,33 @@ export function PendingItems({
                     className="field font-mono text-xs"
                   />
                 </label>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {/* Prefilled by the brand rules (migration 0020) where the
+                      brand is known. Editable because the queue exists for the
+                      brands that are not. */}
+                  <label className="block">
+                    <span className="sr-only">{t.adAliases}</span>
+                    <input
+                      name="aliases"
+                      defaultValue={item.aliases ?? ""}
+                      placeholder={t.adAliases}
+                      className="field text-xs"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="sr-only">{t.adMinPrice}</span>
+                    <input
+                      name="min_price"
+                      type="number"
+                      min="0"
+                      step="any"
+                      defaultValue={item.min_price ?? ""}
+                      placeholder={`${t.adMinPrice} (${item.currency ?? "JPY"})`}
+                      className="field tnum text-xs"
+                    />
+                  </label>
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   <button type="submit" className="btn-primary px-3 py-1.5 text-xs">

@@ -76,6 +76,18 @@ const LANE_CONCURRENCY: Record<SourceType, number> = {
  * whatever was dropped.
  */
 const TIME_BUDGET_MS = 45_000;
+
+/**
+ * How far a price may fall in one day before it is treated as the wrong
+ * product rather than a market move.
+ *
+ * Watches, handbags and cards do not lose four fifths of their value overnight.
+ * When a fetched price does, the overwhelmingly likely explanation is that the
+ * search matched something else this time — a strap instead of the watch, a
+ * charm instead of the bag. Refusing it costs a day of staleness; publishing it
+ * puts an absurd number in somebody's net worth.
+ */
+const COLLAPSE_RATIO = 0.2;
 /**
  * Ceiling on the catalogue read. The whole table is fetched and narrowed in
  * code, so this only exists to keep the request bounded if the catalogue ever
@@ -94,12 +106,18 @@ interface CatalogueRow {
    * than the item — see migration 0013.
    */
   min_price: number | null;
+  /**
+   * The last published price, used as a second, table-free plausibility check.
+   * See COLLAPSE_RATIO below.
+   */
+  current_price: number | null;
 }
 
 type SourceType = "ebay" | "scryfall" | "pokemontcg" | "rakuten" | "curated";
 
 interface Candidate {
   id: string;
+  lastPrice?: number | null;
   sourceType: SourceType;
   query: string;
   minPrice: number | null;
@@ -152,7 +170,7 @@ export async function GET(request: NextRequest) {
     heldItemIds(supabase),
     supabase
       .from("market_items")
-      .select("id, source_type, search_query, price_updated_at, min_price")
+      .select("id, source_type, search_query, price_updated_at, min_price, current_price")
       .limit(CATALOGUE_READ_LIMIT),
   ]);
 
@@ -174,6 +192,7 @@ export async function GET(request: NextRequest) {
       sourceType: row.source_type as SourceType,
       query: row.search_query as string,
       minPrice: row.min_price === null ? null : Number(row.min_price),
+      lastPrice: row.current_price === null ? null : Number(row.current_price),
     });
   }
 
@@ -206,6 +225,7 @@ export async function GET(request: NextRequest) {
 
   let updated = 0;
   let insufficient = 0;
+  let rejected = 0;
   let failed = 0;
   let backfilled = 0;
 
@@ -239,12 +259,36 @@ export async function GET(request: NextRequest) {
       // source removes most of them, but "cheap listings that are internally
       // consistent" is indistinguishable from a real price by any statistic —
       // only knowing what the item cannot possibly cost separates the two.
-      const series =
+      /*
+       * Two independent plausibility checks, and a price has to pass both.
+       *
+       * The floor knows what this item cannot cost. It is the stronger check,
+       * and it is the one that catches a search matching a dust bag rather than
+       * the handbag — but it only exists for items whose brand we recognise
+       * (migration 0020), so it cannot be the only one.
+       *
+       * The collapse check needs no table at all. A price that falls by more
+       * than four fifths against yesterday's published figure, in a market
+       * where nothing moves that fast, is a different product rather than a
+       * crash. It generalises to brands nobody has written a rule for, which is
+       * exactly where the floor is absent.
+       */
+      const belowFloor =
+        fetched && candidate.minPrice !== null && fetched.current.price < candidate.minPrice;
+
+      const collapsed =
         fetched &&
-        candidate.minPrice !== null &&
-        fetched.current.price < candidate.minPrice
-          ? null
-          : fetched;
+        candidate.lastPrice != null &&
+        candidate.lastPrice > 0 &&
+        fetched.current.price < candidate.lastPrice * COLLAPSE_RATIO;
+
+      const series = fetched && !belowFloor && !collapsed ? fetched : null;
+      if (belowFloor || collapsed) {
+        // Named in the response so a refused price is diagnosable without
+        // reading the database: "insufficient" alone cannot tell a thin result
+        // from one that was rejected as implausible.
+        rejected += 1;
+      }
 
       if (!series) {
         // Not an error: we refuse to publish a price we cannot support.
@@ -341,6 +385,8 @@ export async function GET(request: NextRequest) {
     ok: true,
     updated,
     insufficient,
+    // Prices fetched but refused as implausible — see COLLAPSE_RATIO.
+    rejected,
     failed,
     backfilled,
     bySource,
