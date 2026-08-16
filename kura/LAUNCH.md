@@ -91,6 +91,29 @@ select public.grant_unlimited(
 );
 ```
 
+### A-2.5. ⚠️ メール送信（SMTP）— 新規登録が失敗する最大の原因
+
+**Supabase の標準メール送信は「1時間に数通」しか送れません。**
+これを超えると新規登録が `429 rate limit` で失敗します。テスト中に
+アカウントを2〜3個作っただけで到達するため、**本番公開前に必ず独自SMTPへ
+切り替えてください。**（切り替えるまで、2人目以降の登録は高確率で失敗します）
+
+- [ ] メール配信サービスに登録（**Resend** 推奨。無料枠 月3,000通・設定が最短）
+      代替: SendGrid / Amazon SES / Postmark
+- [ ] **送信ドメインを認証**する（SPF / DKIM / DMARC の DNS レコードを追加）。
+      これをしないと Gmail に届かず迷惑メール行きになります
+- [ ] Supabase → Project Settings → **Authentication → SMTP Settings** で
+      `Enable Custom SMTP` を有効化し、以下を設定
+      - Sender email: `noreply@<あなたのドメイン>`
+      - Sender name: `Oh My Asset`
+      - Host / Port / Username / Password: 配信サービスの値
+- [ ] Authentication → Rate Limits で `Emails per hour` を引き上げる
+      （独自SMTPにしても、ここが低いままだと同じ症状が続きます）
+- [ ] 実際に別アドレスで新規登録し、**自分のドメインから**メールが届くことを確認
+
+> 独自SMTPにすると、確認メールの差出人が `noreply@mail.app.supabase.io` から
+> **自分のドメイン**に変わります。到達率・ブランド・信頼のすべてが改善します。
+
 ### A-3. 認証設定
 - [ ] Authentication → URL Configuration
   - Site URL: `https://<本番ドメイン>`

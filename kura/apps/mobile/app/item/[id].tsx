@@ -24,6 +24,7 @@ import { usePhotoUrls } from "../../src/usePhotoUrls";
 import { numericFont, theme, toneColor } from "../../src/theme";
 import { intlLocale } from "../../src/i18n";
 import { useColors } from "../../src/ThemeProvider";
+import { alertHoldingLimit, isHoldingLimitError } from "../../src/limits";
 
 export default function ItemScreen() {
   const col = useColors();
@@ -72,8 +73,13 @@ export default function ItemScreen() {
     const { error } = await supabase
       .from("holdings")
       .insert({ user_id: userId, market_item_id: id });
-    if (!error || error.code === "23505") await load();
     setBusy(false);
+
+    if (isHoldingLimitError(error)) {
+      alertHoldingLimit(t);
+      return;
+    }
+    if (!error || error.code === "23505") await load();
   }
 
   async function pickPhoto() {

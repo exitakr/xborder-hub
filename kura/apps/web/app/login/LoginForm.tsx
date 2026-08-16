@@ -2,7 +2,15 @@
 
 import { useActionState, useState } from "react";
 import type { getDict } from "@oma/core";
-import { sendMagicLink, signIn, signInWithGoogle, type AuthState } from "./actions";
+import { authErrorMessage } from "@/lib/auth-messages";
+import { ResendConfirmation } from "@/components/ResendConfirmation";
+import {
+  resendConfirmation,
+  sendMagicLink,
+  signIn,
+  signInWithGoogle,
+  type AuthState,
+} from "./actions";
 
 type Dict = ReturnType<typeof getDict>;
 
@@ -19,9 +27,16 @@ export function LoginForm({ t, next }: { t: Dict; next: string }) {
   return (
     <div className="space-y-4">
       {state.error && (
-        <p role="alert" className="rounded-lg bg-loss/5 px-3 py-2 text-sm text-loss">
-          {t.txErrGeneric}
-        </p>
+        <div role="alert" className="space-y-2 rounded-lg bg-loss/5 px-3 py-2 text-sm text-loss">
+          <p>{authErrorMessage(t, state.error)}</p>
+          {/* An unconfirmed account cannot be rescued by trying again — the
+              only way out is another email, so offer one right here rather
+              than sending the user back to signup, where signing up again
+              would fail because the account already exists. */}
+          {state.error === "unconfirmed" && (
+            <ResendConfirmation t={t} email={state.email ?? ""} action={resendConfirmation} />
+          )}
+        </div>
       )}
       {magicState.notice === "magic" && (
         <p role="status" className="rounded-lg bg-gain/5 px-3 py-2 text-sm text-gain">

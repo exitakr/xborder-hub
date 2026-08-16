@@ -173,13 +173,34 @@ grant execute on function public.has_unlimited(uuid) to authenticated;
 grant execute on function public.free_holding_limit() to authenticated, anon;
 
 /**
+ * May the caller award entitlements?
+ *
+ * Two callers legitimately can: an admin working in the dashboard, and a
+ * payment webhook running as the service role after verifying a receipt.
+ *
+ * The service-role branch is not a convenience — without it the webhook path
+ * is impossible. `is_admin()` reads `auth.uid()`, which is NULL for a
+ * service-role connection, so an admin-only check would reject the very caller
+ * that is supposed to record purchases.
+ */
+create or replace function public.may_grant_entitlements()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select public.is_admin()
+      or coalesce(auth.jwt() ->> 'role', '') = 'service_role';
+$$;
+
+/**
  * Record a purchase.
  *
- * SECURITY DEFINER and admin-only. This is the function a payment webhook will
- * call once a provider is wired up: the server verifies the receipt with Apple,
- * Google or Stripe FIRST, then calls this with the verified transaction id.
- * It must never be reachable by a client, because a client that can call it can
- * award itself the paid plan — hence no grant to `authenticated`.
+ * The order of operations matters and is not enforceable here: the server
+ * verifies the receipt with Apple, Google or Stripe FIRST, and only then calls
+ * this with the verified transaction id. Calling it on an unverified receipt
+ * gives away the product.
  *
  * Idempotent on `receipt_id`: stores retry their webhooks, and a retried
  * delivery must not create a second grant.
@@ -197,7 +218,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_admin() then
+  if not public.may_grant_entitlements() then
     raise exception 'forbidden';
   end if;
 
@@ -219,17 +240,23 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_admin() then
+  if not public.may_grant_entitlements() then
     raise exception 'forbidden';
   end if;
   delete from public.entitlements where user_id = p_user;
 end;
 $$;
 
--- Deliberately NOT granted to `authenticated`. Only the service role (a
--- verified payment webhook) and an admin session may call these.
-revoke execute on function public.grant_unlimited(uuid, text, text, timestamptz, text) from public, authenticated;
-revoke execute on function public.revoke_unlimited(uuid) from public, authenticated;
+-- Callable by any signed-in session, and refused inside the function unless the
+-- caller is an admin or the service role.
+--
+-- That is the same pattern as migration 0011's admin functions, and it is the
+-- safe direction: the check lives in one place that every caller goes through,
+-- rather than in a GRANT that a later migration could quietly widen. An earlier
+-- draft revoked and then re-granted these in adjacent statements, which read as
+-- if execute were withheld while in fact granting it — the check below is what
+-- was doing the work either way, so say so plainly.
+grant execute on function public.may_grant_entitlements() to authenticated;
 grant execute on function public.grant_unlimited(uuid, text, text, timestamptz, text) to authenticated;
 grant execute on function public.revoke_unlimited(uuid) to authenticated;
 

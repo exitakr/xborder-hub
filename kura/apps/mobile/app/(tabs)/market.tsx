@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   CATEGORIES,
@@ -17,6 +17,7 @@ import { supabase } from "../../src/supabase";
 import { useSession } from "../../src/session";
 import { Button, Card, CategoryGlyph, Disclaimer, Thumb } from "../../src/components/ui";
 import { AddItemSheet } from "../../src/components/AddItemSheet";
+import { alertHoldingLimit, isHoldingLimitError } from "../../src/limits";
 import { numericFont, theme } from "../../src/theme";
 import { useColors } from "../../src/ThemeProvider";
 
@@ -72,8 +73,17 @@ export default function MarketScreen() {
     const { error } = await supabase
       .from("holdings")
       .insert({ user_id: userId, market_item_id: itemId });
+
+    // A refused add used to do nothing at all — no message, no navigation —
+    // which reads as a broken button rather than as a limit.
+    if (isHoldingLimitError(error)) {
+      alertHoldingLimit(t);
+      return;
+    }
+
     // 23505 = already held; navigating on is the right outcome either way.
     if (!error || error.code === "23505") router.push(`/item/${itemId}`);
+    else Alert.alert(t.errorTitle, t.errorBody);
   }
 
   return (

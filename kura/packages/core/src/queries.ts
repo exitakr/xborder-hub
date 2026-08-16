@@ -14,8 +14,110 @@ import type { Category, HoldingRow, MarketItem, TransactionRow } from "./types.t
  * their collection is worth.
  */
 
-const ITEM_COLUMNS =
-  "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence, image_url";
+/**
+ * Columns every deployment has, since migration 0001.
+ */
+const ITEM_COLUMNS_BASE =
+  "id, category, name, detail, identifier, source_type, source_url, current_price, currency, price_updated_at, data_confidence";
+
+/** Base columns plus anything a later migration added. */
+const ITEM_COLUMNS = `${ITEM_COLUMNS_BASE}, image_url`;
+
+/**
+ * Whether this database has the columns a recent migration adds.
+ *
+ * WHY THIS EXISTS
+ *
+ * Code deploys the moment it is pushed; a migration is run by a human, later.
+ * For the window in between, a query naming a column that does not exist yet
+ * fails — and because these functions returned `data ?? []`, that failure did
+ * not surface as an error. It surfaced as an empty catalogue and an empty
+ * portfolio: the app looked like it had lost the user's data.
+ *
+ * So the rule this encodes is: a request for an optional column must never be
+ * able to cost us the rows. The full list is tried once, and if the database
+ * says the column is unknown, every later query in this process uses the base
+ * list instead. One wasted round trip per process, and the app works on both
+ * sides of a migration.
+ *
+ * The negative answer is remembered only for a few minutes. A long-lived
+ * server that probed before the migration ran would otherwise keep serving
+ * imageless rows until someone restarted it — the operator applies the
+ * migration and nothing changes, which is its own confusing bug. Re-probing
+ * costs one failed query every few minutes at worst.
+ *
+ * `null` = not yet determined.
+ */
+let hasOptionalItemColumns: boolean | null = null;
+let probedAt = 0;
+const PROBE_TTL_MS = 5 * 60_000;
+
+/** Forget the cached schema probe. Exported for tests; not part of the package's public surface. */
+export function __resetSchemaProbe(): void {
+  hasOptionalItemColumns = null;
+  probedAt = 0;
+}
+
+interface QueryResult<T> {
+  data: T | null;
+  error: { code?: string; message?: string } | null;
+}
+
+/** 42703 is Postgres's `undefined_column`. PostgREST forwards it verbatim. */
+function isUnknownColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "42703" || /column .* does not exist/i.test(error.message ?? "");
+}
+
+/**
+ * Run a query that selects item columns, degrading if the optional ones are
+ * not there yet.
+ *
+ * `run` is called with a column list rather than being handed a builder,
+ * because PostgREST builders cannot be re-executed once awaited — a retry has
+ * to construct a fresh one.
+ */
+async function withItemColumns<T>(
+  run: (columns: string) => PromiseLike<QueryResult<T>>,
+): Promise<QueryResult<T>> {
+  if (hasOptionalItemColumns === false && Date.now() - probedAt < PROBE_TTL_MS) {
+    return run(ITEM_COLUMNS_BASE);
+  }
+
+  const full = await run(ITEM_COLUMNS);
+  if (!full.error) {
+    hasOptionalItemColumns = true;
+    probedAt = Date.now();
+    return full;
+  }
+  if (!isUnknownColumn(full.error)) return full;
+
+  hasOptionalItemColumns = false;
+  probedAt = Date.now();
+  return run(ITEM_COLUMNS_BASE);
+}
+
+/**
+ * A query failed for a reason we did not plan for.
+ *
+ * Logged rather than thrown: one broken panel is better than a broken page,
+ * and every caller here already renders an empty state. But it must not be
+ * SILENT — an invisible failure is what turned a missing column into
+ * "the app deleted my collection".
+ */
+function reportQueryError(where: string, error: { message?: string } | null): void {
+  if (!error) return;
+  console.error(`[queries] ${where}: ${error.message ?? "unknown error"}`);
+}
+
+/**
+ * Fill in columns an older database does not have, so callers can rely on the
+ * shape regardless of which migrations have been applied.
+ */
+function normaliseItem<T>(row: T): T {
+  // Spread order matters: the default comes first so a real value overrides it.
+  return { image_url: null, ...row };
+}
 
 /**
  * A valuation the holder entered themselves, for an item with no automatic
@@ -69,10 +171,13 @@ export async function loadPortfolio(
   displayCurrency: Currency,
 ): Promise<PortfolioView> {
   const [holdingsRes, txRes, fx, ownRes] = await Promise.all([
-    supabase
-      .from("holdings")
-      .select(`id, market_item_id, photo_path, note, market_items(${ITEM_COLUMNS})`)
-      .eq("user_id", userId),
+    withItemColumns<HoldingRow[]>(
+      (columns) =>
+        supabase
+          .from("holdings")
+          .select(`id, market_item_id, photo_path, note, market_items(${columns})`)
+          .eq("user_id", userId) as unknown as PromiseLike<QueryResult<HoldingRow[]>>,
+    ),
     supabase
       .from("transactions")
       .select("id, holding_id, type, traded_on, quantity, unit_price, currency")
@@ -84,7 +189,11 @@ export async function loadPortfolio(
       .eq("user_id", userId),
   ]);
 
-  const holdingRows = (holdingsRes.data ?? []) as unknown as HoldingRow[];
+  reportQueryError("loadPortfolio.holdings", holdingsRes.error);
+  const holdingRows = ((holdingsRes.data ?? []) as unknown as HoldingRow[]).map((row) => ({
+    ...row,
+    market_items: row.market_items ? normaliseItem(row.market_items) : row.market_items,
+  })) as unknown as HoldingRow[];
   const txRows = (txRes.data ?? []) as TransactionRow[];
   const ownPrices = ownPriceMap(ownRes.data, displayCurrency, fx);
 
@@ -403,14 +512,18 @@ export async function loadItemDetail(
   userId: string | null,
   displayCurrency: Currency,
 ): Promise<ItemDetail | null> {
-  const { data: itemRow } = await supabase
-    .from("market_items")
-    .select(ITEM_COLUMNS)
-    .eq("id", itemId)
-    .maybeSingle();
+  const { data: itemRow, error: itemError } = await withItemColumns<MarketItem>(
+    (columns) =>
+      supabase
+        .from("market_items")
+        .select(columns)
+        .eq("id", itemId)
+        .maybeSingle() as unknown as PromiseLike<QueryResult<MarketItem>>,
+  );
 
+  reportQueryError("loadItemDetail", itemError);
   if (!itemRow) return null;
-  const item = itemRow as MarketItem;
+  const item = normaliseItem(itemRow) as MarketItem;
 
   const [
     { data: holding },
@@ -526,24 +639,28 @@ export async function searchItems(
   supabase: SupabaseClient,
   { term, category, limit = 200 }: { term?: string; category?: Category | null; limit?: number },
 ): Promise<MarketItem[]> {
-  let query = supabase.from("market_items").select(ITEM_COLUMNS).order("name").limit(limit);
+  const { data, error } = await withItemColumns<MarketItem[]>((columns) => {
+    let query = supabase.from("market_items").select(columns).order("name").limit(limit);
 
-  if (category) query = query.eq("category", category);
+    if (category) query = query.eq("category", category);
 
-  const trimmed = (term ?? "").trim().slice(0, 80);
-  if (trimmed) {
-    // Escape PostgREST's `or` delimiters so a comma or paren in the search box
-    // cannot alter the filter expression.
-    const safe = trimmed.replace(/[,()]/g, " ");
-    // `aliases` is what makes a Japanese-language search match a catalogue
-    // named in English (エルメス against Hermès) — see migration 0008/0009.
-    query = query.or(
-      `name.ilike.%${safe}%,detail.ilike.%${safe}%,identifier.ilike.%${safe}%,aliases.ilike.%${safe}%`,
-    );
-  }
+    const trimmed = (term ?? "").trim().slice(0, 80);
+    if (trimmed) {
+      // Escape PostgREST's `or` delimiters so a comma or paren in the search box
+      // cannot alter the filter expression.
+      const safe = trimmed.replace(/[,()]/g, " ");
+      // `aliases` is what makes a Japanese-language search match a catalogue
+      // named in English (エルメス against Hermès) — see migration 0008/0009.
+      query = query.or(
+        `name.ilike.%${safe}%,detail.ilike.%${safe}%,identifier.ilike.%${safe}%,aliases.ilike.%${safe}%`,
+      );
+    }
 
-  const { data } = await query;
-  return (data ?? []) as MarketItem[];
+    return query as unknown as PromiseLike<QueryResult<MarketItem[]>>;
+  });
+
+  reportQueryError("searchItems", error);
+  return (data ?? []).map(normaliseItem) as MarketItem[];
 }
 
 /** Catalogue ids the user already holds, for "in holdings" badges. */

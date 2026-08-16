@@ -43,7 +43,7 @@ const ja = {
   landingF3Title: "出どころのわかる価格",
   landingF3Body: "価格には必ず参照元と取得日時が付きます。推測値は「データ不足」と表示します。",
   landingShotPortfolio: "評価額合計",
-  landingShotPicker: "ボッテガヴェネタ カセ",
+  landingShotPicker: "エルメス ケリー25",
   landingShotItem: "楽天市場・2026年8月11日 取得",
   landingShotNote: "※ 画面はイメージです。数値はサンプルです。",
   landingSeeTitle: "登録すると、こう見えます",
@@ -74,6 +74,24 @@ const ja = {
   authToSignIn: "すでにアカウントをお持ちの方",
   authDisplayName: "表示名",
   authPasswordHint: "8文字以上",
+  authErrGeneric: "アカウントを作成できませんでした。時間をおいて再度お試しください。",
+  authErrRate:
+    "確認メールの送信回数が上限に達しました。しばらく時間をおいてから、もう一度お試しください。",
+  authErrWeakPassword: "パスワードは8文字以上で、推測されにくいものにしてください。",
+  authErrEmail: "このメールアドレスは使用できません。入力内容をご確認ください。",
+  authErrInvalidLogin: "メールアドレスまたはパスワードが正しくありません。",
+  authErrNotConfirmed:
+    "メールアドレスの確認が完了していません。確認メールのリンクを開いてください。",
+  authErrLinkExpired:
+    "確認リンクの有効期限が切れているか、すでに使用済みです。下記から再送できます。",
+  authConfirmTitle: "確認メールを送信しました",
+  authConfirmBody:
+    "{email} 宛にメールを送信しました。本文のリンクを開くと登録が完了し、そのままログインした状態で始められます。",
+  authConfirmSpam: "数分待っても届かない場合は、迷惑メールフォルダをご確認ください。",
+  authResend: "確認メールを再送する",
+  authResent: "再送しました。メールをご確認ください。",
+  authBackToLogin: "ログイン画面へ",
+
 
   // --- portfolio ---
   pfTitle: "ポートフォリオ",
@@ -421,7 +439,7 @@ const en: Dict = {
   landingF2Body:
     "Buys and sells are marked directly on the price history, so your decisions stay visible.",
   landingShotPortfolio: "Total value",
-  landingShotPicker: "Bottega Veneta Casse",
+  landingShotPicker: "Hermes Kelly 25",
   landingShotItem: "Rakuten · fetched 11 Aug 2026",
   landingShotNote: "Illustrative screens. Figures are samples.",
   landingSeeTitle: "This is what you get",
@@ -454,6 +472,22 @@ const en: Dict = {
   authToSignIn: "Already have an account?",
   authDisplayName: "Display name",
   authPasswordHint: "8 characters or more",
+  authErrGeneric: "We could not create the account. Please try again shortly.",
+  authErrRate:
+    "Too many confirmation emails have been sent. Please wait a little and try again.",
+  authErrWeakPassword: "Use at least 8 characters, and something hard to guess.",
+  authErrEmail: "That email address cannot be used. Please check it and try again.",
+  authErrInvalidLogin: "That email address or password is not correct.",
+  authErrNotConfirmed: "Your email is not confirmed yet. Open the link we sent you.",
+  authErrLinkExpired:
+    "That confirmation link has expired or has already been used. You can send a new one below.",
+  authConfirmTitle: "Check your email",
+  authConfirmBody:
+    "We sent a message to {email}. Open the link in it and your account is ready — you will be signed in straight away.",
+  authConfirmSpam: "If it has not arrived after a few minutes, check your spam folder.",
+  authResend: "Send it again",
+  authResent: "Sent. Please check your email.",
+  authBackToLogin: "Back to sign in",
 
   pfTitle: "Portfolio",
   pfTotalValue: "Total value",

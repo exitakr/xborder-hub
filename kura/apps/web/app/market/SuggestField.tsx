@@ -8,7 +8,8 @@ export interface Suggestion {
   id: string;
   name: string;
   detail: string | null;
-  image_url: string | null;
+  /** Absent on a database that has not run migration 0014 yet. */
+  image_url?: string | null;
   current_price: number | null;
   currency: string | null;
 }
@@ -65,14 +66,27 @@ export function SuggestField({
     const timer = setTimeout(async () => {
       const supabase = createClient();
       const safe = term.replace(/[,()]/g, " ");
-      const { data } = await supabase
-        .from("market_items")
-        .select("id, name, detail, image_url, current_price, currency")
-        .eq("category", category)
-        .or(`name.ilike.%${safe}%,aliases.ilike.%${safe}%`)
-        .limit(6);
 
-      if (active) setMatches((data ?? []) as Suggestion[]);
+      const search = (columns: string) =>
+        supabase
+          .from("market_items")
+          .select(columns)
+          .eq("category", category)
+          .or(`name.ilike.%${safe}%,aliases.ilike.%${safe}%`)
+          .limit(6);
+
+      // `image_url` arrives with migration 0014. Asking for it on a database
+      // that has not run yet fails the whole query, and a picker that silently
+      // returns nothing is far worse than one without pictures — so the
+      // artwork is what gets dropped, never the suggestions.
+      let { data, error } = await search(
+        "id, name, detail, image_url, current_price, currency",
+      );
+      if (error) {
+        ({ data } = await search("id, name, detail, current_price, currency"));
+      }
+
+      if (active) setMatches((data ?? []) as unknown as Suggestion[]);
     }, 250);
 
     return () => {
@@ -109,7 +123,7 @@ export function SuggestField({
                   href={`/items/${m.id}`}
                   className="flex items-center gap-2.5 rounded px-1 py-1.5 hover:bg-surface"
                 >
-                  <Art name={m.name} url={m.image_url} />
+                  <Art name={m.name} url={m.image_url ?? null} />
 
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm">{m.name}</span>

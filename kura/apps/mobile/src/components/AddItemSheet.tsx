@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CATEGORIES, CATEGORY_LABEL_KEY, getDict, newItemSchema, type Category } from "@oma/core";
+import { alertHoldingLimit, isHoldingLimitError } from "../limits";
 import { supabase } from "../supabase";
 import { Button, Card } from "./ui";
 import { theme } from "../theme";
@@ -72,9 +73,26 @@ export function AddItemSheet({
       return;
     }
 
-    await supabase.from("holdings").insert({ user_id: userId, market_item_id: itemId });
+    const { error: holdError } = await supabase
+      .from("holdings")
+      .insert({ user_id: userId, market_item_id: itemId });
 
     setBusy(false);
+
+    // The catalogue row was created and is now available to everyone, so it is
+    // not rolled back — only the holding was refused. Saying so beats closing
+    // the sheet as if it had worked, which is what happened before: the error
+    // was discarded and the user was navigated to an item they did not hold.
+    if (isHoldingLimitError(holdError)) {
+      alertHoldingLimit(t);
+      onClose();
+      return;
+    }
+    if (holdError) {
+      setError(t.txErrGeneric);
+      return;
+    }
+
     onAdded(itemId as string);
   }
 

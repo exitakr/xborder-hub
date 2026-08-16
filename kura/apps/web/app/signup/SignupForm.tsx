@@ -1,17 +1,38 @@
 "use client";
 
 import { useActionState } from "react";
-import type { getDict } from "@oma/core";
-import { signInWithGoogle, signUp, type AuthState } from "../login/actions";
+import { fill, type getDict } from "@oma/core";
+import { authErrorMessage } from "@/lib/auth-messages";
+import { resendConfirmation, signInWithGoogle, signUp, type AuthState } from "../login/actions";
+import { ResendConfirmation } from "@/components/ResendConfirmation";
 
 export function SignupForm({ t }: { t: ReturnType<typeof getDict> }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signUp, {});
 
+  /*
+   * The confirmation step is a screen, not a one-line notice.
+   *
+   * This is the single highest-drop-off moment in the product: the account
+   * exists but is unusable until the person finds an email and clicks it. So
+   * it names the address the message went to (the commonest failure is a typo,
+   * and only the user can spot it), says what happens when they click, points
+   * at the spam folder, and offers a resend — because "nothing arrived" with
+   * no way forward is where a new user is simply lost.
+   */
   if (state.notice === "confirm") {
     return (
-      <p role="status" className="rounded-lg bg-gain/5 px-3 py-3 text-sm text-gain">
-        {t.authMagicSent}
-      </p>
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-gain">{t.authConfirmTitle}</p>
+        <p className="text-sm leading-relaxed">
+          {fill(t.authConfirmBody, { email: state.email ?? "" })}
+        </p>
+        <p className="text-xs text-muted">{t.authConfirmSpam}</p>
+        <ResendConfirmation
+          t={t}
+          email={state.email ?? ""}
+          action={resendConfirmation}
+        />
+      </div>
     );
   }
 
@@ -19,7 +40,7 @@ export function SignupForm({ t }: { t: ReturnType<typeof getDict> }) {
     <div className="space-y-4">
       {state.error && (
         <p role="alert" className="rounded-lg bg-loss/5 px-3 py-2 text-sm text-loss">
-          {t.txErrGeneric}
+          {authErrorMessage(t, state.error)}
         </p>
       )}
 
