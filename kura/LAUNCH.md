@@ -128,44 +128,76 @@ Supabase の標準メール送信は **1時間に数通**しか送れず、テ�
 
 #### 手順1-A: Brevo の場合（推奨）
 
-- [ ] https://www.brevo.com に登録（クレジットカード不要）
-- [ ] **Senders, Domains & Dedicated IPs → Domains → Add a domain** で
-      `ohmyasset.com` を追加
-- [ ] 表示された **DKIM / DMARC / Brevo code** の TXT レコードを Cloudflare DNS に登録
-- [ ] **Authenticated** になるまで待つ（通常10〜30分）
-- [ ] **SMTP & API → SMTP** タブを開き、次を控える
-      - **SMTP server**: `smtp-relay.brevo.com`
-      - **Port**: `587`
-      - **Login**: 表示されている `xxxxxxx@smtp-brevo.com` 形式の文字列
-        （⚠️ ログイン用メールアドレスではありません）
-      - **Password**: 「Generate a new SMTP key」で発行した鍵
-        （⚠️ アカウントのパスワードではありません）
+> ## ⚠️ 最重要：`Senders` ではなく `Domains` を使うこと
+>
+> Brevo には送信元を許可する画面が**2つ**あり、片方は行き止まりです。
+>
+> | 画面 | 方式 | 必要なもの |
+> |---|---|---|
+> | **Senders**（❌ 使わない） | そのアドレス宛に**確認コードをメール送信** | `noreply@` の**受信箱** |
+> | **Domains**（✅ こちら） | **DNS レコード**でドメイン所有を証明 | Cloudflare の DNS のみ |
+>
+> `noreply@` に受信箱は存在しないので、**Senders では永久に完了できません**。
+> ドメイン認証を通せば、`noreply@` も `support@` も**個別確認なしで送信可能**になります。
 
-そのうえで **手順3** へ進んでください（Supabase 側の設定値は下表のとおり）。
+**A-1. Brevo でドメインを追加**
+- [ ] Brevo → **Senders, Domains & Dedicated IPs → Domains** タブ
+      （⚠️ 隣の `Senders` タブではありません）
+- [ ] **Add a domain** → `ohmyasset.com` を入力
+- [ ] 表示される3つのレコードを控える
+      - **Brevo code**（TXT）
+      - **DKIM**（TXT・ホスト名は `brevo._domainkey`）
+      - **DMARC**（TXT・ホスト名は `_dmarc`）
 
-| 項目 | Brevo の値 |
+> SPF と MX は**共有IPでは不要**です（Brevo が要求するのは専用IPの場合のみ）。
+
+**A-2. Cloudflare DNS に登録**
+- [ ] Cloudflare → `ohmyasset.com` → **DNS → Records → Add record**
+- [ ] 3件とも **Type: TXT** で追加
+
+| Name（Cloudflare の入力欄） | Content |
 |---|---|
-| Host | `smtp-relay.brevo.com` |
-| Port | `587` |
-| Username | `xxxxxxx@smtp-brevo.com` |
-| Password | 発行した SMTP key |
-| Sender email | `noreply@ohmyasset.com` |
+| `@` | Brevo code の値 |
+| `brevo._domainkey` | DKIM の値（`k=rsa;p=...`） |
+| `_dmarc` | `v=DMARC1; p=none; rua=mailto:あなたのGmail` |
 
-> ⚠️ Sender email のドメインは、**Brevo 側で認証済みのドメインと一致**していなければ
-> なりません。未認証ドメインからの送信は拒否されます。
+> ⚠️ **Name 欄にドメイン名を含めないでください。**
+> Cloudflare は自動でドメインを補完するため、`brevo._domainkey.ohmyasset.com` と
+> 入力すると `brevo._domainkey.ohmyasset.com.ohmyasset.com` になり、認証が通りません。
+>
+> ⚠️ **DMARC レコードは1ドメインに1つだけ**です。既にある場合は追加せず、既存を編集します。
+>
+> ℹ️ TXT レコードに Proxy（オレンジの雲）の設定はありません。CNAME/A とは異なり
+> 気にする必要はありません。
+
+- [ ] Brevo の Domains 画面に戻り **Verify / Authenticate** を実行
+- [ ] **Authenticated** になるまで待つ（通常10〜30分、最大24時間）
+
+**A-3. 受信箱を作る（Cloudflare Email Routing・無料）**
+
+ドメイン認証だけで送信はできますが、**`noreply@` 宛の返信は消滅します**。
+利用者は確認メールに普通に返信してくるため、受信経路は用意すべきです。
+
+- [ ] Cloudflare → `ohmyasset.com` → **Email → Email Routing** を有効化
+- [ ] **Destination addresses** に `exitakr@gmail.com` を追加し、届いた確認リンクを開く
+- [ ] **Routing rules** で `support@ohmyasset.com` → Gmail の転送を作成
+- [ ] 必要な MX / SPF レコードは Cloudflare が自動追加します（**Add records** を押す）
+
+> 💡 **送信元は `noreply@` より `support@` を推奨します。**
+> 返信が届く方が利用者体験として明確に良く、`noreply@` は問い合わせを
+> 黙って捨てる設計です。Email Routing を設定すれば、どちらも実在します。
+
+**A-4. Supabase に SMTP を設定** → 下の **手順3** へ進んでください。
 
 ---
 
 #### 手順1-B: Resend の場合（無料枠が空いていれば）
 
-#### 手順1: Resend でドメインを認証する（ここを飛ばすと必ず失敗します）
+> 現在 Resend の無料枠は x-border-hub が消費済みのため、通常は A のままで進めます。
 
-- [ ] https://resend.com に登録
-- [ ] **Domains → Add Domain** で送信ドメインを追加
-      （例: `ohmyasset.com`。まだ取得前なら `xbordercareer.com` でも可）
-- [ ] 表示された **MX / TXT（SPF）/ TXT（DKIM）** を DNS に登録
-      （Xserverドメインまたは Cloudflare の DNS 画面）
-- [ ] Resend の Domains 画面が **Verified** になるまで待つ（通常5〜30分）
+- [ ] Resend に登録し **Domains → Add Domain** でドメインを認証
+
+- [ ] 表示された TXT レコードを Cloudflare DNS に登録し、**Verified** を待つ
 
 > ⚠️ **`onboarding@resend.dev` を使ってはいけません。**
 > Resend のテスト用差出人は、**あなた自身のアカウントのメールアドレス宛にしか送れません**。
@@ -187,7 +219,7 @@ Supabase の標準メール送信は **1時間に数通**しか送れず、テ�
 
 | 項目 | 値 |
 |---|---|
-| Sender email | `noreply@<認証したドメイン>` |
+| Sender email | `support@<認証したドメイン>`（返信が届くため推奨） |
 | Sender name | `Oh My Asset` |
 | Host | `smtp.resend.com` |
 | Port | `465` |
