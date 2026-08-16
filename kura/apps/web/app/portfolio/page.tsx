@@ -10,6 +10,7 @@ import { CATEGORY_LABEL_KEY } from "@oma/core";
 import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { Sparkline } from "@/components/Sparkline";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
+import { InfoTip } from "@/components/InfoTip";
 
 export const metadata: Metadata = { title: "Portfolio" };
 
@@ -101,15 +102,30 @@ export default async function PortfolioPage({
           <Stat label={t.myItemCount}>{view.holdings.length}</Stat>
         </dl>
 
+        {/*
+          * The caveats, behind an "i".
+          *
+          * The total is one number built from more than one kind of evidence,
+          * and saying so beside the number rather than in a footer nobody reads
+          * is what makes it a disclosure rather than a caveat. But at full
+          * length it was four lines of grey text under the figure the screen
+          * exists to show, competing with it and losing. A labelled control
+          * keeps the admission one tap from the number without burying the
+          * number underneath it.
+          */}
         {(totals.excludedCount > 0 || view.selfReportedCount > 0) && (
-          <div className="mt-4 space-y-1.5 border-t border-line pt-3 text-xs leading-relaxed text-muted">
-            {totals.excludedCount > 0 && <p>{t.pfExcluded}</p>}
-            {/* The total is one number built from more than one kind of evidence.
-                Saying so where the number is, rather than in a footer nobody
-                reads, is the difference between a caveat and a disclosure. */}
-            {view.selfReportedCount > 0 && (
-              <p>{fill(t.srPortfolioNotice, { count: view.selfReportedCount })}</p>
-            )}
+          <div className="mt-3 flex items-center justify-end gap-1.5 text-xs text-muted">
+            <span>{t.pfNotesShort}</span>
+            <InfoTip label={t.pfNotesLabel}>
+              <span className="block space-y-2">
+                {totals.excludedCount > 0 && <span className="block">{t.pfExcluded}</span>}
+                {view.selfReportedCount > 0 && (
+                  <span className="block">
+                    {fill(t.srPortfolioNotice, { count: view.selfReportedCount })}
+                  </span>
+                )}
+              </span>
+            </InfoTip>
           </div>
         )}
       </section>

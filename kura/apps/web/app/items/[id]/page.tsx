@@ -124,9 +124,18 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </div>
       </header>
 
-      {/* Provenance sits directly under the price: a number without a source is
-          exactly what this product refuses to show. */}
+      {/*
+        * Provenance sits directly under the price: a number without a source is
+        * exactly what this product refuses to show.
+        *
+        * Shown only when a feed has actually produced a price. An item created
+        * by a user is assigned a source at creation, so an entry nothing has
+        * ever priced was still captioned "Source: eBay" — crediting a venue
+        * that had never been asked about it, under a valuation the holder had
+        * typed themselves. No feed price, no attribution.
+        */}
       <section className="card space-y-1.5 p-4 text-xs text-muted">
+        {item.current_price !== null && (
         <p>
           {t.itSource}: {sourceLabel(item.source_type, locale)}
           {item.source_url && (
@@ -143,21 +152,26 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             </>
           )}
         </p>
-        <p>
-          {t.itUpdatedAt}:{" "}
-          {item.price_updated_at
-            ? new Date(item.price_updated_at).toLocaleString(
-                locale === "ja" ? "ja-JP" : "en-SG",
-              )
-            : t.noData}
-        </p>
-        <p>
-          {t.itConfidence}: {confidenceLabel(t, item.data_confidence)}
-        </p>
-        {(item.data_confidence === "low" || item.data_confidence === "insufficient") && (
-          <p className="mt-1 rounded-lg bg-canvas px-3 py-2 text-muted">
-            {t.itLowConfidenceWarn}
-          </p>
+        )}
+        {item.current_price !== null && (
+          <>
+            <p>
+              {t.itUpdatedAt}:{" "}
+              {item.price_updated_at
+                ? new Date(item.price_updated_at).toLocaleString(
+                    locale === "ja" ? "ja-JP" : "en-SG",
+                  )
+                : t.noData}
+            </p>
+            <p>
+              {t.itConfidence}: {confidenceLabel(t, item.data_confidence)}
+            </p>
+            {(item.data_confidence === "low" || item.data_confidence === "insufficient") && (
+              <p className="mt-1 rounded-lg bg-canvas px-3 py-2 text-muted">
+                {t.itLowConfidenceWarn}
+              </p>
+            )}
+          </>
         )}
         {/* Says why there is no number, rather than leaving "insufficient" to
             be read as a failure of the app. For a brand-name-only entry the

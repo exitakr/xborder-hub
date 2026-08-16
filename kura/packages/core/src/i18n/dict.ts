@@ -158,6 +158,8 @@ const ja = {
   pfViewList: "リスト",
   pfViewGrid: "画像",
   pfViewLabel: "表示形式",
+  pfNotesLabel: "この数値について",
+  pfNotesShort: "算出の前提",
 
 
 
@@ -372,6 +374,14 @@ const ja = {
   adExportItems: "銘柄別",
   adExportMessages: "問い合わせ",
   adExportNote: "個人情報を含みます。取り扱いにご注意ください。",
+  adPending: "公開待ちの銘柄",
+  adPendingLead:
+    "利用者が追加した銘柄です。承認するまで、追加した本人以外には表示されません。表記を整えてから公開してください。",
+  adPendingNone: "公開待ちの銘柄はありません。",
+  adApprove: "修正して公開",
+  adReject: "非公開のまま",
+  adSearchQuery: "検索クエリ",
+  adAddedBy: "追加日",
   adEmailTitle: "確認メールの到達状況",
   adEmailUnconfirmed: "未確認アカウント",
   adEmailUnconfirmed7: "未確認（7日）",
@@ -596,6 +606,8 @@ const en: Dict = {
   pfViewList: "List",
   pfViewGrid: "Gallery",
   pfViewLabel: "Layout",
+  pfNotesLabel: "About this figure",
+  pfNotesShort: "How this is calculated",
 
 
 
@@ -807,6 +819,14 @@ const en: Dict = {
   adExportItems: "By item",
   adExportMessages: "Messages",
   adExportNote: "Contains personal data. Handle accordingly.",
+  adPending: "Items awaiting review",
+  adPendingLead:
+    "Added by users. Until approved they are visible only to the person who added them. Tidy the wording before publishing.",
+  adPendingNone: "Nothing is waiting for review.",
+  adApprove: "Fix and publish",
+  adReject: "Keep private",
+  adSearchQuery: "Search query",
+  adAddedBy: "Added",
   adEmailTitle: "Confirmation email delivery",
   adEmailUnconfirmed: "Unconfirmed accounts",
   adEmailUnconfirmed7: "Unconfirmed (7d)",

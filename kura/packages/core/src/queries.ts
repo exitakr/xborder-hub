@@ -382,7 +382,7 @@ export async function loadPortfolioSeries(
   const [{ data: txRows }, { data: snapRows }, fx] = await Promise.all([
     supabase
       .from("transactions")
-      .select("holding_id, type, traded_on, quantity")
+      .select("holding_id, type, traded_on, quantity, unit_price, currency")
       .eq("user_id", userId),
     supabase
       .from("price_snapshots")
@@ -396,12 +396,14 @@ export async function loadPortfolioSeries(
   interface DayBucket {
     deltas: Array<[itemId: string, delta: number]>;
     prices: Map<string, number>;
+    /** What the user paid, per unit, for buys settled that day. */
+    costs: Array<[itemId: string, unitCost: number, quantity: number]>;
   }
   const days = new Map<string, DayBucket>();
   const bucket = (day: string): DayBucket => {
     let b = days.get(day);
     if (!b) {
-      b = { deltas: [], prices: new Map() };
+      b = { deltas: [], prices: new Map(), costs: [] };
       days.set(day, b);
     }
     return b;
@@ -412,10 +414,19 @@ export async function loadPortfolioSeries(
     type: "buy" | "sell";
     traded_on: string;
     quantity: number;
+    unit_price: number;
+    currency: string;
   }>) {
     const itemId = holdingToItem.get(tx.holding_id);
     if (!itemId) continue;
-    bucket(tx.traded_on).deltas.push([itemId, tx.type === "buy" ? tx.quantity : -tx.quantity]);
+
+    const day = bucket(tx.traded_on);
+    day.deltas.push([itemId, tx.type === "buy" ? tx.quantity : -tx.quantity]);
+
+    if (tx.type === "buy" && isCurrency(tx.currency)) {
+      const unit = convert(Number(tx.unit_price), tx.currency, displayCurrency, fx);
+      if (unit !== null) day.costs.push([itemId, unit, tx.quantity]);
+    }
   }
 
   for (const snap of (snapRows ?? []) as Array<{
@@ -434,24 +445,56 @@ export async function loadPortfolioSeries(
 
   const qty = new Map<string, number>();
   const lastPrice = new Map<string, number>();
+  /** Running average of what the holder paid, per unit, in the display currency. */
+  const avgCost = new Map<string, { units: number; spend: number }>();
   const series: PortfolioPoint[] = [];
 
   for (const day of [...days.keys()].sort()) {
     const b = days.get(day)!;
     for (const [itemId, delta] of b.deltas) qty.set(itemId, (qty.get(itemId) ?? 0) + delta);
     for (const [itemId, price] of b.prices) lastPrice.set(itemId, price);
-
-    let value = 0;
-    let priced = false;
-    for (const [itemId, q] of qty) {
-      if (q <= 0) continue;
-      const p = lastPrice.get(itemId);
-      if (p === undefined) continue;
-      value += p * q;
-      priced = true;
+    for (const [itemId, unit, units] of b.costs) {
+      const acc = avgCost.get(itemId) ?? { units: 0, spend: 0 };
+      acc.units += units;
+      acc.spend += unit * units;
+      avgCost.set(itemId, acc);
     }
 
-    if (priced) series.push({ ts: new Date(`${day}T00:00:00Z`).getTime(), value });
+    let value = 0;
+    let valued = false;
+    for (const [itemId, q] of qty) {
+      if (q <= 0) continue;
+
+      /*
+       * Market price where we have one, cost where we do not.
+       *
+       * Snapshots only exist from the day this deployment first ran its
+       * refresh, so every day before that had no price for anything and was
+       * skipped entirely — which is why the chart covered two days and the
+       * range buttons did nothing no matter what dates the trades carried.
+       *
+       * Falling back to what the holder actually paid is not a market claim
+       * invented to fill the gap: it is the one figure we genuinely hold for
+       * those days, and valuing a position at cost until it has been
+       * repriced is the ordinary convention. The line then steps to market
+       * value on the first day a real observation exists, which is visible
+       * rather than hidden.
+       */
+      const price = lastPrice.get(itemId);
+      if (price !== undefined) {
+        value += price * q;
+        valued = true;
+        continue;
+      }
+
+      const cost = avgCost.get(itemId);
+      if (cost && cost.units > 0) {
+        value += (cost.spend / cost.units) * q;
+        valued = true;
+      }
+    }
+
+    if (valued) series.push({ ts: new Date(`${day}T00:00:00Z`).getTime(), value });
   }
 
   return series;
@@ -674,16 +717,46 @@ export async function searchItems(
   return (data ?? []).map(normaliseItem) as MarketItem[];
 }
 
-/** Catalogue ids the user already holds, for "in holdings" badges. */
+/**
+ * Catalogue ids the user currently holds, for the "in holdings" badge.
+ *
+ * Open positions only — buys minus sells above zero. A holding row survives
+ * selling out, deliberately, so the trade history is not destroyed by closing a
+ * position; but Browse was reading that row as "you own this" and kept the
+ * badge on items the portfolio had already stopped counting. Two screens, two
+ * answers about the same item.
+ */
 export async function heldItemIds(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Set<string>> {
-  const { data } = await supabase
-    .from("holdings")
-    .select("market_item_id")
-    .eq("user_id", userId);
-  return new Set((data ?? []).map((r) => r.market_item_id as string));
+  const [holdingsRes, txRes] = await Promise.all([
+    supabase.from("holdings").select("id, market_item_id").eq("user_id", userId),
+    supabase.from("transactions").select("holding_id, type, quantity").eq("user_id", userId),
+  ]);
+
+  reportQueryError("heldItemIds", holdingsRes.error);
+
+  const holdings = (holdingsRes.data ?? []) as Array<{ id: string; market_item_id: string }>;
+  const net = new Map<string, number>();
+  for (const tx of (txRes.data ?? []) as Array<{
+    holding_id: string;
+    type: "buy" | "sell";
+    quantity: number;
+  }>) {
+    const delta = tx.type === "buy" ? tx.quantity : -tx.quantity;
+    net.set(tx.holding_id, (net.get(tx.holding_id) ?? 0) + delta);
+  }
+
+  const held = new Set<string>();
+  for (const h of holdings) {
+    // A holding with no transactions at all is one the user has just added and
+    // not yet recorded a purchase against. That is still "tracking it", so it
+    // keeps the badge — only a position that was opened and then closed loses it.
+    const qty = net.get(h.id);
+    if (qty === undefined || qty > 0) held.add(h.market_item_id);
+  }
+  return held;
 }
 
 /** A trade, positioned for the portfolio chart. */

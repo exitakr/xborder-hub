@@ -78,6 +78,11 @@ SQL Editor に貼り付けて実行します。**順番を守ってください�
       適用直後は空で、**次回の価格更新が走ったカードから順に画像が付きます**
       （`/admin` の「価格を今すぐ更新」で即座に反映できます）。
       カード以外（時計・バッグ・車等）は仕様上ずっと空のままです（`docs/RESEARCH.md` §13.4）
+- [ ] `supabase/migrations/0019_catalogue_moderation.sql`
+      **利用者が追加した銘柄を、管理者が承認するまで非公開**にします。
+      追加した本人には即座に見え、保有・評価・グラフも通常どおり使えます。
+      承認は `/admin` の「公開待ちの銘柄」から、表記を修正しながら行えます。
+      ⚠️ 既存の初期カタログ（`created_by` が NULL の行）は自動的に承認済みになります
 - [ ] `supabase/migrations/0018_other_category.sql`
       カテゴリ「その他」を追加。価格ソースを持たないため自己申告評価で運用します
 - [ ] `supabase/migrations/0017_admin_portfolios_and_owner.sql`

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { RefreshPricesButton } from "./RefreshPricesButton";
 import { markContactHandled } from "./actions";
 import { EmailHealth, type EmailHealthRow } from "./EmailHealth";
+import { PendingItems, type PendingItem } from "./PendingItems";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -87,13 +88,15 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes] = await Promise.all([
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes] =
+    await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
     supabase.rpc("admin_contact_messages", { p_limit: 100 }),
     supabase.rpc("admin_plan_kpis"),
     supabase.rpc("admin_email_health"),
     supabase.rpc("admin_top_items", { p_limit: 30 }),
+    supabase.rpc("admin_pending_items", { p_limit: 200 }),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -107,6 +110,8 @@ export default async function AdminPage() {
     Array.isArray(emailRes.data) ? emailRes.data[0] : null
   ) as EmailHealthRow | null;
   const topItems = (topRes.data ?? []) as TopItem[];
+  // Migration 0019. Absent on a database that has not run it yet.
+  const pending = (pendingRes.data ?? []) as PendingItem[];
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -191,6 +196,11 @@ export default async function AdminPage() {
               <Kpi label={t.adKpiOpenContact} value={k.contact_open} />
             </dl>
           </section>
+
+          {/* First, because it is the only panel with a queue behind it: every
+              item sitting here is invisible to everyone but the person who
+              added it until somebody looks. */}
+          {!pendingRes.error && <PendingItems t={t} locale={profile.locale} items={pending} />}
 
           {emailHealth && (
             <EmailHealth t={t} health={emailHealth} defaultEmail={profile.email ?? ""} />
