@@ -32,16 +32,30 @@ interface Kpis {
 }
 
 interface Member {
-  id: string;
+  user_id: string;
   email: string | null;
   display_name: string | null;
   locale: string | null;
   base_currency: string | null;
-  is_admin: boolean;
   created_at: string;
+  last_activity: string | null;
+  confirmed: boolean;
+  unlimited: boolean;
   holdings_count: number;
   transactions_count: number;
-  last_activity: string | null;
+  tracked_value_jpy: number;
+  cost_jpy: number;
+  categories: string | null;
+}
+
+interface TopItem {
+  item_id: string;
+  name: string;
+  category: string;
+  holders: number;
+  current_price: number | null;
+  currency: string | null;
+  confidence: string | null;
 }
 
 interface PlanKpis {
@@ -73,12 +87,13 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes] = await Promise.all([
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes] = await Promise.all([
     supabase.rpc("admin_kpis"),
-    supabase.rpc("admin_members", { p_limit: 200 }),
+    supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
     supabase.rpc("admin_contact_messages", { p_limit: 100 }),
     supabase.rpc("admin_plan_kpis"),
     supabase.rpc("admin_email_health"),
+    supabase.rpc("admin_top_items", { p_limit: 30 }),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -91,6 +106,7 @@ export default async function AdminPage() {
   const emailHealth = (
     Array.isArray(emailRes.data) ? emailRes.data[0] : null
   ) as EmailHealthRow | null;
+  const topItems = (topRes.data ?? []) as TopItem[];
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -243,9 +259,14 @@ export default async function AdminPage() {
           </section>
 
           <section className="card p-5">
-            <h2 className="text-sm font-semibold">
-              {t.adContact} <span className="tnum text-muted">({messages.length})</span>
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="text-sm font-semibold">
+                {t.adContact} <span className="tnum text-muted">({messages.length})</span>
+              </h2>
+              <a href="/admin/export?type=messages" className="btn-secondary px-3 py-1.5 text-xs">
+                {t.adExport}
+              </a>
+            </div>
 
             {messages.length === 0 ? (
               <p className="mt-4 text-sm text-muted">{t.adNoContact}</p>
@@ -286,36 +307,111 @@ export default async function AdminPage() {
           </section>
 
           <section className="card p-5">
-            <h2 className="text-sm font-semibold">
-              {t.adMembers} <span className="tnum text-muted">({members.length})</span>
-            </h2>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="text-sm font-semibold">
+                {t.adTopItems} <span className="tnum text-muted">({topItems.length})</span>
+              </h2>
+              <a href="/admin/export?type=items" className="btn-secondary px-3 py-1.5 text-xs">
+                {t.adExport}
+              </a>
+            </div>
 
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[42rem] text-left text-sm">
+              <table className="w-full min-w-[32rem] text-left text-sm">
+                <thead className="text-xs text-muted">
+                  <tr className="border-b border-line">
+                    <th className="pb-2 pr-3 font-medium">{t.mkAddOwnName}</th>
+                    <th className="pb-2 pr-3 font-medium">{t.mkCategory}</th>
+                    <th className="pb-2 pr-3 text-right font-medium">{t.adHolders}</th>
+                    <th className="pb-2 text-right font-medium">{t.pfValue}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topItems.map((i) => (
+                    <tr key={i.item_id} className="border-b border-line/60">
+                      <td className="py-2 pr-3">
+                        <Link href={`/items/${i.item_id}`} className="rounded hover:underline">
+                          {i.name}
+                        </Link>
+                      </td>
+                      <td className="py-2 pr-3 text-muted">{i.category}</td>
+                      <td className="tnum py-2 pr-3 text-right">{Number(i.holders)}</td>
+                      <td className="tnum py-2 text-right">
+                        {i.current_price === null
+                          ? <span className="text-muted">{t.mkNoPrice}</span>
+                          : formatMoney(
+                              Number(i.current_price),
+                              (i.currency ?? "JPY") as "JPY" | "SGD" | "USD",
+                              profile.locale,
+                            )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">
+                  {t.adPortfolios} <span className="tnum text-muted">({members.length})</span>
+                </h2>
+                {/* Stated at the point of download, not buried in a policy: the
+                    file is personal data the moment it leaves this page. */}
+                <p className="mt-1 text-xs text-muted">{t.adExportNote}</p>
+              </div>
+              <a href="/admin/export?type=members" className="btn-secondary px-3 py-1.5 text-xs">
+                {t.adExport}
+              </a>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[54rem] text-left text-sm">
                 <thead className="text-xs text-muted">
                   <tr className="border-b border-line">
                     <th className="pb-2 pr-3 font-medium">{t.authEmail}</th>
                     <th className="pb-2 pr-3 font-medium">{t.authDisplayName}</th>
                     <th className="pb-2 pr-3 text-right font-medium">{t.adKpiHoldings}</th>
-                    <th className="pb-2 pr-3 text-right font-medium">{t.adKpiTx}</th>
+                    <th className="pb-2 pr-3 text-right font-medium">{t.adTracked}</th>
+                    <th className="pb-2 pr-3 text-right font-medium">{t.adCost}</th>
+                    <th className="pb-2 pr-3 font-medium">{t.adCategories}</th>
+                    <th className="pb-2 pr-3 font-medium">{t.adPlanCol}</th>
                     <th className="pb-2 pr-3 font-medium">{t.adMemberJoined}</th>
                     <th className="pb-2 font-medium">{t.adMemberLastSeen}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((m) => (
-                    <tr key={m.id} className="border-b border-line/60">
+                    <tr key={m.user_id} className="border-b border-line/60">
                       <td className="py-2 pr-3">
                         {m.email ?? "—"}
-                        {m.is_admin && (
-                          <span className="ml-1.5 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
-                            admin
+                        {/* An unconfirmed account is a signup that did not
+                            complete. Marked here so the member list and the
+                            email-delivery panel tell the same story. */}
+                        {!m.confirmed && (
+                          <span className="ml-1.5 rounded bg-loss/10 px-1.5 py-0.5 text-[10px] text-loss">
+                            !{t.adConfirmed}
                           </span>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-muted">{m.display_name ?? "—"}</td>
-                      <td className="tnum py-2 pr-3 text-right">{m.holdings_count}</td>
-                      <td className="tnum py-2 pr-3 text-right">{m.transactions_count}</td>
+                      <td className="tnum py-2 pr-3 text-right">{Number(m.holdings_count)}</td>
+                      <td className="tnum py-2 pr-3 text-right">
+                        {formatMoney(Number(m.tracked_value_jpy), "JPY", profile.locale)}
+                      </td>
+                      <td className="tnum py-2 pr-3 text-right text-muted">
+                        {formatMoney(Number(m.cost_jpy), "JPY", profile.locale)}
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-muted">{m.categories ?? "—"}</td>
+                      <td className="py-2 pr-3 text-xs">
+                        {m.unlimited ? (
+                          <span className="text-gain">{t.planUnlimited}</span>
+                        ) : (
+                          <span className="text-muted">{t.planFree}</span>
+                        )}
+                      </td>
                       <td className="tnum py-2 pr-3 text-muted">
                         {new Date(m.created_at).toLocaleDateString(
                           profile.locale === "ja" ? "ja-JP" : "en-SG",
@@ -334,6 +430,7 @@ export default async function AdminPage() {
               </table>
             </div>
           </section>
+
         </>
       )}
     </div>

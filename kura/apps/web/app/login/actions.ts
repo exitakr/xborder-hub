@@ -203,3 +203,66 @@ async function origin(): Promise<string> {
   const proto = h.get("x-forwarded-proto") ?? "http";
   return `${proto}://${host}`;
 }
+
+/**
+ * Start a password reset.
+ *
+ * There was no way to do this at all. Someone who forgot their password was
+ * locked out permanently — the magic-link tab is a workaround only if you
+ * happen to notice it, and nothing on the login screen said so. For an app
+ * holding a record of what you own, "you cannot get back in" is not a
+ * shortcoming, it is data loss.
+ *
+ * The reply is identical whether or not the address has an account, so this
+ * cannot be used to discover who is registered.
+ */
+export async function requestPasswordReset(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = z.string().email().safeParse(formData.get("email"));
+  if (!email.success) return { error: "invalid" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email.data, {
+    redirectTo: `${await origin()}/auth/callback?next=/reset`,
+  });
+
+  if (error) {
+    console.error("[auth] password reset failed:", error.message);
+    // Only a rate limit is worth saying out loud; it tells the user to wait
+    // rather than to keep pressing.
+    if (classify(error) === "rate") return { error: "rate", email: email.data };
+  }
+
+  return { notice: "reset_sent", email: email.data };
+}
+
+/**
+ * Finish a password reset.
+ *
+ * Reached only with the recovery session the emailed link established, so the
+ * session itself is the proof of ownership — there is no "current password"
+ * field because the person doing this by definition does not have one.
+ */
+export async function updatePassword(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const password = z.string().min(8).max(200).safeParse(formData.get("password"));
+  if (!password.success) return { error: "weak_password" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "invalid" };
+
+  const { error } = await supabase.auth.updateUser({ password: password.data });
+  if (error) {
+    console.error("[auth] password update failed:", error.message);
+    return { error: classify(error) };
+  }
+
+  redirect("/portfolio");
+}

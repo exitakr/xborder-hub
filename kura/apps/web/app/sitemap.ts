@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Ranks for "where does <app> get its prices", which is a question people
     // search before trusting a portfolio tool.
     { url: `${base}/data-sources`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/login`, changeFrequency: "yearly", priority: 0.4 },
     { url: `${base}/legal/terms`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/legal/privacy`, changeFrequency: "yearly", priority: 0.2 },
   ];

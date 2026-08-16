@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     locale: "ja_JP",
     alternateLocale: ["en_SG"],
   },
-  twitter: { card: "summary", title: brand.name, description: brand.tagline.en },
+  twitter: { card: "summary_large_image", title: brand.name, description: brand.tagline.en },
 };
 
 export const viewport: Viewport = {

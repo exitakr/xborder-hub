@@ -11,7 +11,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * read-only without a session; every action on them (holding an item,
  * recording a trade, entering a valuation) still checks for one.
  */
-const PROTECTED = ["/portfolio", "/mypage", "/admin", "/plan"];
+const PROTECTED = ["/portfolio", "/mypage", "/admin", "/plan", "/reset"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

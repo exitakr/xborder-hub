@@ -45,10 +45,12 @@ export default async function PrivacyPage() {
           <ul>
             <li>Supabase（認証、データベース、画像保管）</li>
             <li>Vercel（アプリケーションの配信）</li>
+            <li>Brevo（認証メール・確認メールの送信）</li>
           </ul>
           <p>
-            価格の取得のために eBay の公開 API を利用しますが、
-            その際に利用者個人を識別する情報は送信しません。
+            価格の取得のために eBay・楽天市場・Scryfall・Pokémon TCG API の公開 API を
+            利用しますが、その際に利用者個人を識別する情報は送信しません。
+            取得元と取得方法の詳細は「価格データについて」に記載しています。
           </p>
 
           <h2>5. 国外へのデータ移転</h2>

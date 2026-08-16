@@ -74,6 +74,15 @@ export function LoginForm({ t, next }: { t: Dict; next: string }) {
               className="field"
             />
           </div>
+          {/* The way back in. Without a link here, a forgotten password was a
+              permanently lost account — the magic-link tab only helps someone
+              who thinks to look for it. */}
+          <p className="text-right">
+            <a href="/forgot" className="rounded text-xs text-muted hover:text-ink hover:underline">
+              {t.authForgot}
+            </a>
+          </p>
+
           <button type="submit" disabled={pwPending} className="btn-primary w-full">
             {pwPending ? t.loading : t.authSignIn}
           </button>

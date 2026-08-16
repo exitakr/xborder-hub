@@ -17,10 +17,13 @@ import { useColors } from "../src/ThemeProvider";
 export default function LegalScreen() {
   const { t, profile } = useSession();
 
+  // Falls back to the production site rather than a placeholder domain: an
+  // unset env var used to ship "example.com" into a store build, where it
+  // reads as an unfinished app in exactly the screen reviewers check.
   const siteUrl =
     (Constants.expoConfig?.extra?.SITE_URL as string | undefined) ??
     process.env.EXPO_PUBLIC_SITE_URL ??
-    "https://example.com";
+    "https://ohmyasset.com";
 
   const ja = profile.locale === "ja";
 
