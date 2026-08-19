@@ -7,7 +7,7 @@ type Dict = ReturnType<typeof getDict>;
  * Free-plan ceiling, mirrored from `free_holding_limit()` in migration 0015.
  * Used only for the message; the database is what actually enforces it.
  */
-export const FREE_HOLDING_LIMIT = 20;
+export const FREE_HOLDING_LIMIT = 10;
 
 /** Did this write fail because the free plan is full? See migration 0015. */
 export function isHoldingLimitError(error: { message?: string } | null | undefined): boolean {

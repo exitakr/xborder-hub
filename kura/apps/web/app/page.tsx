@@ -128,7 +128,7 @@ export default async function LandingPage() {
  * most likely to arrive in bulk from a crawler — is not worth it. The migration
  * is the authority; if it changes, this changes with it.
  */
-const FREE_HOLDING_LIMIT = 20;
+const FREE_HOLDING_LIMIT = 10;
 
 function Showcase({
   title,
