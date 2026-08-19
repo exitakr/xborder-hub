@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { brand, wordmark } from "@oma/core";
 import { site } from "@/lib/site";
 import { getDict, isLocale } from "@oma/core";
@@ -146,6 +147,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </div>
         </footer>
+
+        {/*
+          "Nobody is visiting" and "people visit and leave in four seconds" look
+          identical from here, and they call for opposite responses. This is the
+          instrument that tells them apart, and it is also the thing an acquirer
+          asks for first: a product with no traffic history is a codebase, while
+          the same product with six months of numbers is a business.
+
+          Cookieless and IP-anonymised by design, which is why it can be added
+          without a consent banner under PDPA or APPI — see /legal/privacy,
+          where it is disclosed rather than left implicit.
+        */}
+        <Analytics />
       </body>
     </html>
   );

@@ -17,10 +17,11 @@
   "engines": {
     "node": ">=20"
   },
-  "//overrides": "Transitive dependencies pinned to patched releases. next 15.5.x bundles postcss 8.4.31 and sharp 0.34.x, and the eslint toolchain pulls brace-expansion <=5.0.7 — all carry high-severity advisories. `npm audit fix --force` would instead downgrade next to v9 and eslint to v10, which is not a fix. Revisit when next ships updated bundled deps.",
+  "//overrides": "Transitive dependencies pinned to patched releases. next 15.5.x bundles postcss 8.4.31 and sharp 0.34.x, and the eslint toolchain pulls brace-expansion <=5.0.7 — all carry high-severity advisories. postcss 8.5.x in turn pulls nanoid <3.3.18 (GHSA-2v37-7h3g-55p8), which is build tooling rather than runtime code but costs nothing to pin. `npm audit fix --force` would instead downgrade next to v9 and eslint to v10, which is not a fix. Revisit when next ships updated bundled deps.",
   "//audit-uuid": "`npm audit` reports a MODERATE advisory for uuid@7 (GHSA-w5hq-g745-h8pq, bounds check in v3/v5/v6 when an explicit buf is passed). It is NOT overridden on purpose: the only dependent is `xcode`, a .pbxproj parser used by @expo/config-plugins during `expo prebuild`. It is build tooling and never ships in the app bundle, and the affected code path is not reached. Forcing uuid@11 is a major-version jump across a package we cannot exercise in CI, so the risk of breaking prebuild outweighs an advisory with no runtime exposure. Remove this note once Expo ships an updated xcode.",
   "overrides": {
     "postcss": "^8.5.25",
+    "nanoid": "^3.3.18",
     "sharp": "^0.35.3",
     "brace-expansion": "^5.0.8"
   }

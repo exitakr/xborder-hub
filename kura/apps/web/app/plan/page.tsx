@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import { fill, getDict } from "@oma/core";
 import { requireProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
+import { stripeConfigured } from "@/lib/stripe";
+import { sellerConfigured } from "@/lib/seller";
+import { SubmitButton } from "@/components/SubmitButton";
+import { startCheckout } from "./actions";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -26,11 +30,13 @@ interface PlanRow {
 export default async function PlanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ full?: string }>;
+  searchParams: Promise<{ full?: string; paid?: string; error?: string }>;
 }) {
   const profile = await requireProfile();
   const t = getDict(profile.locale);
-  const { full } = await searchParams;
+  const { full, paid, error } = await searchParams;
+  const canPay = stripeConfigured();
+  const hasCommerceNotice = sellerConfigured();
 
   const supabase = await createClient();
   const { data } = await supabase.rpc("my_plan");
@@ -50,6 +56,23 @@ export default async function PlanPage({
         <h1 className="text-2xl font-semibold tracking-tight">{t.planTitle}</h1>
         <p className="mt-1 text-sm text-muted">{t.planLead}</p>
       </div>
+
+      {/* Stripe sends the buyer back here, and the webhook that grants the
+          entitlement may land a second later. Saying so is better than showing
+          a "Free" badge to someone who has just paid and letting them conclude
+          the payment failed. */}
+      {paid === "1" && (
+        <div role="status" className="card border-gain/40 p-4">
+          <p className="text-sm font-semibold text-gain">{t.planPaidTitle}</p>
+          {!unlimited && <p className="mt-1 text-sm text-muted">{t.planPaidBody}</p>}
+        </div>
+      )}
+
+      {error && (
+        <div role="alert" className="card border-loss/40 p-4">
+          <p className="text-sm text-loss">{t.planPayError}</p>
+        </div>
+      )}
 
       {full === "1" && !unlimited && (
         <div role="alert" className="card border-loss/40 p-4">
@@ -116,20 +139,47 @@ export default async function PlanPage({
           </ul>
 
           {/*
-           * No purchase button, because there is no payment provider connected
-           * yet and a button that cannot take money is worse than no button:
-           * it collects the intent and then fails, which is exactly when a
-           * person decides the app is broken. When Stripe or App Store billing
-           * is wired up, the verified webhook calls `grant_unlimited` and this
-           * block becomes the button. See docs/RESEARCH.md §14.
+           * The button appears only when Stripe is actually configured.
+           *
+           * A purchase button that cannot take money is worse than none: it
+           * collects the intent and then fails, which is the exact moment a
+           * person decides the app is broken. So the two states are separate
+           * and the environment decides between them — there is no way to
+           * deploy a live-looking button over a dead payment path.
            */}
-          <div className="mt-5 rounded-lg bg-canvas p-3">
-            <p className="text-sm font-medium">{t.planComingSoon}</p>
-            <p className="mt-1 text-xs text-muted">{t.planComingSoonBody}</p>
-            <Link href="/contact" className="btn-secondary mt-3 w-full sm:w-auto">
-              {t.planContact}
-            </Link>
-          </div>
+          {canPay ? (
+            <form action={startCheckout} className="mt-5">
+              <SubmitButton pendingLabel={t.loading} className="btn-primary w-full">
+                {fill(t.planBuyCta, { price: t.planPrice })}
+              </SubmitButton>
+              <p className="mt-2 text-center text-xs text-muted">{t.planPayNote}</p>
+              {/* Article 11 of the Specified Commercial Transactions Act wants
+                  the seller's details readable BEFORE the buyer pays, not
+                  discoverable afterwards in the footer. This is the last screen
+                  before Stripe, so it is where the link belongs. */}
+              <p className="mt-3 text-center text-xs">
+                <Link href="/legal/terms" className="text-muted underline hover:text-ink">
+                  {t.legalTerms}
+                </Link>
+                {hasCommerceNotice && (
+                  <>
+                    <span className="mx-2 text-muted">·</span>
+                    <Link href="/legal/commerce" className="text-muted underline hover:text-ink">
+                      {t.legalCommerce}
+                    </Link>
+                  </>
+                )}
+              </p>
+            </form>
+          ) : (
+            <div className="mt-5 rounded-lg bg-canvas p-3">
+              <p className="text-sm font-medium">{t.planComingSoon}</p>
+              <p className="mt-1 text-xs text-muted">{t.planComingSoonBody}</p>
+              <Link href="/contact" className="btn-secondary mt-3 w-full sm:w-auto">
+                {t.planContact}
+              </Link>
+            </div>
+          )}
         </section>
       )}
 

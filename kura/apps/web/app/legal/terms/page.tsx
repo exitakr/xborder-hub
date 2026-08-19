@@ -4,6 +4,7 @@ import { site } from "@/lib/site";
 import { getLocale } from "@/lib/i18n-server";
 import { getDict } from "@oma/core";
 import { LegalBody } from "../LegalBody";
+import { sellerConfigured } from "@/lib/seller";
 
 export const metadata: Metadata = { title: "Terms of Service" };
 
@@ -11,6 +12,9 @@ export default async function TermsPage() {
   const locale = await getLocale();
   const t = getDict(locale);
   const name = wordmark(locale);
+  // See lib/seller.ts: the notice does not exist until there is a seller to
+  // name, so the sentence pointing at it appears at the same moment it does.
+  const hasCommerceNotice = sellerConfigured();
 
   return (
     <LegalBody title={t.legalTerms}>
@@ -115,19 +119,54 @@ export default async function TermsPage() {
             適用法令が許容する範囲で責任を負いません。
           </p>
 
-          <h2>9. サービスの変更・終了</h2>
+          <h2>9. 有料プラン</h2>
+          <p>
+            無料プランでは登録できる銘柄数に上限があります。
+            買い切りの有料プラン（無制限プラン）をご購入いただくと、この上限がなくなります。
+            月額課金や自動更新はありません。
+          </p>
+          <ul>
+            <li>
+              決済は Stripe を通じて行われます。運営者がカード番号を受け取ることも、保存することもありません。
+            </li>
+            <li>
+              提供内容はデジタルサービスであり、決済完了後ただちに利用可能となるため、
+              購入後の返金は原則としてお受けできません。
+              ただし、当方の障害により提供できない場合、および法令上返金が求められる場合はこの限りではありません。
+            </li>
+            <li>
+              返金・チャージバックが行われた場合、当該アカウントの無制限プランは終了し、
+              無料プランの上限が再び適用されます。
+              上限を超えて登録済みの銘柄が削除されることはありませんが、新たな追加はできなくなります。
+            </li>
+            <li>
+              価格・グラフ・出典表示など、価格情報そのものは無料プランと有料プランで同一です。
+              有料プランは登録できる件数のみを変更します。
+            </li>
+          </ul>
+          {hasCommerceNotice && (
+            <p>
+              事業者情報および支払方法・提供時期等は
+              <a href="/legal/commerce" className="text-accent hover:underline">
+                特定商取引法に基づく表記
+              </a>
+              をご覧ください。
+            </p>
+          )}
+
+          <h2>10. サービスの変更・終了</h2>
           <p>
             運営者は、本サービスの内容を変更し、または提供を終了することがあります。
             終了する場合は、合理的な範囲で事前に通知します。
           </p>
 
-          <h2>10. 準拠法・管轄</h2>
+          <h2>11. 準拠法・管轄</h2>
           <p>
             本規約は日本法に準拠します。
             本サービスに関して紛争が生じた場合、東京地方裁判所を第一審の専属的合意管轄裁判所とします。
           </p>
 
-          <h2>11. お問い合わせ</h2>
+          <h2>12. お問い合わせ</h2>
           <p>お問い合わせは<a href="/contact" className="text-accent hover:underline">お問い合わせフォーム</a>からお願いします。</p>
         </>
       ) : (
@@ -234,19 +273,54 @@ export default async function TermsPage() {
             use, the Service.
           </p>
 
-          <h2>9. Changes and discontinuation</h2>
+          <h2>9. Paid plan</h2>
+          <p>
+            The free plan caps how many items you may register. A one-time purchase removes
+            that cap. There is no subscription and nothing renews.
+          </p>
+          <ul>
+            <li>
+              Payment is processed by Stripe. The operator never receives or stores your card
+              details.
+            </li>
+            <li>
+              Because the purchase is a digital service that becomes available immediately, it
+              is not generally refundable — except where we are unable to provide the Service
+              through our own fault, or where a refund is required by law.
+            </li>
+            <li>
+              If a payment is refunded or charged back, unlimited access ends and the free
+              limit applies again. Items already registered above the limit are not deleted,
+              but no further items can be added.
+            </li>
+            <li>
+              Prices, charts and source attribution are identical on both plans. The paid plan
+              changes the number of items you may register, and nothing else.
+            </li>
+          </ul>
+          {hasCommerceNotice && (
+            <p>
+              Seller details, payment methods and delivery timing are set out in the{" "}
+              <a href="/legal/commerce" className="text-accent hover:underline">
+                Specified Commercial Transactions Act notice
+              </a>
+              .
+            </p>
+          )}
+
+          <h2>10. Changes and discontinuation</h2>
           <p>
             The operator may change or discontinue the Service, giving reasonable notice where
             discontinuation is planned.
           </p>
 
-          <h2>10. Governing law</h2>
+          <h2>11. Governing law</h2>
           <p>
             These terms are governed by the laws of Japan, with the Tokyo District Court as the
             court of first instance for any dispute.
           </p>
 
-          <h2>11. Contact</h2>
+          <h2>12. Contact</h2>
           <p>Please use the <a href="/contact" className="text-accent hover:underline">contact form</a>.</p>
         </>
       )}

@@ -327,6 +327,12 @@ const ja = {
     "価格やグラフを有料にすると、無料プランをわざと悪くする動機が生まれます。数字の正確さがこのアプリの価値なので、機能ではなく規模で区切っています。",
   planNearLimit: "残り{left}件で上限です。",
   planContact: "お問い合わせ",
+  planBuyCta: "{price}で無制限にする",
+  planPayNote: "決済はStripeの画面で行われます。カード番号を当サービスが受け取ることはありません。",
+  planPaidTitle: "お支払いありがとうございます",
+  planPaidBody:
+    "反映まで数秒かかる場合があります。表示が変わらない場合はページを再読み込みしてください。",
+  planPayError: "決済画面を開けませんでした。時間をおいて再度お試しください。",
 
   myTitle: "マイページ",
   myDisplayName: "表示名",
@@ -461,6 +467,7 @@ const ja = {
   trademarkNotice:
     "記載されている商標・ブランド名は、すべて各権利者に帰属します。Oh My Asset は、本サービスに掲載されるいかなるブランドとも提携・推奨・後援の関係にありません。",
   legalTerms: "利用規約",
+  legalCommerce: "特定商取引法に基づく表記",
   legalPrivacy: "プライバシーポリシー",
   legalContact: "お問い合わせ",
 } as const;
@@ -776,6 +783,13 @@ const en: Dict = {
     "Charging for prices or charts would give us a reason to make the free tier worse. The honesty of the numbers is the product, so the plans differ in scale rather than in features.",
   planNearLimit: "{left} left before the limit.",
   planContact: "Contact us",
+  planBuyCta: "Go unlimited for {price}",
+  planPayNote:
+    "Payment is handled on Stripe's own page. Your card details never reach this service.",
+  planPaidTitle: "Thank you — payment received",
+  planPaidBody:
+    "It can take a few seconds to apply. Reload the page if the plan still shows as free.",
+  planPayError: "We could not open the payment page. Please try again in a moment.",
 
   myTitle: "Account",
   myDisplayName: "Display name",
@@ -908,6 +922,7 @@ const en: Dict = {
   trademarkNotice:
     "All trademarks belong to their respective owners. Oh My Asset is not affiliated with, endorsed by, or sponsored by any brand listed on the platform.",
   legalTerms: "Terms of Service",
+  legalCommerce: "Specified Commercial Transactions Act",
   legalPrivacy: "Privacy Policy",
   legalContact: "Contact",
 };

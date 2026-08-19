@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getDict } from "@oma/core";
+import { brand, getDict } from "@oma/core";
 import { optionalProfile, signedPhotoUrl } from "@/lib/profile";
 import { getLocale } from "@/lib/i18n-server";
 import { site } from "@/lib/site";
@@ -17,6 +17,7 @@ import { TransactionList } from "./TransactionList";
 import { PriceReportForm } from "./PriceReportForm";
 import { ValuationForm } from "./ValuationForm";
 import { SubmitButton } from "@/components/SubmitButton";
+import { JsonLd } from "@/components/JsonLd";
 import { addHolding, removeHolding } from "../../market/actions";
 import { communityConfidence, fill } from "@oma/core";
 
@@ -86,6 +87,26 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="space-y-6">
+      {/* Puts "Oh My Asset › Bags › Hermes Kelly 25" under the result instead
+          of a bare URL. Structure only — see JsonLd for why there is no price
+          in here. */}
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: brand.name, item: site.domain },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: t[CATEGORY_LABEL_KEY[item.category]],
+              item: `${site.domain}/market?c=${item.category}`,
+            },
+            { "@type": "ListItem", position: 3, name: item.name },
+          ],
+        }}
+      />
+
       <header className="flex items-start gap-4">
         <HoldingPhoto
           signedUrl={photoUrl}

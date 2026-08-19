@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { fill, getDict } from "@oma/core";
+import { brand, fill, getDict } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
+import { site } from "@/lib/site";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
 import { CATEGORIES, CATEGORY_LABEL_KEY } from "@oma/core";
 import { ItemPreview, PickerPreview, PortfolioPreview } from "@/components/AppPreview";
+import { JsonLd } from "@/components/JsonLd";
 
 /**
  * The page a stranger lands on.
@@ -26,6 +28,28 @@ export default async function LandingPage() {
 
   return (
     <div className="space-y-16 py-6 sm:space-y-24 sm:py-12">
+      {/* Tells a search engine that this site has a catalogue worth searching,
+          which is what produces a search box inside the result rather than a
+          plain link. The `target` is the real /market query shape, so the box
+          leads somewhere that works. */}
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: brand.name,
+          url: site.domain,
+          inLanguage: ["ja-JP", "en-SG"],
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${site.domain}/market?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
+
       {/* Hero: the claim on the left, the thing itself on the right. On a phone
           the picture goes underneath, where it still lands above the fold. */}
       <section className="grid items-center gap-8 sm:grid-cols-2 sm:gap-12">

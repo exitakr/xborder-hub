@@ -44,7 +44,7 @@ export default async function PrivacyPage() {
           </p>
           <ul>
             <li>Supabase（認証、データベース、画像保管）</li>
-            <li>Vercel（アプリケーションの配信）</li>
+            <li>Vercel（アプリケーションの配信、アクセス数の集計）</li>
             <li>Brevo（認証メール・確認メールの送信）</li>
           </ul>
           <p>
@@ -79,10 +79,16 @@ export default async function PrivacyPage() {
             すべてのデータを削除できます。削除は取り消せません。
           </p>
 
-          <h2>8. Cookie</h2>
+          <h2>8. Cookie とアクセス解析</h2>
           <p>
             ログインセッションの維持と表示言語の記憶のために Cookie を使用します。
             広告目的のトラッキング Cookie は使用していません。
+          </p>
+          <p>
+            どのページがどれだけ閲覧されているかを把握するため、Vercel Web Analytics を
+            利用しています。閲覧ページ、参照元サイト、おおまかな端末種別を記録しますが、
+            Cookie を設定せず、継続的な識別子も付与せず、IP アドレスも保持しません。
+            そのためサイトをまたいだ追跡や、アカウントとの紐付けはできません。
           </p>
 
           <h2>9. お問い合わせ</h2>
@@ -120,11 +126,17 @@ export default async function PrivacyPage() {
           </p>
           <ul>
             <li>Supabase — authentication, database, image storage</li>
-            <li>Vercel — application hosting</li>
+            <li>Vercel — application hosting and aggregate traffic measurement</li>
+            <li>Brevo — delivery of authentication and confirmation email</li>
           </ul>
           <p>
-            eBay&rsquo;s public API is called to retrieve prices. No information identifying
-            you is sent in those requests.
+            The public APIs of eBay, Rakuten Ichiba, Scryfall and the Pokémon TCG API are
+            called to retrieve prices. No information identifying you is sent in those
+            requests. How each source is used is described under{" "}
+            <a href="/data-sources" className="text-accent hover:underline">
+              About our price data
+            </a>
+            .
           </p>
 
           <h2>5. International transfers</h2>
@@ -153,10 +165,17 @@ export default async function PrivacyPage() {
             images. Deletion cannot be undone.
           </p>
 
-          <h2>8. Cookies</h2>
+          <h2>8. Cookies and traffic measurement</h2>
           <p>
             Cookies are used to keep you signed in and to remember your language. No
             advertising or tracking cookies are used.
+          </p>
+          <p>
+            To understand how many people reach the Service and which pages they read, we use
+            Vercel Web Analytics. It records the page visited, the referring site and the
+            general device type. It sets no cookie, assigns no persistent identifier, and does
+            not retain your IP address — so it cannot follow you between sites or link a visit
+            to your account.
           </p>
 
           <h2>9. Contact</h2>
