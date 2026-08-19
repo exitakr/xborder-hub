@@ -28,7 +28,11 @@ export function ContactForm({
     <div className="space-y-4">
       {state.error && (
         <p role="alert" className="rounded-lg bg-loss/5 px-3 py-2 text-sm text-loss">
-          {state.error === "email" ? t.ctErrEmail : t.txErrGeneric}
+          {state.error === "email"
+            ? t.ctErrEmail
+            : state.error === "rate"
+              ? t.ctErrRate
+              : t.txErrGeneric}
         </p>
       )}
 

@@ -135,6 +135,8 @@ const ja = {
   ctSubmit: "送信する",
   ctSent: "送信しました。お問い合わせありがとうございます。",
   ctErrEmail: "メールアドレスの形式が正しくありません。",
+  ctErrRate:
+    "短時間に複数回送信されています。しばらく時間をおいてから再度お試しください。",
   ctPrivacy:
     "ご記入いただいた内容とメールアドレスは、お問い合わせへの対応にのみ使用します。",
 
@@ -594,6 +596,8 @@ const en: Dict = {
   ctSubmit: "Send",
   ctSent: "Sent. Thank you for getting in touch.",
   ctErrEmail: "That email address does not look right.",
+  ctErrRate:
+    "Several messages have been sent in a short time. Please try again a little later.",
   ctPrivacy: "Your message and address are used only to answer this enquiry.",
 
   pfRange1w: "1W",

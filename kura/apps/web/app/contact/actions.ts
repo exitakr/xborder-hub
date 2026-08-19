@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isLocale } from "@oma/core";
 
 export interface ContactState {
-  error?: "email" | "subject" | "body" | "generic";
+  error?: "email" | "subject" | "body" | "generic" | "rate";
   ok?: boolean;
 }
 
@@ -20,10 +20,13 @@ const schema = z.object({
  *
  * Writes to a table rather than sending mail: a mailto: link needs a mailbox
  * on the domain and somebody watching it, and an emailed message arrives
- * detached from the account it is about. `user_id` is taken from the session
- * and never from the form — the RLS policy checks the same thing, so a
- * client-supplied id could not be used to attribute a message to someone else
- * even if this layer forgot.
+ * detached from the account it is about.
+ *
+ * Goes through `submit_contact` rather than inserting directly. The function
+ * takes `user_id` from the session inside the database, so this layer cannot
+ * attribute a message to the wrong account even by mistake, and it throttles —
+ * which matters because the anon key is public, so this action was never the
+ * only way to reach the table. See migration 0022.
  */
 export async function sendContactMessage(
   _prev: ContactState,
@@ -47,17 +50,17 @@ export async function sendContactMessage(
   const locale = typeof localeRaw === "string" && isLocale(localeRaw) ? localeRaw : "ja";
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { error } = await supabase.from("contact_messages").insert({
-    user_id: user?.id ?? null,
-    email: parsed.data.email,
-    subject: parsed.data.subject,
-    body: parsed.data.body,
-    locale,
+  const { error } = await supabase.rpc("submit_contact", {
+    p_email: parsed.data.email,
+    p_subject: parsed.data.subject,
+    p_body: parsed.data.body,
+    p_locale: locale,
   });
+
+  // Told apart from a failure, because they call for opposite reactions: one
+  // asks the sender to wait, the other asks them to try again now.
+  if (error?.message?.includes("contact_rate_limited")) return { error: "rate" };
 
   if (error) {
     // A support message that fails to store is lost with nothing to show for
