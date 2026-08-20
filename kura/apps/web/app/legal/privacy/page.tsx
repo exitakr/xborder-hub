@@ -59,27 +59,54 @@ export default async function PrivacyPage() {
             日本国外の利用者を含め、本サービスの利用にあたっては当該移転に同意いただきます。
           </p>
 
-          <h2>6. シンガポールの利用者の方へ（PDPA）</h2>
+          <h2>6. 利用者の権利</h2>
           <p>
-            シンガポール個人情報保護法（PDPA）に基づき、利用者は自己の個人データへのアクセス、
-            訂正、および同意の撤回を請求することができます。
+            お住まいの国にかかわらず、すべての利用者が以下を請求できます。
+          </p>
+          <ul>
+            <li>保有している個人データの開示</li>
+            <li>誤った内容の訂正</li>
+            <li>利用の停止、および同意の撤回</li>
+            <li>アカウントとデータの削除</li>
+          </ul>
+          <p>
             ご請求は<a href="/contact" className="text-accent hover:underline">お問い合わせフォーム</a>
             からお願いします。原則として30日以内に回答します。
-          </p>
-          <p>
-            PDPA 第11条に基づくデータ保護責任者（Data Protection Officer）を指定しており、
-            上記フォームからの請求は当該責任者が受領します。
-            回答に不服がある場合は、シンガポール個人情報保護委員会（PDPC）へ申し立てることができます。
+            なお、削除については請求を待たずに、マイページからご自身でいつでも実行できます。
           </p>
 
-          <h2>7. 保存期間と削除</h2>
+          <h2>7. 各国の法令に基づく補足</h2>
+          <p>
+            上記の権利は本サービスの方針としてすべての利用者に適用されます。
+            以下は、本サービスが対象としている国の法令が個別に定める事項です。
+          </p>
+          <p>
+            <strong>日本（個人情報保護法）</strong>
+            ：本サービスの運営者は日本の個人情報取扱事業者です。
+            利用目的は第2項、第三者提供および委託先は第4項に記載しています。
+            開示・訂正・利用停止の請求、および苦情の申出は上記フォームで受け付けます。
+            解決しない場合は、個人情報保護委員会に申し出ることができます。
+          </p>
+          <p>
+            <strong>シンガポール（PDPA）</strong>
+            ：シンガポールを提供地域としているため、同国の個人情報保護法が適用されます。
+            同法第11条に基づき個人データの管理責任者（Data Protection Officer）を置いており、
+            上記フォームからの請求は当該責任者が受領します。
+            回答に不服がある場合は、個人情報保護委員会（PDPC）へ申し立てることができます。
+          </p>
+          <p>
+            上記以外の国からもご利用いただけますが、本サービスは日本およびシンガポール向けに
+            提供しており、これらの国以外の法令に基づく個別の対応は行っていません。
+          </p>
+
+          <h2>8. 保存期間と削除</h2>
           <p>
             アカウントが存続する間、データを保存します。
             マイページの「アカウントの削除」から、保有・取引・アップロード画像を含む
             すべてのデータを削除できます。削除は取り消せません。
           </p>
 
-          <h2>8. Cookie とアクセス解析</h2>
+          <h2>9. Cookie とアクセス解析</h2>
           <p>
             ログインセッションの維持と表示言語の記憶のために Cookie を使用します。
             広告目的のトラッキング Cookie は使用していません。
@@ -91,7 +118,7 @@ export default async function PrivacyPage() {
             そのためサイトをまたいだ追跡や、アカウントとの紐付けはできません。
           </p>
 
-          <h2>9. お問い合わせ</h2>
+          <h2>10. お問い合わせ</h2>
           <p>お問い合わせは<a href="/contact" className="text-accent hover:underline">お問い合わせフォーム</a>からお願いします。</p>
         </>
       ) : (
@@ -145,27 +172,54 @@ export default async function PrivacyPage() {
             Service involves consenting to that transfer.
           </p>
 
-          <h2>6. For users in Singapore (PDPA)</h2>
+          <h2>6. Your rights</h2>
+          <p>Wherever you live, you may ask us to:</p>
+          <ul>
+            <li>tell you what personal data we hold about you</li>
+            <li>correct anything that is wrong</li>
+            <li>stop using it, and withdraw your consent</li>
+            <li>delete your account and its data</li>
+          </ul>
           <p>
-            Under Singapore&rsquo;s Personal Data Protection Act you may request access to and
-            correction of your personal data, and may withdraw consent. Please use the{" "}
+            Please use the{" "}
             <a href="/contact" className="text-accent hover:underline">contact form</a>; we
-            respond within 30 days.
-          </p>
-          <p>
-            We have designated a Data Protection Officer as required by section 11 of the PDPA,
-            and requests sent through that form reach them. If you are not satisfied with our
-            response, you may complain to the Personal Data Protection Commission (PDPC).
+            respond within 30 days. Deletion needs no request at all — you can do it yourself
+            from the Account page at any time.
           </p>
 
-          <h2>7. Retention and deletion</h2>
+          <h2>7. Country-specific notes</h2>
+          <p>
+            The rights above are our policy and apply to every user. What follows is what the
+            law of each market we serve requires us to say specifically.
+          </p>
+          <p>
+            <strong>Japan (APPI)</strong>: the operator is a personal information handling
+            business operator under Japanese law. Our purposes of use are in section 2, and our
+            processors and disclosures in section 4. Requests for disclosure, correction or
+            suspension of use, and complaints, go through the form above. If a complaint is not
+            resolved, you may raise it with the Personal Information Protection Commission.
+          </p>
+          <p>
+            <strong>Singapore (PDPA)</strong>: because the Service is offered in Singapore, the
+            Personal Data Protection Act applies to it. We have designated a Data Protection
+            Officer as required by section 11, and requests sent through the form above reach
+            them. If you are not satisfied with our response, you may complain to the Personal
+            Data Protection Commission (PDPC).
+          </p>
+          <p>
+            You are welcome to use the Service from elsewhere, but it is offered to Japan and
+            Singapore, and we do not undertake obligations specific to the law of other
+            countries.
+          </p>
+
+          <h2>8. Retention and deletion</h2>
           <p>
             Data is retained while your account exists. &ldquo;Delete account&rdquo; on the
             Account page removes all of it, including holdings, transactions and uploaded
             images. Deletion cannot be undone.
           </p>
 
-          <h2>8. Cookies and traffic measurement</h2>
+          <h2>9. Cookies and traffic measurement</h2>
           <p>
             Cookies are used to keep you signed in and to remember your language. No
             advertising or tracking cookies are used.
@@ -178,7 +232,7 @@ export default async function PrivacyPage() {
             to your account.
           </p>
 
-          <h2>9. Contact</h2>
+          <h2>10. Contact</h2>
           <p>Please use the <a href="/contact" className="text-accent hover:underline">contact form</a>.</p>
         </>
       )}

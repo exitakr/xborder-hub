@@ -7,6 +7,7 @@ import { RefreshPricesButton } from "./RefreshPricesButton";
 import { markContactHandled } from "./actions";
 import { EmailHealth, type EmailHealthRow } from "./EmailHealth";
 import { PendingItems, type PendingItem } from "./PendingItems";
+import { PriceAudit, type PriceAuditRow } from "./PriceAudit";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -88,7 +89,7 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes] =
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes] =
     await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
@@ -97,6 +98,7 @@ export default async function AdminPage() {
     supabase.rpc("admin_email_health"),
     supabase.rpc("admin_top_items", { p_limit: 30 }),
     supabase.rpc("admin_pending_items", { p_limit: 200 }),
+    supabase.rpc("admin_price_audit", { p_limit: 100 }),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -112,6 +114,9 @@ export default async function AdminPage() {
   const topItems = (topRes.data ?? []) as TopItem[];
   // Migration 0019. Absent on a database that has not run it yet.
   const pending = (pendingRes.data ?? []) as PendingItem[];
+  // Migration 0023. Absent on a database that has not run it yet, which is why
+  // the panel below is rendered only when the call actually succeeded.
+  const priceAudit = (auditRes.data ?? []) as PriceAuditRow[];
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -201,6 +206,13 @@ export default async function AdminPage() {
               item sitting here is invisible to everyone but the person who
               added it until somebody looks. */}
           {!pendingRes.error && <PendingItems t={t} locale={profile.locale} items={pending} />}
+
+          {/* Directly after the moderation queue, because it answers the
+              question that queue raises: an item is approved, and then its
+              price is wrong, and until now there was nothing to look at. */}
+          {!auditRes.error && (
+            <PriceAudit t={t} locale={profile.locale} rows={priceAudit} />
+          )}
 
           {emailHealth && (
             <EmailHealth t={t} health={emailHealth} defaultEmail={profile.email ?? ""} />

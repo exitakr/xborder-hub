@@ -117,7 +117,9 @@ const ja = {
   dsSourcesTitle: "利用しているデータソース",
   dsMethodTitle: "価格の決め方",
   dsMethodBody:
-    "出品一覧から価格を作る場合は、上下10%を除いた中央値を採用します。件数が5件未満のとき、または四分位範囲が中央値を超えるほど価格がばらついているときは、価格を表示しません。銘柄ごとに設定した下限価格を下回る結果も、付属品を拾ったものとみなして破棄します。",
+    "まず検索対象を絞ります。カテゴリごとに出品先のカテゴリ（例：車なら「Cars & Trucks」）を指定し、ミニカー・エンブレム・パーツなどの付属品を除外語で外し、銘柄ごとの下限価格を検索条件そのものに含めます。" +
+    "そのうえで、残った出品の上下10%を除いた中央値を採用します。件数が5件未満のとき、または四分位範囲が中央値を超えるほど価格がばらついているときは、価格を表示しません。" +
+    "それでも下限価格を下回った結果、および前日比で8割以上下落した結果は、別の商品を拾ったものとみなして破棄します。",
   dsLimitsTitle: "限界と、正直に言えること",
   dsLimitsBody:
     "eBay と楽天市場から取得しているのは出品価格であり、実際に売れた価格ではありません。実売価格を無料で提供する公開 API は、時計・バッグ・スニーカーには存在しません。そのため利用者が登録した売却実績を併記し、3人以上の投稿が集まった銘柄でのみ公開しています。",
@@ -358,6 +360,29 @@ const ja = {
   adPrice: "価格",
   adSourceUrl: "参照元 URL",
   adSave: "登録",
+  adAuditTitle: "価格の根拠",
+  adAuditLead:
+    "自動取得が判断できなかった銘柄です。検索リンクを開くと、中央値の計算対象になった出品そのものを確認できます。",
+  adAuditEmpty: "確認が必要な銘柄はありません。",
+  adAuditNoRecord: "この銘柄はまだ自動取得が実行されていません。",
+  adAuditOpenSearch: "同じ検索を開く",
+  adAuditQuery: "送信した検索語",
+  adAuditExcluded: "除外語",
+  adAuditCategoryId: "カテゴリID",
+  adAuditFloor: "下限価格",
+  adAuditReturned: "取得件数",
+  adAuditUsed: "採用件数",
+  adAuditSample: "中央値の母数",
+  adAuditSpread: "ばらつき",
+  adAuditRange: "価格帯",
+  adAuditMedian: "中央値",
+  adAuditPrevious: "前回価格",
+  adAuditHolders: "人が保有",
+  adAuditPublished: "公開",
+  adAuditBelowFloor: "下限割れで棄却",
+  adAuditCollapsed: "急落で棄却",
+  adAuditNoResult: "該当なし",
+  adAuditApiUrl: "API リクエスト",
   adForbidden: "この画面にアクセスする権限がありません。",
 
   // --- admin dashboard ---
@@ -578,7 +603,9 @@ const en: Dict = {
   dsSourcesTitle: "Sources we use",
   dsMethodTitle: "How a price is decided",
   dsMethodBody:
-    "Where a price is built from listings, we take the median after trimming the top and bottom 10%. If there are fewer than five listings, or the interquartile spread exceeds the median, we publish nothing. Results below an item's floor price are discarded as accessory matches rather than the item.",
+    "We narrow the search first: each category is confined to the marketplace's own category for it (cars to Cars & Trucks, not Toys), accessory terms such as die-cast models, emblems and parts are excluded, and the item's floor price goes into the request itself. " +
+    "The median of what remains is then taken after trimming the top and bottom 10%. If there are fewer than five listings, or the interquartile spread exceeds the median, we publish nothing. " +
+    "A result that still lands below the floor, or that has fallen by more than four fifths since the previous day, is discarded as a match on a different product.",
   dsLimitsTitle: "Limits, stated plainly",
   dsLimitsBody:
     "eBay and Rakuten give us asking prices, not realised sale prices. No free public API publishes realised prices for watches, bags or sneakers. We therefore also collect sale prices reported by users, and publish them only once at least three people have reported on an item.",
@@ -816,6 +843,29 @@ const en: Dict = {
   adPrice: "Price",
   adSourceUrl: "Source URL",
   adSave: "Save",
+  adAuditTitle: "How prices were reached",
+  adAuditLead:
+    "Items the automation could not settle on its own. Opening the search shows the very listings the median was taken over.",
+  adAuditEmpty: "Nothing needs a second look.",
+  adAuditNoRecord: "This item has not been fetched yet.",
+  adAuditOpenSearch: "Open the same search",
+  adAuditQuery: "Query sent",
+  adAuditExcluded: "Excluded",
+  adAuditCategoryId: "Category ID",
+  adAuditFloor: "Floor",
+  adAuditReturned: "Returned",
+  adAuditUsed: "Used",
+  adAuditSample: "Median sample",
+  adAuditSpread: "Spread",
+  adAuditRange: "Range",
+  adAuditMedian: "Median",
+  adAuditPrevious: "Previous price",
+  adAuditHolders: " holding",
+  adAuditPublished: "Published",
+  adAuditBelowFloor: "Refused: below floor",
+  adAuditCollapsed: "Refused: collapsed",
+  adAuditNoResult: "No results",
+  adAuditApiUrl: "API request",
   adForbidden: "You do not have access to this page.",
 
   // --- admin dashboard ---

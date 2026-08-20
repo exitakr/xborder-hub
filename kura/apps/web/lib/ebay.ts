@@ -34,12 +34,16 @@ let cachedToken: { value: string; expiresAt: number } | null = null;
 let inFlight: Promise<string> | null = null;
 
 export class EbayError extends Error {
-  constructor(
-    message: string,
-    readonly status?: number,
-  ) {
+  // Written out rather than declared as a constructor parameter property.
+  // Node's `--experimental-strip-types`, which is what runs the test suite,
+  // refuses parameter properties — they need emitted code, not erased types.
+  // That one line of syntax is why this file had no tests until now.
+  readonly status?: number;
+
+  constructor(message: string, status?: number) {
     super(message);
     this.name = "EbayError";
+    this.status = status;
   }
 }
 
@@ -100,15 +104,94 @@ const EXCLUDE = [
   "case", "cover", "charm", "keychain", "keyring", "strap", "handle",
   "replica", "inspired", "style", "organizer", "insert", "protector",
   "sticker", "decal", "repair", "cleaner", "stand", "dust bag", "box only",
-]
-  .map((t) => `-${t}`)
-  .join(" ");
+];
+
+/**
+ * Extra exclusions that only make sense for one kind of thing.
+ *
+ * A car is surrounded by a far larger accessory economy than a handbag is, and
+ * it is a different one. "BMW" on eBay is overwhelmingly die-cast models, wheel
+ * emblems, floor mats, brochures and spare parts, all of them priced in the
+ * tens of dollars and all of them internally consistent — which is exactly the
+ * shape of data no statistic can rescue. A BMW showing around ¥10,000 is not a
+ * cheap BMW; it is a keyring, and the median said so correctly.
+ *
+ * These lists are the second line of defence. The first is CATEGORY_IDS below,
+ * which is far stronger.
+ */
+const EXCLUDE_BY_CATEGORY: Record<string, string[]> = {
+  car: [
+    "diecast", "die-cast", "model", "toy", "1:18", "1:24", "1:43", "1/18",
+    "scale", "emblem", "badge", "grille", "bumper", "wheel", "rim", "mat",
+    "manual", "brochure", "poster", "part", "parts", "steering", "mirror",
+    "seat", "knob", "spoiler", "headlight", "sensor", "module", "keyfob",
+    "key fob", "hubcap", "shirt", "hat", "mug",
+  ],
+  watch: ["band", "bracelet", "bezel", "crystal", "winder", "link", "clasp", "crown"],
+  bag: ["scarf", "twilly", "wallet insert", "base shaper", "chain strap"],
+  sneaker: ["lace", "laces", "insole", "shoe tree", "cleaning kit", "keychain"],
+};
+
+/**
+ * eBay leaf categories, by our own category column.
+ *
+ * THIS IS THE FIX THAT ACTUALLY WORKS.
+ *
+ * Enumerating accessory words is a losing game: there is always another word,
+ * and a seller who writes "BMW M3 Alloy" without any of them still lands in the
+ * sample. eBay already sorts its inventory into a category tree, and a die-cast
+ * model is not in Cars & Trucks — it is in Toys. Restricting the search to the
+ * right category removes an entire class of wrong answer in one parameter,
+ * before any statistic is computed.
+ *
+ * Cards are absent deliberately: they are priced by Scryfall and the Pokémon
+ * TCG API, which return an aggregate for a specific printing and never see this
+ * code path.
+ *
+ * Verify an id at https://www.ebay.com/n/all-categories before changing it. A
+ * wrong id does not fail loudly — it returns an empty result set, which this
+ * module reports as "no data", which looks like a thin market rather than a
+ * typo.
+ */
+const CATEGORY_IDS: Record<string, string> = {
+  car: "6001", // eBay Motors › Cars & Trucks
+  watch: "31387", // Jewelry & Watches › Watches, Parts & Accessories › Wristwatches
+  bag: "169291", // Women's Bags & Handbags
+  sneaker: "15709", // Men's Shoes › Athletic Shoes
+};
 
 export interface PriceObservation {
   price: number;
   currency: string;
   sampleSize: number;
   spread: number;
+  /**
+   * How this number was arrived at, for the admin screen.
+   *
+   * A price nobody can check is a price nobody can correct. Everything here is
+   * either a request parameter or a figure computed from the response, so it
+   * explains the number without anyone needing to read this file.
+   */
+  audit: PriceAudit;
+}
+
+export interface PriceAudit {
+  /** The exact text sent as `q`, exclusions and all. */
+  query: string;
+  /** The Browse API request, credentials excluded — they travel in a header. */
+  apiUrl: string;
+  /** The same search on eBay's own website, for a human to open and judge. */
+  webUrl: string;
+  categoryId: string | null;
+  /** Floor pushed into the query, in `currency`. Null when none was known. */
+  minPrice: number | null;
+  currency: string | null;
+  /** Listings returned, and how many survived currency and validity filters. */
+  returned: number;
+  used: number;
+  /** Range of the values the median was taken over. */
+  low: number | null;
+  high: number | null;
 }
 
 /**
@@ -121,19 +204,70 @@ export interface PriceObservation {
  */
 export async function fetchPrice(
   query: string,
-  { marketplace = "EBAY_US", limit = 100 }: { marketplace?: string; limit?: number } = {},
+  {
+    marketplace = "EBAY_US",
+    limit = 100,
+    category = null,
+    minPrice = null,
+    minPriceCurrency = "USD",
+  }: {
+    marketplace?: string;
+    limit?: number;
+    /** Our own category, used to pick an eBay category and extra exclusions. */
+    category?: string | null;
+    /**
+     * Floor for this item, in `minPriceCurrency`.
+     *
+     * Applied as a REQUEST FILTER rather than only as a check on the answer,
+     * which is a different thing and a better one. Rejecting a median after the
+     * fact throws away the whole item — the caller gets "no data" and the
+     * screen shows nothing, even when genuine listings were sitting in the
+     * sample underneath the junk. Filtering at the source removes the junk from
+     * the sample instead, so the median is taken over the listings that could
+     * actually be the item and a real price survives.
+     *
+     * The after-the-fact check in the cron stays: this one narrows the sample,
+     * that one refuses to publish. They are not redundant — a floor pushed into
+     * the query cannot catch an item whose brand we do not recognise.
+     */
+    minPrice?: number | null;
+    minPriceCurrency?: string;
+  } = {},
 ): Promise<PriceObservation | null> {
   const token = await getAppToken();
 
-  const url = new URL(BROWSE_URL);
+  const exclusions = [...EXCLUDE, ...(category ? (EXCLUDE_BY_CATEGORY[category] ?? []) : [])];
   // Browse honours `-term` for exclusion. The same accessory economy that
   // surrounds a luxury item on a Japanese marketplace surrounds it here, and
   // those listings are internally consistent in price — so no statistic applied
   // afterwards can separate them from a genuinely cheap example of the item.
-  url.searchParams.set("q", `${query} ${EXCLUDE}`);
+  const q = `${query} ${exclusions.map((t) => `-${t}`).join(" ")}`;
+  const categoryId = category ? (CATEGORY_IDS[category] ?? null) : null;
+
+  const filters = ["buyingOptions:{FIXED_PRICE}"];
+  if (minPrice !== null && minPrice > 0) {
+    filters.push(`price:[${Math.floor(minPrice)}..]`, `priceCurrency:${minPriceCurrency}`);
+  }
+
+  const url = new URL(BROWSE_URL);
+  url.searchParams.set("q", q);
   url.searchParams.set("limit", String(Math.min(limit, 200)));
   // Fixed-price only: auctions in progress are not comparable to a market price.
-  url.searchParams.set("filter", "buyingOptions:{FIXED_PRICE}");
+  url.searchParams.set("filter", filters.join(","));
+  if (categoryId) url.searchParams.set("category_ids", categoryId);
+
+  const audit: PriceAudit = {
+    query: q,
+    apiUrl: url.toString(),
+    webUrl: webSearchUrl(q, categoryId, minPrice),
+    categoryId,
+    minPrice: minPrice !== null && minPrice > 0 ? Math.floor(minPrice) : null,
+    currency: minPrice !== null && minPrice > 0 ? minPriceCurrency : null,
+    returned: 0,
+    used: 0,
+    low: null,
+    high: null,
+  };
 
   const res = await fetchWithBackoff(url.toString(), {
     headers: {
@@ -149,6 +283,7 @@ export async function fetchPrice(
   };
 
   const summaries = json.itemSummaries ?? [];
+  audit.returned = summaries.length;
   if (summaries.length === 0) return null;
 
   // Mixing currencies inside one median would be meaningless, so we keep only
@@ -161,6 +296,12 @@ export async function fetchPrice(
     .map((s) => Number(s.price?.value))
     .filter((n) => Number.isFinite(n) && n > 0);
 
+  audit.used = values.length;
+  if (values.length > 0) {
+    audit.low = Math.min(...values);
+    audit.high = Math.max(...values);
+  }
+
   const result = trimmedMedian(values);
   if (!result) return null;
 
@@ -169,7 +310,27 @@ export async function fetchPrice(
     currency,
     sampleSize: result.sampleSize,
     spread: result.spread,
+    audit,
   };
+}
+
+/**
+ * The same search as a link a person can open.
+ *
+ * The Browse API URL is the honest record of what was asked, and it is useless
+ * to a human: it needs an OAuth header and answers in JSON. eBay's own site
+ * takes the same query, so the admin screen can offer a link that shows what
+ * the median was computed over — which is the difference between "the price
+ * looks wrong" and "the price is wrong, and here is the die-cast model that
+ * caused it".
+ */
+function webSearchUrl(q: string, categoryId: string | null, minPrice: number | null): string {
+  const url = new URL("https://www.ebay.com/sch/i.html");
+  url.searchParams.set("_nkw", q);
+  url.searchParams.set("LH_BIN", "1"); // fixed price, matching the API filter
+  if (categoryId) url.searchParams.set("_sacat", categoryId);
+  if (minPrice !== null && minPrice > 0) url.searchParams.set("_udlo", String(Math.floor(minPrice)));
+  return url.toString();
 }
 
 function dominantCurrency(

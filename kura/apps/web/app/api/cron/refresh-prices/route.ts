@@ -97,6 +97,12 @@ const CATALOGUE_READ_LIMIT = 2000;
 
 interface CatalogueRow {
   id: string;
+  /**
+   * Our own category, which decides which eBay category the search is confined
+   * to and which extra exclusions apply. Without it a car search runs across
+   * the whole site and returns die-cast models.
+   */
+  category: string | null;
   source_type: string | null;
   search_query: string | null;
   price_updated_at: string | null;
@@ -106,6 +112,8 @@ interface CatalogueRow {
    * than the item — see migration 0013.
    */
   min_price: number | null;
+  /** The currency `min_price` and `current_price` are expressed in. */
+  currency: string | null;
   /**
    * The last published price, used as a second, table-free plausibility check.
    * See COLLAPSE_RATIO below.
@@ -119,8 +127,11 @@ interface Candidate {
   id: string;
   lastPrice?: number | null;
   sourceType: SourceType;
+  category: string | null;
   query: string;
   minPrice: number | null;
+  /** Currency the floor is expressed in, which is the item's own. */
+  currency: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -170,7 +181,9 @@ export async function GET(request: NextRequest) {
     heldItemIds(supabase),
     supabase
       .from("market_items")
-      .select("id, source_type, search_query, price_updated_at, min_price, current_price")
+      .select(
+        "id, category, source_type, search_query, price_updated_at, min_price, currency, current_price",
+      )
       .limit(CATALOGUE_READ_LIMIT),
   ]);
 
@@ -190,8 +203,10 @@ export async function GET(request: NextRequest) {
     byId.set(row.id, {
       id: row.id,
       sourceType: row.source_type as SourceType,
+      category: row.category,
       query: row.search_query as string,
       minPrice: row.min_price === null ? null : Number(row.min_price),
+      currency: row.currency ?? "USD",
       lastPrice: row.current_price === null ? null : Number(row.current_price),
     });
   }
@@ -252,7 +267,7 @@ export async function GET(request: NextRequest) {
   async function priceOne(candidate: Candidate) {
     const id = candidate.id;
     try {
-      const fetched = await fetchFor(candidate, fx);
+      const { series: fetched, audit } = await fetchFor(candidate, fx);
 
       // Last line of defence against a search that matched the item's
       // accessories rather than the item. Excluding accessory terms at the
@@ -283,6 +298,38 @@ export async function GET(request: NextRequest) {
         fetched.current.price < candidate.lastPrice * COLLAPSE_RATIO;
 
       const series = fetched && !belowFloor && !collapsed ? fetched : null;
+
+      /*
+       * The record of how this number was reached, written on every attempt.
+       *
+       * Especially on the failures. "BMW shows ¥10,000" and "BMW shows nothing"
+       * have the same cause and neither is diagnosable from the answer alone —
+       * what is needed is the query that was sent and the range it came back
+       * with. Written before the branch below so a refusal is as inspectable as
+       * a publication.
+       */
+      const priceDebug = audit
+        ? {
+            ...audit,
+            outcome: !fetched
+              ? "no_result"
+              : belowFloor
+                ? "below_floor"
+                : collapsed
+                  ? "collapsed"
+                  : "published",
+            median: fetched?.current.price ?? null,
+            medianCurrency: fetched?.current.currency ?? null,
+            sampleSize: fetched?.current.sampleSize ?? null,
+            spread: fetched?.current.spread ?? null,
+            floor: candidate.minPrice,
+            floorCurrency: candidate.currency,
+            previousPrice: candidate.lastPrice ?? null,
+            checkedAt: new Date().toISOString(),
+            commit: commitRef(),
+          }
+        : null;
+
       if (belowFloor || collapsed) {
         // Named in the response so a refused price is diagnosable without
         // reading the database: "insufficient" alone cannot tell a thin result
@@ -297,6 +344,7 @@ export async function GET(request: NextRequest) {
           .update({
             data_confidence: "insufficient",
             price_updated_at: new Date().toISOString(),
+            ...(priceDebug ? { price_debug: priceDebug } : {}),
           })
           .eq("id", id);
         insufficient += 1;
@@ -321,6 +369,7 @@ export async function GET(request: NextRequest) {
           currency: series.current.currency,
           data_confidence: confidenceOf(candidate.sourceType, series.current),
           price_updated_at: new Date().toISOString(),
+          ...(priceDebug ? { price_debug: priceDebug } : {}),
           // Only when the source supplied one, so a run against a source that
           // publishes no artwork never blanks an image an earlier run stored.
           ...(series.imageUrl ? { image_url: series.imageUrl } : {}),
@@ -442,36 +491,71 @@ async function writeHistory(
   return error ? 0 : series.history.length;
 }
 
-/** Dispatch to whichever source this item is configured for. */
-async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<SourceSeries | null> {
-  switch (candidate.sourceType) {
-    case "scryfall":
-      return fetchScryfallSeries(candidate.query);
+/**
+ * What a fetch produced, plus how.
+ *
+ * The audit travels beside the series rather than inside it because it exists
+ * even when the series does not: an item that returned nothing usable is
+ * exactly the item somebody needs to see the query for.
+ */
+interface FetchResult {
+  series: SourceSeries | null;
+  audit: Record<string, unknown> | null;
+}
 
-    case "pokemontcg":
-      return fetchPokemonTcgSeries(candidate.query, fx.eurToUsd);
+/** Dispatch to whichever source this item is configured for. */
+async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResult> {
+  switch (candidate.sourceType) {
+    case "scryfall": {
+      const series = await fetchScryfallSeries(candidate.query);
+      return { series, audit: { source: "scryfall", query: candidate.query } };
+    }
+
+    case "pokemontcg": {
+      const series = await fetchPokemonTcgSeries(candidate.query, fx.eurToUsd);
+      return { series, audit: { source: "pokemontcg", query: candidate.query } };
+    }
 
     case "rakuten": {
-      const current = await fetchRakutenPrice(candidate.query);
-      return current ? { current, history: [] } : null;
+      // Rakuten quotes JPY, so a floor only transfers when the item does too.
+      // Sending a USD figure as a yen minimum would filter out everything.
+      const current = await fetchRakutenPrice(candidate.query, {
+        category: candidate.category,
+        minPrice: candidate.currency === "JPY" ? candidate.minPrice : null,
+      });
+      return {
+        series: current ? { current, history: [] } : null,
+        audit: current ? { source: "rakuten_ichiba", ...current.audit } : null,
+      };
     }
 
     case "ebay": {
-      const observation = await fetchPrice(candidate.query);
-      if (!observation) return null;
+      const observation = await fetchPrice(candidate.query, {
+        category: candidate.category,
+        // The floor is stored in the item's own currency (migration 0020
+        // converts it), so it is passed with that currency rather than assumed
+        // to be dollars.
+        minPrice: candidate.minPrice,
+        minPriceCurrency: candidate.currency,
+      });
+      if (!observation) return { series: null, audit: null };
       return {
-        current: {
-          price: observation.price,
-          currency: observation.currency as SourceSeries["current"]["currency"],
-          sampleSize: observation.sampleSize,
-          source: "ebay_browse",
+        series: {
+          current: {
+            price: observation.price,
+            currency: observation.currency as SourceSeries["current"]["currency"],
+            sampleSize: observation.sampleSize,
+            spread: observation.spread,
+            source: "ebay_browse",
+          },
+          history: [],
         },
-        history: [],
+        audit: { source: "ebay_browse", ...observation.audit },
       };
     }
 
     default:
-      return null; // curated items are priced by an admin, not fetched
+      return { series: null, audit: null }; // curated items are priced by an admin
   }
 }
 
