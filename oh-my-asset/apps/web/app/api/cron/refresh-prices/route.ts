@@ -112,6 +112,12 @@ interface CatalogueRow {
    * than the item — see migration 0013.
    */
   min_price: number | null;
+  /**
+   * Highest plausible figure, same currency. The mirror of min_price: a search
+   * that comes back above it matched a more expensive model than this one —
+   * see migration 0024.
+   */
+  max_price: number | null;
   /** The currency `min_price` and `current_price` are expressed in. */
   currency: string | null;
   /**
@@ -130,7 +136,8 @@ interface Candidate {
   category: string | null;
   query: string;
   minPrice: number | null;
-  /** Currency the floor is expressed in, which is the item's own. */
+  maxPrice: number | null;
+  /** Currency the band is expressed in, which is the item's own. */
   currency: string;
 }
 
@@ -182,7 +189,7 @@ export async function GET(request: NextRequest) {
     supabase
       .from("market_items")
       .select(
-        "id, category, source_type, search_query, price_updated_at, min_price, currency, current_price",
+        "id, category, source_type, search_query, price_updated_at, min_price, max_price, currency, current_price",
       )
       .limit(CATALOGUE_READ_LIMIT),
   ]);
@@ -206,6 +213,7 @@ export async function GET(request: NextRequest) {
       category: row.category,
       query: row.search_query as string,
       minPrice: row.min_price === null ? null : Number(row.min_price),
+      maxPrice: row.max_price === null ? null : Number(row.max_price),
       currency: row.currency ?? "USD",
       lastPrice: row.current_price === null ? null : Number(row.current_price),
     });
@@ -291,13 +299,25 @@ export async function GET(request: NextRequest) {
       const belowFloor =
         fetched && candidate.minPrice !== null && fetched.current.price < candidate.minPrice;
 
+      /*
+       * The mirror of the floor, and it catches a different mistake.
+       *
+       * A search for a mid-range model matches the brand's flagship —
+       * "Chanel 19" pulls in Classic Flap listings at three times the price —
+       * and the median of that sample is a real number about the wrong bag. A
+       * portfolio total inflated threefold is exactly as wrong as one deflated
+       * tenfold, and only one of the two was being checked.
+       */
+      const aboveCeiling =
+        fetched && candidate.maxPrice !== null && fetched.current.price > candidate.maxPrice;
+
       const collapsed =
         fetched &&
         candidate.lastPrice != null &&
         candidate.lastPrice > 0 &&
         fetched.current.price < candidate.lastPrice * COLLAPSE_RATIO;
 
-      const series = fetched && !belowFloor && !collapsed ? fetched : null;
+      const series = fetched && !belowFloor && !aboveCeiling && !collapsed ? fetched : null;
 
       /*
        * The record of how this number was reached, written on every attempt.
@@ -315,14 +335,17 @@ export async function GET(request: NextRequest) {
               ? "no_result"
               : belowFloor
                 ? "below_floor"
-                : collapsed
-                  ? "collapsed"
-                  : "published",
+                : aboveCeiling
+                  ? "above_ceiling"
+                  : collapsed
+                    ? "collapsed"
+                    : "published",
             median: fetched?.current.price ?? null,
             medianCurrency: fetched?.current.currency ?? null,
             sampleSize: fetched?.current.sampleSize ?? null,
             spread: fetched?.current.spread ?? null,
             floor: candidate.minPrice,
+            ceiling: candidate.maxPrice,
             floorCurrency: candidate.currency,
             previousPrice: candidate.lastPrice ?? null,
             checkedAt: new Date().toISOString(),
@@ -330,7 +353,7 @@ export async function GET(request: NextRequest) {
           }
         : null;
 
-      if (belowFloor || collapsed) {
+      if (belowFloor || aboveCeiling || collapsed) {
         // Named in the response so a refused price is diagnosable without
         // reading the database: "insufficient" alone cannot tell a thin result
         // from one that was rejected as implausible.
@@ -522,6 +545,7 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResu
       const current = await fetchRakutenPrice(candidate.query, {
         category: candidate.category,
         minPrice: candidate.currency === "JPY" ? candidate.minPrice : null,
+        maxPrice: candidate.currency === "JPY" ? candidate.maxPrice : null,
       });
       return {
         series: current ? { current, history: [] } : null,
@@ -536,6 +560,7 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResu
         // converts it), so it is passed with that currency rather than assumed
         // to be dollars.
         minPrice: candidate.minPrice,
+        maxPrice: candidate.maxPrice,
         minPriceCurrency: candidate.currency,
       });
       if (!observation) return { series: null, audit: null };

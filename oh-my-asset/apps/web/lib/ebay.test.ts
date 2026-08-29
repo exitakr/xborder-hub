@@ -123,6 +123,40 @@ test("pushes the floor into the request rather than only checking the answer", a
   }
 });
 
+test("brackets the search when a ceiling is known too", async () => {
+  const { captured, restore } = capture(listings([3000, 3200, 3400, 3600, 3800]));
+  try {
+    await withCredentials(() =>
+      fetchPrice("Chanel 19 Medium", {
+        category: "bag",
+        minPrice: 2600,
+        maxPrice: 20000,
+        minPriceCurrency: "USD",
+      }),
+    );
+    const filter = new URL(captured.url).searchParams.get("filter") ?? "";
+    // The mirror of the floor: "Chanel 19" matches Classic Flap listings at
+    // three times the price, and a portfolio inflated 3x is as wrong as one
+    // deflated 10x.
+    assert.ok(filter.includes("price:[2600..20000]"), filter);
+  } finally {
+    restore();
+  }
+});
+
+test("writes an open-ended range when only one end is known", async () => {
+  const { captured, restore } = capture(listings([100, 110, 120, 130, 140]));
+  try {
+    await withCredentials(() => fetchPrice("Something", { maxPrice: 5000 }));
+    const filter = new URL(captured.url).searchParams.get("filter") ?? "";
+    // eBay's filter takes an inclusive range, so a ceiling with no floor has
+    // to be written with the low end empty rather than as a second filter.
+    assert.ok(filter.includes("price:[..5000]"), filter);
+  } finally {
+    restore();
+  }
+});
+
 test("omits the price filter when no floor is known", async () => {
   const { captured, restore } = capture(listings([100, 110, 120, 130, 140]));
   try {
@@ -141,12 +175,13 @@ test("reports how the number was reached, including a URL a person can open", as
   const { restore } = capture(listings([20000, 21000, 22000, 23000, 25000]));
   try {
     const result = await withCredentials(() =>
-      fetchPrice("BMW M3", { category: "car", minPrice: 2000 }),
+      fetchPrice("BMW M3", { category: "car", minPrice: 2000, maxPrice: 40000 }),
     );
     assert.ok(result);
     const a = result.audit;
     assert.equal(a.categoryId, "6001");
     assert.equal(a.minPrice, 2000);
+    assert.equal(a.maxPrice, 40000);
     assert.equal(a.returned, 5);
     assert.equal(a.used, 5);
     assert.equal(a.low, 20000);
@@ -157,6 +192,7 @@ test("reports how the number was reached, including a URL a person can open", as
     const web = new URL(a.webUrl);
     assert.equal(web.searchParams.get("_sacat"), "6001");
     assert.equal(web.searchParams.get("_udlo"), "2000");
+    assert.equal(web.searchParams.get("_udhi"), "40000");
     assert.ok((web.searchParams.get("_nkw") ?? "").includes("BMW M3"));
   } finally {
     restore();

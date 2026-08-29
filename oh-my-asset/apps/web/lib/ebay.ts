@@ -183,8 +183,9 @@ export interface PriceAudit {
   /** The same search on eBay's own website, for a human to open and judge. */
   webUrl: string;
   categoryId: string | null;
-  /** Floor pushed into the query, in `currency`. Null when none was known. */
+  /** Band pushed into the query, in `currency`. Null when none was known. */
   minPrice: number | null;
+  maxPrice: number | null;
   currency: string | null;
   /** Listings returned, and how many survived currency and validity filters. */
   returned: number;
@@ -209,6 +210,7 @@ export async function fetchPrice(
     limit = 100,
     category = null,
     minPrice = null,
+    maxPrice = null,
     minPriceCurrency = "USD",
   }: {
     marketplace?: string;
@@ -231,6 +233,15 @@ export async function fetchPrice(
      * the query cannot catch an item whose brand we do not recognise.
      */
     minPrice?: number | null;
+    /**
+     * Ceiling, in the same currency as `minPrice`.
+     *
+     * The mirror of the floor and it earns its place for the same reason: a
+     * search for "Chanel 19" matches Classic Flap listings at three times the
+     * price, and a portfolio total inflated threefold is as wrong as one
+     * deflated tenfold.
+     */
+    maxPrice?: number | null;
     minPriceCurrency?: string;
   } = {},
 ): Promise<PriceObservation | null> {
@@ -244,9 +255,14 @@ export async function fetchPrice(
   const q = `${query} ${exclusions.map((t) => `-${t}`).join(" ")}`;
   const categoryId = category ? (CATEGORY_IDS[category] ?? null) : null;
 
+  // eBay's price filter takes an inclusive range, so a floor with no ceiling
+  // is written open-ended rather than as two separate filters.
+  const lo = minPrice !== null && minPrice > 0 ? Math.floor(minPrice) : null;
+  const hi = maxPrice !== null && maxPrice > 0 ? Math.ceil(maxPrice) : null;
+
   const filters = ["buyingOptions:{FIXED_PRICE}"];
-  if (minPrice !== null && minPrice > 0) {
-    filters.push(`price:[${Math.floor(minPrice)}..]`, `priceCurrency:${minPriceCurrency}`);
+  if (lo !== null || hi !== null) {
+    filters.push(`price:[${lo ?? ""}..${hi ?? ""}]`, `priceCurrency:${minPriceCurrency}`);
   }
 
   const url = new URL(BROWSE_URL);
@@ -259,10 +275,11 @@ export async function fetchPrice(
   const audit: PriceAudit = {
     query: q,
     apiUrl: url.toString(),
-    webUrl: webSearchUrl(q, categoryId, minPrice),
+    webUrl: webSearchUrl(q, categoryId, lo, hi),
     categoryId,
-    minPrice: minPrice !== null && minPrice > 0 ? Math.floor(minPrice) : null,
-    currency: minPrice !== null && minPrice > 0 ? minPriceCurrency : null,
+    minPrice: lo,
+    maxPrice: hi,
+    currency: lo !== null || hi !== null ? minPriceCurrency : null,
     returned: 0,
     used: 0,
     low: null,
@@ -324,12 +341,18 @@ export async function fetchPrice(
  * looks wrong" and "the price is wrong, and here is the die-cast model that
  * caused it".
  */
-function webSearchUrl(q: string, categoryId: string | null, minPrice: number | null): string {
+function webSearchUrl(
+  q: string,
+  categoryId: string | null,
+  lo: number | null,
+  hi: number | null,
+): string {
   const url = new URL("https://www.ebay.com/sch/i.html");
   url.searchParams.set("_nkw", q);
   url.searchParams.set("LH_BIN", "1"); // fixed price, matching the API filter
   if (categoryId) url.searchParams.set("_sacat", categoryId);
-  if (minPrice !== null && minPrice > 0) url.searchParams.set("_udlo", String(Math.floor(minPrice)));
+  if (lo !== null) url.searchParams.set("_udlo", String(lo));
+  if (hi !== null) url.searchParams.set("_udhi", String(hi));
   return url.toString();
 }
 

@@ -23,16 +23,18 @@ export interface PriceDebug {
   webUrl?: string;
   categoryId?: string | null;
   minPrice?: number | null;
+  maxPrice?: number | null;
   returned?: number;
   used?: number;
   low?: number | null;
   high?: number | null;
-  outcome?: "published" | "below_floor" | "collapsed" | "no_result";
+  outcome?: "published" | "below_floor" | "above_ceiling" | "collapsed" | "no_result";
   median?: number | null;
   medianCurrency?: string | null;
   sampleSize?: number | null;
   spread?: number | null;
   floor?: number | null;
+  ceiling?: number | null;
   floorCurrency?: string | null;
   previousPrice?: number | null;
   checkedAt?: string;
@@ -47,6 +49,7 @@ export interface PriceAuditRow {
   current_price: number | null;
   currency: string | null;
   min_price: number | null;
+  max_price: number | null;
   data_confidence: string | null;
   price_updated_at: string | null;
   price_debug: PriceDebug | null;
@@ -158,6 +161,10 @@ export function PriceAudit({
                           label={t.adAuditFloor}
                           value={fmt(d.floor, d.floorCurrency ?? row.currency, locale)}
                         />
+                        <Stat
+                          label={t.adAuditCeiling}
+                          value={fmt(d.ceiling, d.floorCurrency ?? row.currency, locale)}
+                        />
                         <Stat label={t.adAuditReturned} value={d.returned ?? "—"} />
                         <Stat label={t.adAuditUsed} value={d.used ?? "—"} />
                         <Stat label={t.adAuditSample} value={d.sampleSize ?? "—"} />
@@ -255,6 +262,7 @@ function Outcome({ t, outcome }: { t: Dict; outcome?: PriceDebug["outcome"] }) {
   const label = {
     published: t.adAuditPublished,
     below_floor: t.adAuditBelowFloor,
+    above_ceiling: t.adAuditAboveCeiling,
     collapsed: t.adAuditCollapsed,
     no_result: t.adAuditNoResult,
   }[outcome];

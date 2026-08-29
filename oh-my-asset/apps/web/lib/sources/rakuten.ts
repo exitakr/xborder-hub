@@ -88,6 +88,7 @@ export interface RakutenAudit {
   /** The same search on Rakuten's own site, for a human to open and judge. */
   webUrl: string;
   minPrice: number | null;
+  maxPrice: number | null;
   returned: number;
   used: number;
   low: number | null;
@@ -103,6 +104,7 @@ export async function fetchRakutenPrice(
   {
     category = null,
     minPrice = null,
+    maxPrice = null,
   }: {
     category?: string | null;
     /**
@@ -113,6 +115,12 @@ export async function fetchRakutenPrice(
      * throw the whole item away. Both are kept — see the eBay client for why.
      */
     minPrice?: number | null;
+    /**
+     * Ceiling in JPY. The mirror of the floor: a search for a mid-range model
+     * matches the brand's flagship, and a median pulled upward by the wrong
+     * model is as wrong as one pulled down by a keyring.
+     */
+    maxPrice?: number | null;
   } = {},
 ): Promise<RakutenPrice | null> {
   const applicationId = process.env.RAKUTEN_APPLICATION_ID;
@@ -120,6 +128,7 @@ export async function fetchRakutenPrice(
 
   const ng = [...EXCLUDE, ...(category ? (EXCLUDE_BY_CATEGORY[category] ?? []) : [])].join(" ");
   const floor = minPrice !== null && minPrice > 0 ? Math.floor(minPrice) : null;
+  const ceiling = maxPrice !== null && maxPrice > 0 ? Math.ceil(maxPrice) : null;
 
   const url = new URL(ENDPOINT);
   url.searchParams.set("applicationId", applicationId);
@@ -128,6 +137,7 @@ export async function fetchRakutenPrice(
   url.searchParams.set("hits", String(HITS));
   url.searchParams.set("format", "json");
   if (floor !== null) url.searchParams.set("minPrice", String(floor));
+  if (ceiling !== null) url.searchParams.set("maxPrice", String(ceiling));
   // Relevance, NOT price.
   //
   // This asked for cheapest-first, on the reasoning that the expensive tail was
@@ -146,10 +156,9 @@ export async function fetchRakutenPrice(
     keyword,
     ngKeyword: ng,
     apiUrl: redacted.toString(),
-    webUrl: `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(keyword)}/${
-      floor !== null ? `?min=${floor}` : ""
-    }`,
+    webUrl: rakutenWebUrl(keyword, floor, ceiling),
     minPrice: floor,
+    maxPrice: ceiling,
     returned: 0,
     used: 0,
     low: null,
@@ -212,4 +221,19 @@ function readPrices(json: unknown): number[] {
     }
   }
   return prices;
+}
+
+/**
+ * The same search as a link a person can open.
+ *
+ * Rakuten's own site takes `min` and `max` as query parameters on the mall
+ * search path, so the admin screen can offer the human equivalent of the API
+ * call — which is what turns "this price looks wrong" into "here is the pouch
+ * that caused it".
+ */
+function rakutenWebUrl(keyword: string, lo: number | null, hi: number | null): string {
+  const url = new URL(`https://search.rakuten.co.jp/search/mall/${encodeURIComponent(keyword)}/`);
+  if (lo !== null) url.searchParams.set("min", String(lo));
+  if (hi !== null) url.searchParams.set("max", String(hi));
+  return url.toString();
 }
