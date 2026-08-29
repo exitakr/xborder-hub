@@ -82,6 +82,7 @@ export function AddItemForm({
           defaultValue={defaultName}
           category={category}
           hint={t.mkAddOwnNameHint}
+          modelLabel={t.mkAddOwnPickModel}
           pickLabel={t.mkAddOwnPickExisting}
           locale={locale}
           noPriceLabel={t.mkNoPrice}

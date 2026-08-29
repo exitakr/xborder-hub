@@ -174,7 +174,7 @@ test("omits the price filter when no floor is known", async () => {
 test("reports how the number was reached, including a URL a person can open", async () => {
   const { restore } = capture(listings([20000, 21000, 22000, 23000, 25000]));
   try {
-    const result = await withCredentials(() =>
+    const { observation: result } = await withCredentials(() =>
       fetchPrice("BMW M3", { category: "car", minPrice: 2000, maxPrice: 40000 }),
     );
     assert.ok(result);
@@ -207,7 +207,7 @@ test("counts only the dominant currency as used", async () => {
     ],
   });
   try {
-    const result = await withCredentials(() => fetchPrice("Whatever"));
+    const { observation: result } = await withCredentials(() => fetchPrice("Whatever"));
     assert.ok(result);
     assert.equal(result.currency, "USD");
     assert.equal(result.audit.returned, 6);

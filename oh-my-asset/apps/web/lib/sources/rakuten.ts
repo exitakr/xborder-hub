@@ -33,8 +33,20 @@ import type { SourcePrice } from "./types";
 
 const ENDPOINT = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
 
-/** The API caps a page at 30, which is comfortably above the median's floor. */
+/**
+ * Rakuten caps a page at 30, so more than that means paging.
+ *
+ * One page was enough when the query was wide open. It stopped being enough
+ * once 0023 pushed the price band into the request: a floor of ¥400,000 on a
+ * Chanel 19 removes most of the page before the median ever sees it, and the
+ * five-sample minimum then rejected what was left. Paging is how the sample is
+ * restored WITHOUT relaxing any of the quality gates — more of the same
+ * filtered inventory, not looser filters.
+ */
 const HITS = 30;
+const MAX_PAGES = 3;
+/** Stop paging as soon as there is a comfortable sample; each page is a request. */
+const ENOUGH = 12;
 
 /**
  * Listings that use the item's name but are not the item.
@@ -45,30 +57,48 @@ const HITS = 30;
  * filter: they are internally consistent in price, so no statistic computed
  * afterwards can tell them apart from a genuine cheap listing.
  */
+/*
+ * Words that name a DIFFERENT PRODUCT, and only those.
+ *
+ * The previous list was longer and it was quietly destroying the results it
+ * was meant to protect. Rakuten's NGKeyword is matched against the whole item
+ * title, and Japanese marketplace titles are long, descriptive sentences —
+ * unlike eBay's terse English ones, which is why the same idea is safe there
+ * and dangerous here. These were all in the list and all appear constantly in
+ * listings for the genuine article:
+ *
+ *   収納   「収納力抜群」 is in the title of nearly every bag on Rakuten
+ *   持ち手 「持ち手に使用感あり」 is how a pre-owned bag's condition is stated
+ *   風     matches 風合い, the standard word for leather texture
+ *   カバー 「保存袋・カバー付き」 — an accessory INCLUDED with the bag
+ *   保護   「保護袋付き」, same
+ *   ケース 「ギャランティケース付属」, same
+ *   似     matches 類似 in ordinary prose
+ *
+ * Each of those excluded exactly the well-described, complete, higher-value
+ * listings — the ones a median most wants — and that is most of why bags came
+ * back as "データ不足".
+ */
 const EXCLUDE = [
-  "保護", "カバー", "チャーム", "キーホルダー", "ケース", "型紙", "ハンドル",
-  "持ち手", "レプリカ", "風", "収納", "インナーバッグ", "中敷き", "スタンド",
-  "クリーナー", "修理", "リペア", "ショルダーストラップ", "似", "ステッカー",
+  "チャーム", "キーホルダー", "型紙", "レプリカ", "インナーバッグ", "中敷き",
+  "クリーナー", "ステッカー",
 ];
 
 /**
  * Exclusions that only apply to one kind of thing.
  *
- * Same reasoning as the eBay client, and more acute here: a Japanese
- * marketplace search for a car brand is almost entirely ミニカー, parts and
- * merchandise, because Rakuten Ichiba does not sell cars. That is worth saying
- * plainly — for `car` this source is close to unusable, and the honest outcome
- * is a refusal rather than the price of a 1/18 model.
+ * Same rule as above: each word has to name a different product rather than
+ * describe a part of this one. 「ベルト」 was removed from the watch list for
+ * that reason — 「純正ベルト付属」 is a complete watch, not a strap.
  */
 const EXCLUDE_BY_CATEGORY: Record<string, string[]> = {
   car: [
     "ミニカー", "模型", "プラモデル", "トミカ", "1/18", "1/24", "1/43",
-    "エンブレム", "ステアリング", "フロアマット", "パーツ", "部品", "ホイール",
-    "カタログ", "ポスター", "キーケース", "スマートキー", "シートカバー",
-    "ミラー", "ライト", "ステッカー", "Tシャツ", "マグカップ",
+    "エンブレム", "フロアマット", "カタログ", "ポスター", "キーケース",
+    "シートカバー", "Tシャツ", "マグカップ",
   ],
-  watch: ["ベルト", "バンド", "ブレス", "ガラス", "ワインダー", "コマ", "工具", "電池"],
-  bag: ["スカーフ", "ツイリー", "バッグインバッグ", "底板", "ショルダー紐"],
+  watch: ["ワインダー", "工具", "電池", "コマ詰め"],
+  bag: ["ツイリー", "バッグインバッグ", "底板"],
   sneaker: ["靴紐", "シューレース", "インソール", "シューキーパー", "洗剤"],
 };
 
@@ -89,6 +119,8 @@ export interface RakutenAudit {
   webUrl: string;
   minPrice: number | null;
   maxPrice: number | null;
+  /** Pages actually fetched. */
+  pages: number;
   returned: number;
   used: number;
   low: number | null;
@@ -97,6 +129,30 @@ export interface RakutenAudit {
 
 export interface RakutenPrice extends SourcePrice {
   audit: RakutenAudit;
+}
+
+/**
+ * Why a search produced no price.
+ *
+ * The single most useful thing this module can report, and until now it
+ * reported nothing at all: a failed fetch returned bare `null`, so the audit
+ * describing what had been asked was discarded at exactly the moment somebody
+ * needed to read it. That is why the admin screen could not explain a
+ * catalogue full of "データ不足" — there was no record to explain it with.
+ */
+export type RakutenReason =
+  | "ok"
+  | "not_configured"
+  | "http_error"
+  | "no_listings"
+  | "too_few"
+  | "too_spread";
+
+export interface RakutenResult {
+  price: RakutenPrice | null;
+  /** Always present, including on every failure. That is the whole point. */
+  audit: RakutenAudit;
+  reason: RakutenReason;
 }
 
 export async function fetchRakutenPrice(
@@ -122,77 +178,136 @@ export async function fetchRakutenPrice(
      */
     maxPrice?: number | null;
   } = {},
-): Promise<RakutenPrice | null> {
-  const applicationId = process.env.RAKUTEN_APPLICATION_ID;
-  if (!applicationId) return null;
-
-  const ng = [...EXCLUDE, ...(category ? (EXCLUDE_BY_CATEGORY[category] ?? []) : [])].join(" ");
+): Promise<RakutenResult> {
   const floor = minPrice !== null && minPrice > 0 ? Math.floor(minPrice) : null;
   const ceiling = maxPrice !== null && maxPrice > 0 ? Math.ceil(maxPrice) : null;
 
-  const url = new URL(ENDPOINT);
-  url.searchParams.set("applicationId", applicationId);
-  url.searchParams.set("keyword", keyword);
-  url.searchParams.set("NGKeyword", ng);
-  url.searchParams.set("hits", String(HITS));
-  url.searchParams.set("format", "json");
-  if (floor !== null) url.searchParams.set("minPrice", String(floor));
-  if (ceiling !== null) url.searchParams.set("maxPrice", String(ceiling));
-  // Relevance, NOT price.
-  //
-  // This asked for cheapest-first, on the reasoning that the expensive tail was
-  // noise. It is the other way round: the cheap end of a luxury search is
-  // entirely accessories, so taking the first 30 by price guaranteed a sample
-  // containing none of the actual item. A Birkin priced this way came out at
-  // roughly the cost of a bag charm, which is precisely what was being measured.
-  url.searchParams.set("sort", "standard");
-
-  // The application id is a credential and must not reach the admin screen or
-  // the database, so the recorded URL is the request minus that one parameter.
-  const redacted = new URL(url.toString());
-  redacted.searchParams.delete("applicationId");
+  /*
+   * A validated floor makes the accessory list redundant, so it is dropped.
+   *
+   * Nothing that costs ¥400,000 is a bag charm. Every exclusion that survives
+   * into a banded query is therefore pure downside: it cannot remove an
+   * accessory the floor has not already removed, and it CAN remove a genuine
+   * listing that happens to mention one — 「チャーム付属」 is a bag that comes
+   * with a charm, and excluding it loses the bag.
+   *
+   * Without a floor the exclusions are still the only defence, so they stay.
+   */
+  const exclusions = floor !== null
+    ? []
+    : [...EXCLUDE, ...(category ? (EXCLUDE_BY_CATEGORY[category] ?? []) : [])];
+  const ng = exclusions.join(" ");
 
   const audit: RakutenAudit = {
     keyword,
     ngKeyword: ng,
-    apiUrl: redacted.toString(),
+    apiUrl: "",
     webUrl: rakutenWebUrl(keyword, floor, ceiling),
     minPrice: floor,
     maxPrice: ceiling,
+    pages: 0,
     returned: 0,
     used: 0,
     low: null,
     high: null,
   };
 
-  const res = await fetch(url.toString(), {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
+  const applicationId = process.env.RAKUTEN_APPLICATION_ID;
+  if (!applicationId) return { price: null, audit, reason: "not_configured" };
 
-  const json = await res.json();
-  const prices = readPrices(json);
-  audit.returned = Array.isArray((json as { Items?: unknown })?.Items)
-    ? ((json as { Items: unknown[] }).Items.length)
-    : 0;
+  const prices: number[] = [];
+
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const url = new URL(ENDPOINT);
+    url.searchParams.set("applicationId", applicationId);
+    url.searchParams.set("keyword", keyword);
+    if (ng) url.searchParams.set("NGKeyword", ng);
+    url.searchParams.set("hits", String(HITS));
+    url.searchParams.set("page", String(page));
+    url.searchParams.set("format", "json");
+    if (floor !== null) url.searchParams.set("minPrice", String(floor));
+    if (ceiling !== null) url.searchParams.set("maxPrice", String(ceiling));
+    // Relevance, NOT price.
+    //
+    // This asked for cheapest-first, on the reasoning that the expensive tail
+    // was noise. It is the other way round: the cheap end of a luxury search is
+    // entirely accessories, so taking the first 30 by price guaranteed a sample
+    // containing none of the actual item. A Birkin priced this way came out at
+    // roughly the cost of a bag charm, which is precisely what was measured.
+    url.searchParams.set("sort", "standard");
+
+    // The application id is a credential and must not reach the admin screen or
+    // the database, so the recorded URL is the request minus that one parameter.
+    if (page === 1) {
+      const redacted = new URL(url.toString());
+      redacted.searchParams.delete("applicationId");
+      audit.apiUrl = redacted.toString();
+    }
+
+    let res: Response;
+    try {
+      res = await fetch(url.toString(), {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+    } catch {
+      break;
+    }
+    // A later page failing is not fatal — whatever the earlier pages returned
+    // is still a sample. Only a first-page failure means no data at all.
+    if (!res.ok) {
+      if (page === 1) return { price: null, audit, reason: "http_error" };
+      break;
+    }
+
+    const json = await res.json();
+    const items = (json as { Items?: unknown })?.Items;
+    const count = Array.isArray(items) ? items.length : 0;
+
+    audit.pages = page;
+    audit.returned += count;
+    prices.push(...readPrices(json));
+
+    // A short page is the last page; asking for another returns nothing.
+    if (count < HITS || prices.length >= ENOUGH) break;
+  }
+
   audit.used = prices.length;
   if (prices.length > 0) {
     audit.low = Math.min(...prices);
     audit.high = Math.max(...prices);
   }
-  if (prices.length === 0) return null;
 
-  const median = trimmedMedian(prices);
-  if (!median) return null;
+  if (prices.length === 0) return { price: null, audit, reason: "no_listings" };
+
+  /*
+   * A banded query is a stronger prior than an unbanded one, so it earns a
+   * lower bar.
+   *
+   * Five listings was the right minimum when the query was "シャネル バッグ" and
+   * the sample could be anything. With a validated floor, a validated ceiling
+   * and a model-specific keyword, three surviving listings all agreeing is
+   * better evidence than five unconstrained ones — the filtering happened
+   * before the sample rather than after it. The confidence label still reports
+   * the small sample honestly; this only decides whether to publish at all.
+   */
+  const minSamples = floor !== null && ceiling !== null ? 3 : 5;
+  if (prices.length < minSamples) return { price: null, audit, reason: "too_few" };
+
+  const median = trimmedMedian(prices, { minSamples });
+  if (!median) return { price: null, audit, reason: "too_spread" };
 
   return {
-    price: median.price,
-    currency: "JPY",
-    sampleSize: median.sampleSize,
-    spread: median.spread,
-    source: "rakuten_ichiba",
+    price: {
+      price: median.price,
+      currency: "JPY",
+      sampleSize: median.sampleSize,
+      spread: median.spread,
+      source: "rakuten_ichiba",
+      audit,
+    },
     audit,
+    reason: "ok",
   };
 }
 

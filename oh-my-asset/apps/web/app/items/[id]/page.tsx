@@ -198,9 +198,23 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             be read as a failure of the app. For a brand-name-only entry the
             reason is actionable: name the model and the search narrows. */}
         {price === null && (
-          <p className="mt-1 rounded-lg bg-canvas px-3 py-2 leading-relaxed text-muted">
-            {t.itNoPriceWhy}
-          </p>
+          <div className="mt-1 rounded-lg bg-canvas px-3 py-2 leading-relaxed text-muted">
+            <p>{t.itNoPriceWhy}</p>
+            {/* The way out, at the point the problem is stated.
+                
+                The valuation form is several sections down the page, past a
+                chart that is hidden precisely because there is no price. A
+                person who has just read "no data" should not have to scroll
+                past the consequences of it to find the remedy. */}
+            {profile && (
+              <a
+                href="#own-valuation"
+                className="mt-2 inline-block font-medium text-accent underline underline-offset-2"
+              >
+                {t.itNoPriceOwnCta} →
+              </a>
+            )}
+          </div>
         )}
       </section>
 
@@ -290,7 +304,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           price. A valuation that disappeared the moment a price arrived read
           as data loss — the row was still there, nothing displayed it. */}
       {(item.current_price === null || detail.ownValuation) && profile && (
-        <section className="card space-y-3 p-4">
+        <section id="own-valuation" className="card space-y-3 p-4 scroll-mt-4">
           <div>
             <h2 className="text-sm font-semibold">{t.srTitle}</h2>
             <p className="mt-1 text-xs text-muted">{t.srLead}</p>

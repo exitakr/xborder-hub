@@ -523,6 +523,15 @@ async function writeHistory(
  */
 interface FetchResult {
   series: SourceSeries | null;
+  /**
+   * How the attempt was made and what came back.
+   *
+   * Present on FAILURES above all. The previous version returned `null` here
+   * whenever there was no price, which discarded the record at exactly the
+   * moment it was worth having — a catalogue full of "データ不足" with nothing
+   * in the admin screen to explain any of it. A fetch that found nothing is
+   * the fetch whose query most needs reading.
+   */
   audit: Record<string, unknown> | null;
 }
 
@@ -540,42 +549,44 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResu
     }
 
     case "rakuten": {
-      // Rakuten quotes JPY, so a floor only transfers when the item does too.
+      // Rakuten quotes JPY, so a band only transfers when the item does too.
       // Sending a USD figure as a yen minimum would filter out everything.
-      const current = await fetchRakutenPrice(candidate.query, {
+      const result = await fetchRakutenPrice(candidate.query, {
         category: candidate.category,
         minPrice: candidate.currency === "JPY" ? candidate.minPrice : null,
         maxPrice: candidate.currency === "JPY" ? candidate.maxPrice : null,
       });
       return {
-        series: current ? { current, history: [] } : null,
-        audit: current ? { source: "rakuten_ichiba", ...current.audit } : null,
+        series: result.price ? { current: result.price, history: [] } : null,
+        audit: { source: "rakuten_ichiba", reason: result.reason, ...result.audit },
       };
     }
 
     case "ebay": {
-      const observation = await fetchPrice(candidate.query, {
+      const result = await fetchPrice(candidate.query, {
         category: candidate.category,
-        // The floor is stored in the item's own currency (migration 0020
+        // The band is stored in the item's own currency (migration 0020
         // converts it), so it is passed with that currency rather than assumed
         // to be dollars.
         minPrice: candidate.minPrice,
         maxPrice: candidate.maxPrice,
         minPriceCurrency: candidate.currency,
       });
-      if (!observation) return { series: null, audit: null };
+      const audit = { source: "ebay_browse", reason: result.reason, ...result.audit };
+      const o = result.observation;
+      if (!o) return { series: null, audit };
       return {
         series: {
           current: {
-            price: observation.price,
-            currency: observation.currency as SourceSeries["current"]["currency"],
-            sampleSize: observation.sampleSize,
-            spread: observation.spread,
+            price: o.price,
+            currency: o.currency as SourceSeries["current"]["currency"],
+            sampleSize: o.sampleSize,
+            spread: o.spread,
             source: "ebay_browse",
           },
           history: [],
         },
-        audit: { source: "ebay_browse", ...observation.audit },
+        audit,
       };
     }
 

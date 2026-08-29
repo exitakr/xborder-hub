@@ -15,6 +15,22 @@ export interface Suggestion {
 }
 
 /**
+ * A model this app knows how to price, offered when the catalogue has no row
+ * for it yet.
+ *
+ * The catalogue can only suggest what somebody has already added. `brand_models`
+ * (migration 0026) knows the canonical name, the marketplace query and the price
+ * band for models nobody here owns yet — so typing "シャネル" can offer the
+ * actual Chanel models instead of nothing, which is the difference between
+ * being refused for naming a brand and being shown the way out of it.
+ */
+export interface ModelSuggestion {
+  id: string;
+  brand: string;
+  model: string;
+}
+
+/**
  * A name field that offers the catalogue first.
  *
  * Typing a free-text name is how items end up with a query no source can
@@ -41,6 +57,7 @@ export function SuggestField({
   pickLabel,
   locale,
   noPriceLabel,
+  modelLabel,
 }: {
   name: string;
   label: string;
@@ -50,15 +67,18 @@ export function SuggestField({
   pickLabel: string;
   locale: Locale;
   noPriceLabel: string;
+  modelLabel: string;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [matches, setMatches] = useState<Suggestion[]>([]);
+  const [modelMatches, setModelMatches] = useState<ModelSuggestion[]>([]);
   const listId = useId();
 
   useEffect(() => {
     const term = value.trim();
     if (term.length < 2) {
       setMatches([]);
+      setModelMatches([]);
       return;
     }
 
@@ -87,6 +107,18 @@ export function SuggestField({
       }
 
       if (active) setMatches((data ?? []) as unknown as Suggestion[]);
+
+      // Reference models, in parallel with the catalogue rather than instead of
+      // it: an existing row is always the better answer because it already
+      // carries price history, so the models are a fallback shown underneath.
+      const { data: models } = await supabase
+        .from("brand_models")
+        .select("id, brand, model")
+        .eq("category", category)
+        .or(`model.ilike.%${safe}%,brand.ilike.%${safe}%,aliases.ilike.%${safe}%`)
+        .limit(6);
+
+      if (active) setModelMatches((models ?? []) as unknown as ModelSuggestion[]);
     }, 250);
 
     return () => {
@@ -148,6 +180,32 @@ export function SuggestField({
                         )}
                   </span>
                 </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Only when the catalogue had nothing. Two lists of near-identical names
+          is worse than one, and an existing row always wins — it already has
+          price history behind it. */}
+      {matches.length === 0 && modelMatches.length > 0 && (
+        <div className="mt-2 rounded-lg border border-line bg-canvas p-2">
+          <p className="px-1 pb-1.5 text-xs text-muted">{modelLabel}</p>
+          <ul className="flex flex-wrap gap-1.5 px-1">
+            {modelMatches.map((m) => (
+              <li key={m.id}>
+                {/* Fills the field rather than navigating: this model has no
+                    catalogue row to navigate TO. Clicking it produces the exact
+                    text create_market_item will recognise, which is what turns
+                    "brand only" from a rejection into one tap. */}
+                <button
+                  type="button"
+                  onClick={() => setValue(`${m.brand} ${m.model}`)}
+                  className="chip hover:border-accent hover:text-accent"
+                >
+                  {m.brand} {m.model}
+                </button>
               </li>
             ))}
           </ul>

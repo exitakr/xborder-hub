@@ -160,6 +160,27 @@ const CATEGORY_IDS: Record<string, string> = {
   sneaker: "15709", // Men's Shoes › Athletic Shoes
 };
 
+/**
+ * Why a search produced no price.
+ *
+ * Mirrors the Rakuten client, and exists for the same reason: `fetchPrice`
+ * used to return a bare `null`, throwing away the record of what had been
+ * asked at precisely the moment somebody needed to read it.
+ */
+export type EbayReason =
+  | "ok"
+  | "no_listings"
+  | "no_currency"
+  | "too_few"
+  | "too_spread";
+
+export interface EbayResult {
+  observation: PriceObservation | null;
+  /** Always present, including on every failure. */
+  audit: PriceAudit;
+  reason: EbayReason;
+}
+
 export interface PriceObservation {
   price: number;
   currency: string;
@@ -244,7 +265,7 @@ export async function fetchPrice(
     maxPrice?: number | null;
     minPriceCurrency?: string;
   } = {},
-): Promise<PriceObservation | null> {
+): Promise<EbayResult> {
   const token = await getAppToken();
 
   const exclusions = [...EXCLUDE, ...(category ? (EXCLUDE_BY_CATEGORY[category] ?? []) : [])];
@@ -301,12 +322,12 @@ export async function fetchPrice(
 
   const summaries = json.itemSummaries ?? [];
   audit.returned = summaries.length;
-  if (summaries.length === 0) return null;
+  if (summaries.length === 0) return { observation: null, audit, reason: "no_listings" };
 
   // Mixing currencies inside one median would be meaningless, so we keep only
   // the majority currency and drop the rest.
   const currency = dominantCurrency(summaries);
-  if (!currency) return null;
+  if (!currency) return { observation: null, audit, reason: "no_currency" };
 
   const values = summaries
     .filter((s) => s.price?.currency === currency)
@@ -319,15 +340,27 @@ export async function fetchPrice(
     audit.high = Math.max(...values);
   }
 
-  const result = trimmedMedian(values);
-  if (!result) return null;
+  // A banded query earns a lower bar, for the reason set out in the Rakuten
+  // client: the filtering happened before the sample rather than after it, so
+  // three surviving listings are better evidence than five unconstrained ones.
+  const minSamples = lo !== null && hi !== null ? 3 : 5;
+  if (values.length < minSamples) {
+    return { observation: null, audit, reason: "too_few" };
+  }
+
+  const result = trimmedMedian(values, { minSamples });
+  if (!result) return { observation: null, audit, reason: "too_spread" };
 
   return {
-    price: result.price,
-    currency,
-    sampleSize: result.sampleSize,
-    spread: result.spread,
+    observation: {
+      price: result.price,
+      currency,
+      sampleSize: result.sampleSize,
+      spread: result.spread,
+      audit,
+    },
     audit,
+    reason: "ok",
   };
 }
 

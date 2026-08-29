@@ -29,6 +29,16 @@ export interface PriceDebug {
   low?: number | null;
   high?: number | null;
   outcome?: "published" | "below_floor" | "above_ceiling" | "collapsed" | "no_result";
+  /**
+   * Which gate refused it, from the source client itself.
+   *
+   * `outcome` says the cron published nothing; `reason` says why the search
+   * came back empty — a thin market, a query that matched nothing, listings
+   * too scattered to be one product, or missing credentials. Those want four
+   * different responses, and "no_result" alone distinguishes none of them.
+   */
+  reason?: string;
+  pages?: number;
   median?: number | null;
   medianCurrency?: string | null;
   sampleSize?: number | null;
@@ -165,6 +175,7 @@ export function PriceAudit({
                           label={t.adAuditCeiling}
                           value={fmt(d.ceiling, d.floorCurrency ?? row.currency, locale)}
                         />
+                        <Stat label={t.adAuditReason} value={reasonLabel(t, d.reason)} />
                         <Stat label={t.adAuditReturned} value={d.returned ?? "—"} />
                         <Stat label={t.adAuditUsed} value={d.used ?? "—"} />
                         <Stat label={t.adAuditSample} value={d.sampleSize ?? "—"} />
@@ -268,4 +279,24 @@ function Outcome({ t, outcome }: { t: Dict; outcome?: PriceDebug["outcome"] }) {
   }[outcome];
   const tone = outcome === "published" ? "text-gain" : "text-loss";
   return <span className={`mt-0.5 block text-[11px] ${tone}`}>{label}</span>;
+}
+
+/**
+ * The source client's own account of why it produced nothing.
+ *
+ * Unmapped values are shown raw rather than hidden: a reason this build does
+ * not recognise is still more use to whoever is reading than an em dash.
+ */
+function reasonLabel(t: Dict, reason?: string): string {
+  if (!reason) return "—";
+  const map: Record<string, string> = {
+    ok: t.adAuditReasonOk,
+    not_configured: t.adAuditReasonNoKey,
+    http_error: t.adAuditReasonHttp,
+    no_listings: t.adAuditReasonEmpty,
+    no_currency: t.adAuditReasonEmpty,
+    too_few: t.adAuditReasonTooFew,
+    too_spread: t.adAuditReasonTooSpread,
+  };
+  return map[reason] ?? reason;
 }

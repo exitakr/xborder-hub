@@ -152,7 +152,8 @@ const ja = {
   dsMethodTitle: "価格の決め方",
   dsMethodBody:
     "まず検索対象を絞ります。カテゴリごとに出品先のカテゴリ（例：車なら「Cars & Trucks」）を指定し、ミニカー・エンブレム・パーツなどの付属品を除外語で外し、銘柄ごとの下限価格を検索条件そのものに含めます。" +
-    "そのうえで、残った出品の上下10%を除いた中央値を採用します。件数が5件未満のとき、または四分位範囲が中央値を超えるほど価格がばらついているときは、価格を表示しません。" +
+    "そのうえで、残った出品の上下10%を除いた中央値を採用します。価格帯（下限・上限）を指定できた銘柄は3件以上、指定できない銘柄は5件以上の出品がある場合にのみ価格を出します。" +
+    "四分位範囲が中央値を超えるほど価格がばらついているときは、ひとつの商品の相場とみなせないため価格を表示しません。" +
     "それでも下限価格を下回った結果、および前日比で8割以上下落した結果は、別の商品を拾ったものとみなして破棄します。",
   dsLimitsTitle: "限界と、正直に言えること",
   dsLimitsBody:
@@ -220,6 +221,8 @@ const ja = {
   mkAddOwnNameHint:
     "モデル名やサイズまで入れてください（例:「バッグ」ではなく「ボッテガヴェネタ カセット」）。ブランド名だけだと、そのブランドの全商品が混ざり価格が出せません。",
   mkAddOwnPickExisting: "似た銘柄が登録済みです。こちらを使うと価格が取得できます:",
+  mkAddOwnPickModel:
+    "モデル名を選ぶと、検証済みの検索条件で価格を取得します。タップで入力されます:",
   mkAddOwnDetail: "詳細（任意）",
   mkAddOwnDetailPlaceholder: "例: レザー、カラー、サイズなど",
   mkAddOwnIdentifier: "型番・リファレンス（任意）",
@@ -247,6 +250,7 @@ const ja = {
     "検索結果の価格差が大きすぎるか、件数が足りないため、価格を表示していません。" +
     "ブランド名だけで登録した銘柄では、別カテゴリの商品が混ざり、どの商品の価格でもない数値になるためです。" +
     "型番や品名を具体的にすると精度が上がります。",
+  itNoPriceOwnCta: "自分で評価額を入力する",
   itPhoto: "写真",
   itPhotoAdd: "写真を追加",
   itPhotoReplace: "写真を変更",
@@ -415,6 +419,13 @@ const ja = {
   adAuditCategoryId: "カテゴリID",
   adAuditFloor: "下限価格",
   adAuditCeiling: "上限価格",
+  adAuditReason: "判定理由",
+  adAuditReasonOk: "価格を採用",
+  adAuditReasonNoKey: "APIキー未設定",
+  adAuditReasonHttp: "API通信エラー",
+  adAuditReasonEmpty: "検索結果が0件",
+  adAuditReasonTooFew: "出品件数が不足",
+  adAuditReasonTooSpread: "価格のばらつきが大きすぎる",
   adAuditReturned: "取得件数",
   adAuditUsed: "採用件数",
   adAuditSample: "中央値の母数",
@@ -684,7 +695,7 @@ const en: Dict = {
   dsMethodTitle: "How a price is decided",
   dsMethodBody:
     "We narrow the search first: each category is confined to the marketplace's own category for it (cars to Cars & Trucks, not Toys), accessory terms such as die-cast models, emblems and parts are excluded, and the item's floor price goes into the request itself. " +
-    "The median of what remains is then taken after trimming the top and bottom 10%. If there are fewer than five listings, or the interquartile spread exceeds the median, we publish nothing. " +
+    "The median of what remains is then taken after trimming the top and bottom 10%. An item with a validated price band needs at least three surviving listings; one without a band needs five, since nothing has narrowed the sample in advance. If the interquartile spread exceeds the median the listings are not describing one product, and we publish nothing. " +
     "A result that still lands below the floor, or that has fallen by more than four fifths since the previous day, is discarded as a match on a different product.",
   dsLimitsTitle: "Limits, stated plainly",
   dsLimitsBody:
@@ -750,6 +761,8 @@ const en: Dict = {
   mkAddOwnNameHint:
     "Include the model and size (\"Bottega Veneta Cassette\", not \"bag\"). A brand name alone matches that brand's whole product line and cannot be priced.",
   mkAddOwnPickExisting: "Already in the catalogue — these can be priced:",
+  mkAddOwnPickModel:
+    "Pick a model and it is priced with a search we have already checked. Tap to fill in:",
   mkAddOwnDetail: "Detail (optional)",
   mkAddOwnDetailPlaceholder: "e.g. leather, colour, size",
   mkAddOwnIdentifier: "Reference number (optional)",
@@ -776,6 +789,7 @@ const en: Dict = {
     "No price is shown because the listings found either disagree too much or are too few. " +
     "An item recorded under a brand name alone matches that brand's whole product line, and the middle of that describes no single product. " +
     "A model number or fuller name narrows it.",
+  itNoPriceOwnCta: "Enter your own valuation",
   itPhoto: "Photo",
   itPhotoAdd: "Add photo",
   itPhotoReplace: "Replace photo",
@@ -944,6 +958,13 @@ const en: Dict = {
   adAuditCategoryId: "Category ID",
   adAuditFloor: "Floor",
   adAuditCeiling: "Ceiling",
+  adAuditReason: "Verdict",
+  adAuditReasonOk: "Price accepted",
+  adAuditReasonNoKey: "API key not configured",
+  adAuditReasonHttp: "API request failed",
+  adAuditReasonEmpty: "Search returned nothing",
+  adAuditReasonTooFew: "Too few listings",
+  adAuditReasonTooSpread: "Listings too scattered to be one product",
   adAuditReturned: "Returned",
   adAuditUsed: "Used",
   adAuditSample: "Median sample",
