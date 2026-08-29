@@ -89,7 +89,7 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes] =
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes, levelRes] =
     await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
@@ -99,6 +99,7 @@ export default async function AdminPage() {
     supabase.rpc("admin_top_items", { p_limit: 30 }),
     supabase.rpc("admin_pending_items", { p_limit: 200 }),
     supabase.rpc("admin_price_audit", { p_limit: 100 }),
+    supabase.rpc("admin_level_distribution"),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -117,6 +118,10 @@ export default async function AdminPage() {
   // Migration 0023. Absent on a database that has not run it yet, which is why
   // the panel below is rendered only when the call actually succeeded.
   const priceAudit = (auditRes.data ?? []) as PriceAuditRow[];
+  // Migration 0025. Whether anyone ever gets past level 1 is the difference
+  // between "the ladder works" and "the ladder is decoration", and it is not
+  // knowable from any other number on this page.
+  const levels = (levelRes.data ?? []) as { level: number; members: number }[];
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -206,6 +211,21 @@ export default async function AdminPage() {
               item sitting here is invisible to everyone but the person who
               added it until somebody looks. */}
           {!pendingRes.error && <PendingItems t={t} locale={profile.locale} items={pending} />}
+
+          {levels.length > 0 && (
+            <section className="card p-5">
+              <h2 className="text-sm font-semibold">{t.lvTitle}</h2>
+              <dl className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-6">
+                {levels.map((row) => (
+                  <Kpi
+                    key={row.level}
+                    label={`${t.lvLabel} ${row.level}`}
+                    value={Number(row.members)}
+                  />
+                ))}
+              </dl>
+            </section>
+          )}
 
           {/* Directly after the moderation queue, because it answers the
               question that queue raises: an item is approved, and then its

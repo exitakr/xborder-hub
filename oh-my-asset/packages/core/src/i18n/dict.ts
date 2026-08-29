@@ -104,6 +104,40 @@ const ja = {
 
 
 
+  // --- collector levels ---
+  lvName1: "ビギナー",
+  lvName2: "コレクター",
+  lvName3: "目利き",
+  lvName4: "愛好家",
+  lvName5: "収集家",
+  lvName6: "鑑定士",
+  lvName7: "名匠",
+  lvName8: "大収集家",
+  lvName9: "館長",
+  lvName10: "伝説",
+  lvLabel: "レベル",
+  lvTitle: "コレクターレベル",
+  lvLead:
+    "登録した点数、または評価額の合計に応じてレベルが上がります。到達したレベルは下がりません。",
+  lvNext: "次のレベルまで",
+  lvNextItems: "あと{n}点",
+  lvNextValue: "あと{amount}",
+  lvOr: "または",
+  lvMax: "最高レベルに到達しました。",
+  lvViaItems: "登録点数で到達",
+  lvViaValue: "評価額で到達",
+  lvHowTitle: "レベルの決まり方",
+  lvHowBody:
+    "レベルは「登録した点数」と「評価額の合計」の2つで判定し、高い方を採用します。カードを数多く集める方も、少数の時計やバッグを持つ方も、それぞれの集め方で上がります。",
+  lvHowNeverDown:
+    "一度到達したレベルは下がりません。売却してもレベルは維持されます。売却の記録を残していただきたいためです。",
+  lvHowValueNote:
+    "評価額は円換算で判定します。価格が取得できていない銘柄は0円として扱います。",
+  lvTableLevel: "レベル",
+  lvTableName: "称号",
+  lvTableItems: "登録点数",
+  lvTableValue: "評価額合計",
+  lvSee: "レベルについて",
   // --- portfolio ---
   pfTitle: "ポートフォリオ",
   pfTotalValue: "評価額合計",
@@ -593,6 +627,40 @@ const en: Dict = {
   authPasswordChanged: "Password changed.",
 
 
+  // --- collector levels ---
+  lvName1: "Beginner",
+  lvName2: "Collector",
+  lvName3: "Sharp Eye",
+  lvName4: "Enthusiast",
+  lvName5: "Curator",
+  lvName6: "Appraiser",
+  lvName7: "Maestro",
+  lvName8: "Grand Collector",
+  lvName9: "Director",
+  lvName10: "Legend",
+  lvLabel: "Level",
+  lvTitle: "Collector level",
+  lvLead:
+    "Your level rises with the number of items you register, or with their total value. It never falls once reached.",
+  lvNext: "To the next level",
+  lvNextItems: "{n} more items",
+  lvNextValue: "{amount} more",
+  lvOr: "or",
+  lvMax: "You have reached the highest level.",
+  lvViaItems: "Reached on item count",
+  lvViaValue: "Reached on total value",
+  lvHowTitle: "How levels work",
+  lvHowBody:
+    "A level is judged on two things: how many items you have registered, and what they are worth in total. The higher of the two wins, so someone who collects many cards and someone who owns a few watches both rise, each in their own way.",
+  lvHowNeverDown:
+    "A level, once reached, is never taken away. Selling does not demote you \u2014 we would rather you recorded the sale.",
+  lvHowValueNote:
+    "Total value is judged in JPY equivalent. Items with no price yet count as zero.",
+  lvTableLevel: "Level",
+  lvTableName: "Title",
+  lvTableItems: "Items",
+  lvTableValue: "Total value",
+  lvSee: "About levels",
   pfTitle: "Portfolio",
   pfTotalValue: "Total value",
   pfValueChart: "Value over time",

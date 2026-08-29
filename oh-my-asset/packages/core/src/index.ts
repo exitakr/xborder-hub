@@ -27,6 +27,15 @@ export { convertTransactions, unknownValueSummary } from "./holdings.ts";
 export { RANGES, rangeStart, windowSeries, type Range } from "./ranges.ts";
 
 export {
+  LEVELS,
+  MAX_LEVEL,
+  levelFor,
+  type LevelNameKey,
+  type LevelStanding,
+  type LevelTier,
+} from "./levels.ts";
+
+export {
   CURRENCIES,
   convert,
   formatMoney,

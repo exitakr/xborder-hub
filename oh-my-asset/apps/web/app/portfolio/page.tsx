@@ -11,6 +11,7 @@ import { HoldingPhoto } from "@/components/HoldingPhoto";
 import { Sparkline } from "@/components/Sparkline";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
 import { InfoTip } from "@/components/InfoTip";
+import { LevelBadge } from "@/components/LevelBadge";
 
 export const metadata: Metadata = { title: "Portfolio" };
 
@@ -27,11 +28,20 @@ export default async function PortfolioPage({
   const gallery = viewParam === "grid";
   const t = getDict(profile.locale);
   const supabase = await createClient();
-  const [view, series, trades] = await Promise.all([
+  const [view, series, trades, levelRes] = await Promise.all([
     loadPortfolio(supabase, profile.userId, profile.currency),
     loadPortfolioSeries(supabase, profile.userId, profile.currency),
     loadPortfolioTrades(supabase, profile.userId, profile.currency),
+    // Migration 0025. Absent on a database that has not run it yet, in which
+    // case the badge is simply not rendered rather than the page failing.
+    supabase.rpc("my_level_metrics"),
   ]);
+
+  const levelMetrics = (Array.isArray(levelRes.data) ? levelRes.data[0] : null) as {
+    items_ever: number;
+    value_jpy: number;
+    level_peak: number;
+  } | null;
 
   const photos = await Promise.all(
     view.holdings.map((h) => signedPhotoUrl(h.photoPath)),
@@ -55,6 +65,21 @@ export default async function PortfolioPage({
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t.pfTitle}</h1>
+
+      {/* Above the total, deliberately.
+          
+          The total is the number that moves for reasons its owner did not
+          choose, and on a flat day it gives them nothing. The level only ever
+          moves when they do something, so it is what makes the app worth
+          opening on a day the market did nothing. */}
+      {levelMetrics && (
+        <LevelBadge
+          locale={profile.locale}
+          items={Number(levelMetrics.items_ever)}
+          valueJpy={Number(levelMetrics.value_jpy)}
+          peak={Number(levelMetrics.level_peak)}
+        />
+      )}
 
       {/*
         One card, not two.
