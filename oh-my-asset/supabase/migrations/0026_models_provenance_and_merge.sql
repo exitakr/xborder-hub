@@ -449,6 +449,10 @@ grant execute on function public.create_market_item(text, text, text, text) to a
 -- ===========================================================================
 
 /** Top items, now with the URL that shows where the price came from. */
+-- Dropped first: adding columns to a RETURNS TABLE function changes its row
+-- type, which `create or replace` refuses (42P13). See the note in 0024.
+drop function if exists public.admin_top_items(int);
+
 create or replace function public.admin_top_items(p_limit int default 100)
 returns table (
   item_id       uuid,
@@ -491,6 +495,8 @@ $$;
 grant execute on function public.admin_top_items(int) to authenticated;
 
 /** The review queue, same addition. */
+drop function if exists public.admin_pending_items(int);
+
 create or replace function public.admin_pending_items(p_limit int default 200)
 returns table (
   id            uuid,

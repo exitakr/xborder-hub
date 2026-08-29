@@ -356,6 +356,14 @@ update public.market_items
 -- Same function as 0023 with max_price added, and one more trigger for review:
 -- a price sitting just under its ceiling deserves the same second look as one
 -- sitting just above its floor.
+--
+-- Dropped first: `create or replace` cannot add a column to a table-returning
+-- function's output, because the row type comes from the OUT parameters and a
+-- new column is a different row type (42P13, "cannot change return type of
+-- existing function"). Every migration below that widens a RETURNS TABLE
+-- function does the same drop for the same reason.
+drop function if exists public.admin_price_audit(int);
+
 create or replace function public.admin_price_audit(p_limit int default 100)
 returns table (
   id            uuid,

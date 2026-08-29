@@ -245,11 +245,29 @@ begin
 end;
 $$;
 
+-- 0019's six-argument version is a DISTINCT overload from the eight-argument
+-- one above — Postgres tells functions apart by name AND argument list, so
+-- `create or replace` with two more parameters does not replace it, it adds a
+-- second admin_approve_item sitting alongside the first. Left in place, any
+-- future call made with the old six-argument shape would silently run the
+-- version with no aliases or floor rather than fail — the wrong kind of
+-- backward compatibility for a function gated on is_admin(). Dropped, not
+-- replaced, because the six-argument signature has no reason to exist once
+-- this one is defined.
+drop function if exists public.admin_approve_item(uuid, text, text, text, text, text);
+
 grant execute on function public.admin_approve_item(uuid, text, text, text, text, text, text, numeric) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- the queue needs the two new fields it can now edit
 -- ---------------------------------------------------------------------------
+-- `create or replace` cannot widen a table-returning function's column list —
+-- Postgres raises 42P13 ("cannot change return type of existing function")
+-- because the row type is defined by the OUT parameters and a new column is a
+-- different row type. The function has to be dropped first whenever its
+-- output columns change; 0019's version returned fewer columns than this one.
+drop function if exists public.admin_pending_items(int);
+
 create or replace function public.admin_pending_items(p_limit int default 200)
 returns table (
   id            uuid,
