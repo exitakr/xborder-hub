@@ -48,7 +48,11 @@ export function AddItemForm({
 
       {state.error && (
         <p role="alert" className="rounded-lg bg-loss/5 px-3 py-2 text-sm text-loss">
-          {state.error === "name" ? t.mkAddOwnErrName : t.txErrGeneric}
+          {state.error === "name"
+            ? t.mkAddOwnErrName
+            : state.error === "needsModel"
+              ? t.mkAddOwnErrModel
+              : t.txErrGeneric}
         </p>
       )}
 

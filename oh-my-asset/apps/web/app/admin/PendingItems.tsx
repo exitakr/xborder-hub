@@ -11,6 +11,9 @@ export interface PendingItem {
   source_type: string | null;
   aliases: string | null;
   min_price: number | null;
+  max_price?: number | null;
+  /** Migration 0026: opens the same search on the source's own site. */
+  source_url?: string | null;
   holders: number;
   current_price: number | null;
   currency: string | null;
@@ -71,6 +74,25 @@ export function PendingItems({
                   )}
                   {t.adHolders} {Number(item.holders)}
                 </span>
+              </div>
+
+              {/* The link that makes the fetched price checkable. It belongs
+                  here more than anywhere: this is the last moment before the
+                  number reaches everybody, and the query is still editable
+                  directly below it. */}
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-3 text-xs">
+                {item.source_url ? (
+                  <a
+                    href={item.source_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-accent underline underline-offset-2"
+                  >
+                    {t.adAuditOpenSearch} ↗
+                  </a>
+                ) : (
+                  <span className="text-muted">{item.source_type ?? "—"}</span>
+                )}
               </div>
 
               <form action={approveItem} className="mt-2 space-y-2">

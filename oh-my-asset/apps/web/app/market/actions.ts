@@ -53,7 +53,7 @@ export async function addHolding(formData: FormData) {
 }
 
 export interface NewItemState {
-  error?: "name" | "generic";
+  error?: "name" | "needsModel" | "generic";
   ok?: boolean;
 }
 
@@ -97,6 +97,17 @@ export async function createAndHoldItem(
     p_detail: parsed.data.detail ?? null,
     p_identifier: parsed.data.identifier ?? null,
   });
+
+  /*
+   * Told apart because they ask for opposite things.
+   *
+   * `item_needs_model` (migration 0026) means the entry named a brand and
+   * nothing else. That is not a failure to save — it is the one input this
+   * product cannot price, because the search succeeds and returns the brand's
+   * entire product line. "Try again later" would be a lie; what the person
+   * needs is to be told to add the model name.
+   */
+  if (error?.message?.includes("item_needs_model")) return { error: "needsModel" };
 
   if (error || !itemId) return { error: "generic" };
 

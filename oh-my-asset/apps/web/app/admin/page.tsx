@@ -8,6 +8,7 @@ import { markContactHandled } from "./actions";
 import { EmailHealth, type EmailHealthRow } from "./EmailHealth";
 import { PendingItems, type PendingItem } from "./PendingItems";
 import { PriceAudit, type PriceAuditRow } from "./PriceAudit";
+import { DuplicateItems, type DuplicateGroup } from "./DuplicateItems";
 
 export const metadata: Metadata = { title: "Admin" };
 
@@ -58,6 +59,13 @@ interface TopItem {
   current_price: number | null;
   currency: string | null;
   confidence: string | null;
+  /** Migration 0026 — absent on a database that has not run it yet. */
+  source_type?: string | null;
+  search_query?: string | null;
+  /** Opens the same search on the source's own site. The double-check. */
+  source_url?: string | null;
+  price_updated_at?: string | null;
+  user_added?: boolean;
 }
 
 interface PlanKpis {
@@ -89,7 +97,7 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes, levelRes] =
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes, levelRes, dupRes] =
     await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
@@ -100,6 +108,7 @@ export default async function AdminPage() {
     supabase.rpc("admin_pending_items", { p_limit: 200 }),
     supabase.rpc("admin_price_audit", { p_limit: 100 }),
     supabase.rpc("admin_level_distribution"),
+    supabase.rpc("admin_duplicate_items"),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -122,6 +131,8 @@ export default async function AdminPage() {
   // between "the ladder works" and "the ladder is decoration", and it is not
   // knowable from any other number on this page.
   const levels = (levelRes.data ?? []) as { level: number; members: number }[];
+  // Migration 0026. Absent on a database that has not run it yet.
+  const duplicates = (dupRes.data ?? []) as DuplicateGroup[];
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -225,6 +236,13 @@ export default async function AdminPage() {
                 ))}
               </dl>
             </section>
+          )}
+
+          {/* Beside the moderation queue, because it is the same job seen from
+              the other end: that queue stops a bad row entering the catalogue,
+              this one repairs the ones already in it. */}
+          {!dupRes.error && (
+            <DuplicateItems t={t} locale={profile.locale} groups={duplicates} />
           )}
 
           {/* Directly after the moderation queue, because it answers the
@@ -364,6 +382,7 @@ export default async function AdminPage() {
                   <tr className="border-b border-line">
                     <th className="pb-2 pr-3 font-medium">{t.mkAddOwnName}</th>
                     <th className="pb-2 pr-3 font-medium">{t.mkCategory}</th>
+                    <th className="pb-2 pr-3 font-medium">{t.itSource}</th>
                     <th className="pb-2 pr-3 text-right font-medium">{t.adHolders}</th>
                     <th className="pb-2 text-right font-medium">{t.pfValue}</th>
                   </tr>
@@ -377,6 +396,33 @@ export default async function AdminPage() {
                         </Link>
                       </td>
                       <td className="py-2 pr-3 text-muted">{i.category}</td>
+                      {/* The double-check.
+                          
+                          A price with no way to see what it was a price OF is
+                          a number the operator can only believe or disbelieve.
+                          The link opens the very listings the median was taken
+                          over, and the query underneath it is what was asked —
+                          which is usually where a wrong answer is visible
+                          before the price is. */}
+                      <td className="py-2 pr-3">
+                        {i.source_url ? (
+                          <a
+                            href={i.source_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="text-accent underline underline-offset-2"
+                          >
+                            {i.source_type ?? t.itSource} ↗
+                          </a>
+                        ) : (
+                          <span className="text-muted">{i.source_type ?? "—"}</span>
+                        )}
+                        {i.search_query && (
+                          <span className="mt-0.5 block max-w-[18rem] truncate text-[11px] text-muted">
+                            {i.search_query}
+                          </span>
+                        )}
+                      </td>
                       <td className="tnum py-2 pr-3 text-right">{Number(i.holders)}</td>
                       <td className="tnum py-2 text-right">
                         {i.current_price === null

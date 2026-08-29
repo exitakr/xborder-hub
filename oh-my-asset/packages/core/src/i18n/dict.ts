@@ -213,6 +213,8 @@ const ja = {
   mkAddOwnLead:
     "一覧にない銘柄は、ここから追加できます。市場価格が取得できるものは自動で表示され、取得できない場合は自分で評価額を登録できます。",
   mkAddOwnErrName: "名称を入力してください。",
+  mkAddOwnErrModel:
+    "ブランド名だけでは価格を取得できません。モデル名まで入力してください（例：「シャネル」ではなく「シャネル 19」、「ロレックス」ではなく「ロレックス サブマリーナ 126610LN」）。ブランド名だけで検索すると、そのブランドの全商品の平均になり、どの商品の価格でもない数値になります。",
   mkCategory: "カテゴリ",
   mkAddOwnName: "名称",
   mkAddOwnNameHint:
@@ -394,6 +396,14 @@ const ja = {
   adPrice: "価格",
   adSourceUrl: "参照元 URL",
   adSave: "登録",
+  adDupTitle: "表記ゆれ・重複アイテム",
+  adDupLead:
+    "名称の大文字小文字・スペース・記号を無視すると同じになるアイテムです。統合すると保有者数と取引実績がひとつにまとまり、3人以上の投稿が必要な売却実績が公開されるようになります。統合は取り消せません。",
+  adDupNone: "重複の候補はありません。",
+  adDupKeep: "残す",
+  adDupUnapproved: "未承認",
+  adDupMerge: "統合",
+  adDupRename: "名称を統一",
   adAuditTitle: "価格の根拠",
   adAuditLead:
     "自動取得が判断できなかった銘柄です。検索リンクを開くと、中央値の計算対象になった出品そのものを確認できます。",
@@ -733,6 +743,8 @@ const en: Dict = {
   mkAddOwnLead:
     "Not in the list? Add it here. If a market price is available it will show automatically; if not, you can record your own valuation.",
   mkAddOwnErrName: "Please enter a name.",
+  mkAddOwnErrModel:
+    "A brand name alone cannot be priced. Please include the model — \u201cChanel 19\u201d rather than \u201cChanel\u201d, \u201cRolex Submariner 126610LN\u201d rather than \u201cRolex\u201d. Searching a brand on its own averages that brand\u2019s entire product line, which is a price for nothing in particular.",
   mkCategory: "Category",
   mkAddOwnName: "Name",
   mkAddOwnNameHint:
@@ -913,6 +925,14 @@ const en: Dict = {
   adPrice: "Price",
   adSourceUrl: "Source URL",
   adSave: "Save",
+  adDupTitle: "Duplicate spellings",
+  adDupLead:
+    "Items whose names match once case, spacing and punctuation are ignored. Merging pools their holders and their price reports, which is what lets a realised price clear the three-reporter threshold. Merging cannot be undone.",
+  adDupNone: "No duplicate candidates.",
+  adDupKeep: "Keep",
+  adDupUnapproved: "Unapproved",
+  adDupMerge: "Merge",
+  adDupRename: "Rename",
   adAuditTitle: "How prices were reached",
   adAuditLead:
     "Items the automation could not settle on its own. Opening the search shows the very listings the median was taken over.",
