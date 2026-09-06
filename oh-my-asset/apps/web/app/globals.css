@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /*
+   * The palette, as RGB triples so Tailwind's opacity modifiers still work.
+   * Components never reference a hex value — they name a role (`bg-surface`,
+   * `text-muted`) and the theme decides what that is.
+   */
+  :root {
+    --c-ink: 15 23 32;
+    --c-muted: 107 116 128;
+    --c-line: 228 231 236;
+    --c-surface: 255 255 255;
+    --c-canvas: 247 248 250;
+    --c-accent: 31 111 235;
+    --c-gain: 14 159 110;
+    --c-loss: 224 36 36;
+    --c-buy: 31 111 235;
+    --c-sell: 245 158 11;
+  }
+
+  /*
+   * Dark. Not an inversion: the surface sits slightly above the canvas, the way
+   * a trading terminal separates a panel from its background, and gain/loss are
+   * lifted rather than kept at their light values — the light versions are too
+   * dark to read against a near-black panel.
+   */
+  .dark {
+    --c-ink: 232 236 241;
+    --c-muted: 148 158 171;
+    --c-line: 42 48 58;
+    --c-surface: 24 28 35;
+    --c-canvas: 15 18 23;
+    --c-accent: 88 155 255;
+    --c-gain: 45 196 138;
+    --c-loss: 248 92 92;
+    --c-buy: 88 155 255;
+    --c-sell: 250 178 52;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  html.dark {
+    /* Native form controls and scrollbars follow this, and look wrong if it
+       disagrees with the page. */
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    /*
+     * `clip`, not `hidden`: both stop a stray wide element from forcing the
+     * document wider than the screen, but `hidden` on body silently breaks
+     * `position: sticky` for every descendant. This is a backstop — anything
+     * genuinely wide (a data table) still scrolls inside its own container.
+     */
+    overflow-x: clip;
+  }
+
+  /* A visible focus ring on every interactive element is a launch requirement,
+     not a nicety — the app must be fully operable from the keyboard. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-canvas;
+  }
+
+  /* Tabular figures keep columns of money from jittering as values change. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+           text-sm font-medium transition-colors disabled:cursor-not-allowed
+           disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent/90;
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-surface text-ink hover:bg-canvas;
+  }
+
+  .btn-danger {
+    @apply btn border border-loss/30 bg-surface text-loss hover:bg-loss/5;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm
+           text-ink placeholder:text-muted;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-line px-3 py-1
+           text-xs font-medium text-muted transition-colors;
+  }
+
+  .chip-active {
+    @apply border-accent bg-accent text-white;
+  }
+
+  /* Cross-browser scrollbar hiding for horizontally-scrolling strips (the
+     header nav, category chips): the scroll gesture is the affordance on
+     touch devices, and a bar is desktop-only clutter on the same element. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* SPEC DoD: honour prefers-reduced-motion. Recharts animations are disabled
+   separately in the chart component, since CSS cannot reach them. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

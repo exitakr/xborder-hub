@@ -1,0 +1,104 @@
+/**
+ * Public surface of the shared domain package.
+ *
+ * Anything exported here is used by BOTH the web app and the native app. Keep
+ * platform-specific code (Next server helpers, React Native storage, DOM canvas)
+ * out of this package — that is what makes it safe to import from either side.
+ */
+export { brand, wordmark } from "./brand.ts";
+
+export {
+  averageCost,
+  confidenceFor,
+  netQuantity,
+  realizedProfit,
+  summarize,
+  totals,
+  trimmedMedian,
+  type Confidence,
+  type HoldingSummary,
+  type PortfolioTotals,
+  type Transaction,
+  type TxType,
+} from "./calc.ts";
+
+export { convertTransactions, unknownValueSummary } from "./holdings.ts";
+
+export { RANGES, rangeStart, windowSeries, type Range } from "./ranges.ts";
+
+export {
+  LEVELS,
+  MAX_LEVEL,
+  levelFor,
+  type LevelNameKey,
+  type LevelStanding,
+  type LevelTier,
+} from "./levels.ts";
+
+export {
+  CURRENCIES,
+  convert,
+  formatMoney,
+  formatPercent,
+  fractionDigits,
+  isCurrency,
+  type Currency,
+  type FxTable,
+} from "./money.ts";
+
+export {
+  CATEGORIES,
+  CATEGORY_LABEL_KEY,
+  SOURCE_TYPES,
+  communityConfidence,
+  isCategory,
+  sourceLabel,
+  type Category,
+  type CommunityPoint,
+  type CommunityPrice,
+  type SourceType,
+  type HoldingRow,
+  type MarketItem,
+  type PriceSnapshot,
+  type TransactionRow,
+} from "./types.ts";
+
+export {
+  DEFAULT_LOCALE,
+  LOCALES,
+  fill,
+  getDict,
+  isLocale,
+  type Locale,
+  type TranslationKey,
+} from "./i18n/dict.ts";
+
+export {
+  CONDITIONS,
+  VENUES,
+  curatedPriceSchema,
+  newItemSchema,
+  priceReportSchema,
+  profileSchema,
+  selfReportedPriceSchema,
+  transactionSchema,
+  type PriceReportInput,
+  type SelfReportedPriceInput,
+  type TransactionInput,
+} from "./validation.ts";
+
+export {
+  heldItemIds,
+  loadFxRates,
+  loadItemDetail,
+  loadPortfolio,
+  loadPortfolioSeries,
+  loadPortfolioTrades,
+  searchItems,
+  type HoldingView,
+  type ItemDetail,
+  type PortfolioPoint,
+  type PortfolioTrade,
+  type PortfolioView,
+  type SelfReportedPrice,
+} from "./queries.ts";

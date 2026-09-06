@@ -1,0 +1,23 @@
+# The repo-root .gitignore anchors /.next/ and /out/ to the repo root, so this
+# workspace needs its own entries. These are deliberately UNANCHORED so they
+# also match apps/web/.next/ and apps/mobile/dist/, not just this directory.
+.next/
+out/
+build/
+.vercel
+
+# Env files (also covered at the root, repeated here so this directory is
+# self-contained if it is ever extracted into its own repository).
+.env
+.env*.local
+
+*.tsbuildinfo
+next-env.d.ts
+
+# Expo / native
+.expo/
+dist/
+android/
+ios/
+*.keystore
+google-play-service-account.json
