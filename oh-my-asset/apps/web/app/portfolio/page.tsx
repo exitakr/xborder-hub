@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getDict } from "@oma/core";
 import { requireProfile, signedPhotoUrl } from "@/lib/profile";
 import { loadPortfolio, loadPortfolioSeries, loadPortfolioTrades } from "@oma/core";
-import { PortfolioChart } from "./PortfolioChart";
+import { ValueTabs } from "./ValueTabs";
 import { createClient } from "@/lib/supabase/server";
 import { fill, formatMoney, formatPercent } from "@oma/core";
 import { CATEGORY_LABEL_KEY } from "@oma/core";
@@ -60,7 +60,12 @@ export default async function PortfolioPage({
   }
 
   const { totals } = view;
-  const plTone = toneFor(totals.unrealized);
+
+  // How many holdings the valuation actually rests on. A total built from three
+  // of eleven items is not wrong, but it is not what the reader assumes either.
+  // `excludedCount` is already the count of holdings skipped for want of a
+  // price, so this is that same fact stated the other way round.
+  const pricedCount = view.holdings.length - totals.excludedCount;
 
   return (
     <div className="space-y-6">
@@ -92,30 +97,30 @@ export default async function PortfolioPage({
         bottom because they qualify the number rather than compete with it.
       */}
       <section className="card p-5 sm:p-6">
-        <p className="text-sm text-muted">{t.pfTotalValue}</p>
-        <p className="tnum mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
-          {formatMoney(totals.totalValue, view.currency, profile.locale)}
-        </p>
-        <p className={`tnum mt-1.5 text-base font-medium ${plTone}`}>
-          {formatMoney(totals.unrealized, view.currency, profile.locale)} (
-          {formatPercent(totals.unrealizedPct, profile.locale)})
-        </p>
-
-        <div className="mt-5">
-          <PortfolioChart
-            points={series}
-            trades={trades}
-            currency={view.currency}
-            locale={profile.locale}
-            emptyLabel={t.pfValueChartEmpty}
-            rangeLabels={{
+        <ValueTabs
+          points={series}
+          trades={trades}
+          currency={view.currency}
+          locale={profile.locale}
+          totalValue={totals.totalValue}
+          totalCost={totals.totalCost}
+          unrealized={totals.unrealized}
+          unrealizedPct={totals.unrealizedPct}
+          pricedCount={pricedCount}
+          holdingCount={view.holdings.length}
+          labels={{
+            value: t.pfTotalValue,
+            cost: t.pfCost,
+            partial: t.pfPartialCoverage,
+            emptyLabel: t.pfValueChartEmpty,
+            rangeLabels: {
               "1w": t.pfRange1w,
               "1m": t.pfRange1m,
               ytd: t.pfRangeYtd,
               all: t.pfRangeAll,
-            }}
-          />
-        </div>
+            },
+          }}
+        />
 
         <dl className="mt-5 grid grid-cols-3 gap-4 border-t border-line pt-4">
           <Stat label={t.pfCost}>

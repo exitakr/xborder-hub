@@ -341,6 +341,17 @@ async function loadSparklines(
 export interface PortfolioPoint {
   ts: number;
   value: number;
+  /**
+   * What was paid for the positions held that day, in the display currency.
+   *
+   * Carried alongside the valuation rather than derived later because the two
+   * are built from the same walk over the same ledgers — and because a
+   * portfolio where half the items have no market price yet still has a
+   * complete, knowable cost basis. That is the figure worth showing when the
+   * valuation is incomplete, and it is the only one of the two the owner
+   * supplied themselves.
+   */
+  cost: number;
 }
 
 /**
@@ -461,9 +472,15 @@ export async function loadPortfolioSeries(
     }
 
     let value = 0;
+    let cost = 0;
     let valued = false;
     for (const [itemId, q] of qty) {
       if (q <= 0) continue;
+
+      // Cost basis accrues for every held unit, priced or not. This is what
+      // makes the invested-amount view complete on a day the valuation is not.
+      const basis = avgCost.get(itemId);
+      if (basis && basis.units > 0) cost += (basis.spend / basis.units) * q;
 
       /*
        * Market price where we have one, cost where we do not.
@@ -487,14 +504,13 @@ export async function loadPortfolioSeries(
         continue;
       }
 
-      const cost = avgCost.get(itemId);
-      if (cost && cost.units > 0) {
-        value += (cost.spend / cost.units) * q;
+      if (basis && basis.units > 0) {
+        value += (basis.spend / basis.units) * q;
         valued = true;
       }
     }
 
-    if (valued) series.push({ ts: new Date(`${day}T00:00:00Z`).getTime(), value });
+    if (valued) series.push({ ts: new Date(`${day}T00:00:00Z`).getTime(), value, cost });
   }
 
   return series;

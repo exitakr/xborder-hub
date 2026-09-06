@@ -105,6 +105,11 @@ interface CatalogueRow {
   category: string | null;
   source_type: string | null;
   search_query: string | null;
+  /**
+   * English query for the fallback source. Migration 0027 — absent on a
+   * database that has not run it, which simply means no fallback is tried.
+   */
+  search_query_en?: string | null;
   price_updated_at: string | null;
   /**
    * Lowest figure that could plausibly be this item, in its own currency.
@@ -135,6 +140,8 @@ interface Candidate {
   sourceType: SourceType;
   category: string | null;
   query: string;
+  /** Asked of eBay when the primary source cannot fill a sample. */
+  queryEn: string | null;
   minPrice: number | null;
   maxPrice: number | null;
   /** Currency the band is expressed in, which is the item's own. */
@@ -189,7 +196,7 @@ export async function GET(request: NextRequest) {
     supabase
       .from("market_items")
       .select(
-        "id, category, source_type, search_query, price_updated_at, min_price, max_price, currency, current_price",
+        "id, category, source_type, search_query, search_query_en, price_updated_at, min_price, max_price, currency, current_price",
       )
       .limit(CATALOGUE_READ_LIMIT),
   ]);
@@ -212,6 +219,7 @@ export async function GET(request: NextRequest) {
       sourceType: row.source_type as SourceType,
       category: row.category,
       query: row.search_query as string,
+      queryEn: row.search_query_en ?? null,
       minPrice: row.min_price === null ? null : Number(row.min_price),
       maxPrice: row.max_price === null ? null : Number(row.max_price),
       currency: row.currency ?? "USD",
@@ -296,8 +304,22 @@ export async function GET(request: NextRequest) {
        * crash. It generalises to brands nobody has written a rule for, which is
        * exactly where the floor is absent.
        */
+      /*
+       * The band, in the currency the answer actually came back in.
+       *
+       * `min_price` and `max_price` are stored in the ITEM's currency, and the
+       * fallback can return a price in another one — a Rakuten item answered
+       * by eBay is quoted in dollars against a yen floor. Comparing those
+       * directly makes every genuine dollar price look implausibly low and
+       * rejects the whole item, which is the same bug in reverse as the one
+       * these bands exist to fix.
+       */
+      const check = fetched
+        ? convertBand(candidate, fetched.current.currency, fx)
+        : { min: candidate.minPrice, max: candidate.maxPrice };
+
       const belowFloor =
-        fetched && candidate.minPrice !== null && fetched.current.price < candidate.minPrice;
+        fetched && check.min !== null && fetched.current.price < check.min;
 
       /*
        * The mirror of the floor, and it catches a different mistake.
@@ -309,7 +331,7 @@ export async function GET(request: NextRequest) {
        * tenfold, and only one of the two was being checked.
        */
       const aboveCeiling =
-        fetched && candidate.maxPrice !== null && fetched.current.price > candidate.maxPrice;
+        fetched && check.max !== null && fetched.current.price > check.max;
 
       const collapsed =
         fetched &&
@@ -344,9 +366,9 @@ export async function GET(request: NextRequest) {
             medianCurrency: fetched?.current.currency ?? null,
             sampleSize: fetched?.current.sampleSize ?? null,
             spread: fetched?.current.spread ?? null,
-            floor: candidate.minPrice,
-            ceiling: candidate.maxPrice,
-            floorCurrency: candidate.currency,
+            floor: check.min,
+            ceiling: check.max,
+            floorCurrency: fetched?.current.currency ?? candidate.currency,
             previousPrice: candidate.lastPrice ?? null,
             checkedAt: new Date().toISOString(),
             commit: commitRef(),
@@ -535,6 +557,42 @@ interface FetchResult {
   audit: Record<string, unknown> | null;
 }
 
+/**
+ * The item's band, expressed in another currency.
+ *
+ * `min_price` and `max_price` are stored in the item's own currency, and the
+ * fallback asks a marketplace that quotes in a different one. Sending a yen
+ * figure to eBay as a dollar minimum would filter out the entire market, so the
+ * band is converted or dropped — never passed through unconverted.
+ *
+ * `fx_rates` holds units of X per 1 JPY, so a cross rate goes via yen.
+ */
+function convertBand(
+  candidate: Candidate,
+  to: string,
+  fx: FxSnapshot,
+): { min: number | null; max: number | null } {
+  if (candidate.currency === to) {
+    return { min: candidate.minPrice, max: candidate.maxPrice };
+  }
+
+  const rate = (code: string) =>
+    code === "JPY" ? 1 : (fx.rows.find((r) => r.currency === code)?.rate ?? null);
+
+  const from = rate(candidate.currency);
+  const into = rate(to);
+  // No rate means no band rather than a band in the wrong unit: an absent
+  // floor is recoverable on the next run, a wrong one silently suppresses
+  // every real price the item will ever have.
+  if (!from || !into) return { min: null, max: null };
+
+  const factor = into / from;
+  return {
+    min: candidate.minPrice === null ? null : candidate.minPrice * factor,
+    max: candidate.maxPrice === null ? null : candidate.maxPrice * factor,
+  };
+}
+
 /** Dispatch to whichever source this item is configured for. */
 async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResult> {
   switch (candidate.sourceType) {
@@ -556,9 +614,57 @@ async function fetchFor(candidate: Candidate, fx: FxSnapshot): Promise<FetchResu
         minPrice: candidate.currency === "JPY" ? candidate.minPrice : null,
         maxPrice: candidate.currency === "JPY" ? candidate.maxPrice : null,
       });
+      const audit: Record<string, unknown> = {
+        source: "rakuten_ichiba",
+        reason: result.reason,
+        ...result.audit,
+      };
+      if (result.price) {
+        return { series: { current: result.price, history: [] }, audit };
+      }
+
+      /*
+       * Ask somewhere else before giving up.
+       *
+       * A Hermès Kelly 25 has no price on Rakuten because Rakuten does not
+       * have three of them listed above ¥1,400,000 — it is a shopping mall
+       * whose luxury-resale presence is real but shallow, and the top of that
+       * market sells through dealers' own channels and international venues.
+       * That is a fact about the SOURCE, not a filter being too strict:
+       * loosening the filters would not find a Kelly on Rakuten, it would find
+       * something else and label it one.
+       *
+       * eBay is a global market and has the inventory. The fallback carries
+       * the same band, the same category restriction and the same sample
+       * minimum — a second question, not an easier one. It needs an English
+       * query, which is what migration 0027 stores.
+       */
+      const ebayUsable = Boolean(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET);
+      if (!candidate.queryEn || !ebayUsable) return { series: null, audit };
+
+      const band = convertBand(candidate, "USD", fx);
+      const second = await fetchPrice(candidate.queryEn, {
+        category: candidate.category,
+        minPrice: band.min,
+        maxPrice: band.max,
+        minPriceCurrency: "USD",
+      });
+
+      audit.fallback = { source: "ebay_browse", reason: second.reason, ...second.audit };
+      if (!second.observation) return { series: null, audit };
+
       return {
-        series: result.price ? { current: result.price, history: [] } : null,
-        audit: { source: "rakuten_ichiba", reason: result.reason, ...result.audit },
+        series: {
+          current: {
+            price: second.observation.price,
+            currency: second.observation.currency as SourceSeries["current"]["currency"],
+            sampleSize: second.observation.sampleSize,
+            spread: second.observation.spread,
+            source: "ebay_browse",
+          },
+          history: [],
+        },
+        audit,
       };
     }
 
