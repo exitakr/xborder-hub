@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { stripeConfigured } from "@/lib/stripe";
 import { sellerConfigured } from "@/lib/seller";
 import { SubmitButton } from "@/components/SubmitButton";
-import { startCheckout } from "./actions";
+import { openBillingPortal, startCheckout } from "./actions";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -15,6 +15,11 @@ interface PlanRow {
   holdings_used: number;
   holdings_max: number;
   expires_at: string | null;
+  /** Migration 0028 — absent on a database that has not run it yet. */
+  status?: string | null;
+  bill_interval?: string | null;
+  cancel_at_period_end?: boolean;
+  has_customer?: boolean;
 }
 
 /**
@@ -123,14 +128,53 @@ export default async function PlanPage({
         <section className="card border-gain/40 p-5">
           <p className="text-sm font-semibold text-gain">{t.planActive}</p>
           <p className="mt-1 text-sm text-muted">{t.planBenefit1}</p>
+
+          {/* What happens next, and when.
+              
+              A subscriber who has cancelled still has paid time left, and a
+              screen that just says "active" hides the date they actually care
+              about. A failed payment is likewise not a reason to say nothing —
+              they can fix it, and only if told. */}
+          {plan?.expires_at && (
+            <p className="mt-3 text-sm">
+              {plan.cancel_at_period_end ? (
+                <span className="text-muted">
+                  {fill(t.planCanceledNotice, {
+                    date: formatDay(plan.expires_at, profile.locale),
+                  })}
+                </span>
+              ) : plan.status === "past_due" ? (
+                <span className="text-loss">
+                  {fill(t.planPastDue, {
+                    date: formatDay(plan.expires_at, profile.locale),
+                  })}
+                </span>
+              ) : (
+                <span className="text-muted">
+                  {t.planRenews}: {formatDay(plan.expires_at, profile.locale)}
+                </span>
+              )}
+            </p>
+          )}
+
+          {/* Cancellation has to be this easy.
+              
+              The 2022 amendment to the Specified Commercial Transactions Act
+              obliges a recurring seller to make stopping no harder than
+              starting. A cancellation that runs through a contact form and a
+              human reply is the exact pattern it was written to stop. */}
+          {plan?.has_customer && (
+            <form action={openBillingPortal} className="mt-4">
+              <p className="mb-2 text-xs text-muted">{t.planManageLead}</p>
+              <SubmitButton pendingLabel={t.loading} className="btn-secondary">
+                {t.planManage}
+              </SubmitButton>
+            </form>
+          )}
         </section>
       ) : (
         <section className="card border-accent/50 p-5">
           <h2 className="text-base font-semibold">{t.planUpgradeTitle}</h2>
-          <p className="mt-2">
-            <span className="text-3xl font-semibold text-accent">{t.planPrice}</span>
-            <span className="ml-2 text-sm text-muted">{t.planPriceNote}</span>
-          </p>
 
           <ul className="mt-4 space-y-1.5 text-sm">
             <Benefit>{t.planBenefit1}</Benefit>
@@ -138,39 +182,82 @@ export default async function PlanPage({
             <Benefit>{t.planBenefit3}</Benefit>
           </ul>
 
-          {/*
-           * The button appears only when Stripe is actually configured.
-           *
-           * A purchase button that cannot take money is worse than none: it
-           * collects the intent and then fails, which is the exact moment a
-           * person decides the app is broken. So the two states are separate
-           * and the environment decides between them — there is no way to
-           * deploy a live-looking button over a dead payment path.
-           */}
           {canPay ? (
-            <form action={startCheckout} className="mt-5">
-              <SubmitButton pendingLabel={t.loading} className="btn-primary w-full">
-                {fill(t.planBuyCta, { price: t.planPrice })}
-              </SubmitButton>
-              <p className="mt-2 text-center text-xs text-muted">{t.planPayNote}</p>
-              {/* Article 11 of the Specified Commercial Transactions Act wants
-                  the seller's details readable BEFORE the buyer pays, not
-                  discoverable afterwards in the footer. This is the last screen
-                  before Stripe, so it is where the link belongs. */}
-              <p className="mt-3 text-center text-xs">
+            <>
+              {/* Two prices side by side rather than one with a toggle: the
+                  annual saving is the argument for annual, and an argument
+                  hidden behind a switch is an argument nobody reads. */}
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <form action={startCheckout} className="card border-line p-4 text-center">
+                  <input type="hidden" name="interval" value="month" />
+                  <p>
+                    <span className="text-3xl font-semibold">{t.planPriceMonthly}</span>
+                    <span className="text-sm text-muted">{t.planPerMonth}</span>
+                  </p>
+                  <SubmitButton pendingLabel={t.loading} className="btn-secondary mt-3 w-full">
+                    {t.planPickMonthly}
+                  </SubmitButton>
+                </form>
+
+                <form
+                  action={startCheckout}
+                  className="card border-accent p-4 text-center"
+                >
+                  <input type="hidden" name="interval" value="year" />
+                  <p>
+                    <span className="text-3xl font-semibold text-accent">
+                      {t.planPriceYearly}
+                    </span>
+                    <span className="text-sm text-muted">{t.planPerYear}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-gain">{t.planYearlySave}</p>
+                  <SubmitButton pendingLabel={t.loading} className="btn-primary mt-3 w-full">
+                    {t.planPickYearly}
+                  </SubmitButton>
+                </form>
+              </div>
+
+              {/*
+                * The disclosures the law requires, on the screen before payment.
+                *
+                * Article 12-6 of the Specified Commercial Transactions Act, as
+                * amended in 2022 for recurring purchases, requires that the
+                * automatic renewal, its cadence, the amount, when delivery
+                * starts and how to cancel all appear on the final confirmation
+                * screen. Omitting any of them gives the buyer a statutory right
+                * to rescind — which makes this block cheaper than the
+                * alternative as well as correct.
+                */}
+              <div className="mt-5 rounded-lg bg-canvas p-4">
+                <p className="text-xs font-semibold">{t.planSubTermsTitle}</p>
+                <ul className="mt-2 space-y-1 text-xs leading-relaxed text-muted">
+                  <li>{t.planSubTerms1}</li>
+                  <li>{t.planSubTerms2}</li>
+                  <li>{t.planSubTerms3}</li>
+                  <li>{t.planSubTerms4}</li>
+                  <li>{t.planSubTerms5}</li>
+                  <li>{t.planSubTerms6}</li>
+                </ul>
+              </div>
+
+              <p className="mt-3 text-center text-xs text-muted">{t.planPayNote}</p>
+              <p className="mt-2 text-center text-xs">
                 <Link href="/legal/terms" className="text-muted underline hover:text-ink">
                   {t.legalTerms}
                 </Link>
                 {hasCommerceNotice && (
                   <>
                     <span className="mx-2 text-muted">·</span>
-                    <Link href="/legal/commerce" className="text-muted underline hover:text-ink">
+                    <Link
+                      href="/legal/commerce"
+                      className="text-muted underline hover:text-ink"
+                    >
                       {t.legalCommerce}
                     </Link>
                   </>
                 )}
               </p>
-            </form>
+            </>
           ) : (
             <div className="mt-5 rounded-lg bg-canvas p-3">
               <p className="text-sm font-medium">{t.planComingSoon}</p>
@@ -203,4 +290,21 @@ function Benefit({ children }: { children: React.ReactNode }) {
       <span>{children}</span>
     </li>
   );
+}
+
+/**
+ * A renewal or expiry date, in the reader's locale.
+ *
+ * Local rather than shared: the item screen's version formats a `date` column,
+ * which is a bare day string, while this formats a `timestamptz`. Passing one
+ * to the other silently shifts the date across a timezone boundary, which on a
+ * renewal notice is the difference between "renews today" and "renewed
+ * yesterday".
+ */
+function formatDay(iso: string, locale: "ja" | "en"): string {
+  return new Date(iso).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-SG", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }

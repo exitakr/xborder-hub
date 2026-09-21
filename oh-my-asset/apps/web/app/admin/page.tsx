@@ -97,7 +97,7 @@ export default async function AdminPage() {
   }
 
   const supabase = await createClient();
-  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes, levelRes, dupRes] =
+  const [kpiRes, memberRes, messageRes, planRes, emailRes, topRes, pendingRes, auditRes, levelRes, dupRes, revRes, histRes] =
     await Promise.all([
     supabase.rpc("admin_kpis"),
     supabase.rpc("admin_user_portfolios", { p_limit: 500 }),
@@ -109,6 +109,8 @@ export default async function AdminPage() {
     supabase.rpc("admin_price_audit", { p_limit: 100 }),
     supabase.rpc("admin_level_distribution"),
     supabase.rpc("admin_duplicate_items"),
+    supabase.rpc("admin_revenue_summary", { p_months: 12 }),
+    supabase.rpc("admin_metrics_history", { p_days: 90 }),
   ]);
 
   const k = (Array.isArray(kpiRes.data) ? kpiRes.data[0] : null) as Kpis | null;
@@ -133,6 +135,23 @@ export default async function AdminPage() {
   const levels = (levelRes.data ?? []) as { level: number; members: number }[];
   // Migration 0026. Absent on a database that has not run it yet.
   const duplicates = (dupRes.data ?? []) as DuplicateGroup[];
+  // Migration 0028. Absent on a database that has not run it yet.
+  const revenue = (revRes.data ?? []) as Array<{
+    month: string;
+    charges: number;
+    refunds: number;
+    gross: number;
+    fees: number;
+    net: number;
+    currency: string;
+  }>;
+  const history = (histRes.data ?? []) as Array<{
+    day: string;
+    users_total: number;
+    active_30d: number;
+    paying_total: number;
+    mrr_jpy: number;
+  }>;
 
   /*
    * Why the dashboard is empty, in the dashboard.
@@ -222,6 +241,103 @@ export default async function AdminPage() {
               item sitting here is invisible to everyone but the person who
               added it until somebody looks. */}
           {!pendingRes.error && <PendingItems t={t} locale={profile.locale} items={pending} />}
+
+          {/* The two panels a buyer reads first, so they come before the
+              operational queues. Revenue is the number being bought; the
+              metrics series is the evidence that it is going somewhere. */}
+          {!revRes.error && (
+            <section className="card p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold">{t.adRevenueTitle}</h2>
+                <a
+                  href="/admin/export?type=revenue"
+                  className="btn-secondary px-3 py-1.5 text-xs"
+                >
+                  {t.adExport}
+                </a>
+              </div>
+
+              {revenue.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">{t.adRevenueNone}</p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[28rem] text-left text-sm">
+                    <thead className="text-xs text-muted">
+                      <tr className="border-b border-line">
+                        <th className="pb-2 pr-3 font-medium">{t.adRevMonth}</th>
+                        <th className="pb-2 pr-3 text-right font-medium">{t.adRevCharges}</th>
+                        <th className="pb-2 pr-3 text-right font-medium">{t.adRevGross}</th>
+                        <th className="pb-2 pr-3 text-right font-medium">{t.adRevFees}</th>
+                        <th className="pb-2 text-right font-medium">{t.adRevNet}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {revenue.map((r) => (
+                        <tr key={r.month} className="border-b border-line/60">
+                          <td className="py-2 pr-3">{r.month}</td>
+                          <td className="tnum py-2 pr-3 text-right">
+                            {Number(r.charges)}
+                            {Number(r.refunds) > 0 && (
+                              <span className="ml-1 text-xs text-loss">
+                                −{Number(r.refunds)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="tnum py-2 pr-3 text-right">
+                            {Number(r.gross).toLocaleString()}
+                          </td>
+                          <td className="tnum py-2 pr-3 text-right text-muted">
+                            {Number(r.fees).toLocaleString()}
+                          </td>
+                          <td className="tnum py-2 text-right font-medium">
+                            {Number(r.net).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+
+          {!histRes.error && history.length > 0 && (
+            <section className="card p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold">{t.adHistoryTitle}</h2>
+                <a
+                  href="/admin/export?type=metrics"
+                  className="btn-secondary px-3 py-1.5 text-xs"
+                >
+                  {t.adExport}
+                </a>
+              </div>
+              <p className="mt-1 text-xs text-muted">{t.adHistoryLead}</p>
+
+              <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Kpi
+                  label={t.adHistDays}
+                  value={history.length}
+                />
+                <Kpi
+                  label={t.adHistMau}
+                  value={Number(history[history.length - 1]?.active_30d ?? 0)}
+                />
+                <Kpi
+                  label={t.adHistPaying}
+                  value={Number(history[history.length - 1]?.paying_total ?? 0)}
+                />
+                <Kpi
+                  label={t.adHistMrr}
+                  value={formatMoney(
+                    Number(history[history.length - 1]?.mrr_jpy ?? 0),
+                    "JPY",
+                    profile.locale,
+                  )}
+                />
+              </dl>
+            </section>
+          )}
 
           {levels.length > 0 && (
             <section className="card p-5">

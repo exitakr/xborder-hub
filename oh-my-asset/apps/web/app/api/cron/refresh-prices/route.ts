@@ -475,8 +475,31 @@ export async function GET(request: NextRequest) {
 
   await Promise.all([...lanes].map(([source, items]) => runLane(source, items)));
 
+  /*
+   * One row a day, written here rather than on its own schedule.
+   *
+   * Retention and MAU are shapes over time, and a database that only knows the
+   * present cannot be asked about July next February. This is the only reason
+   * a twelve-month chart will exist a year from now — and it has to ride along
+   * with the price refresh because Vercel's Hobby plan allows exactly one cron
+   * a day, which the prices would win.
+   *
+   * Failure is swallowed: a metrics row is worth less than a price refresh,
+   * and must never be the reason one is reported as failed.
+   */
+  let metrics: "ok" | "failed" | "skipped" = "skipped";
+  try {
+    const { error } = await supabase.rpc("capture_daily_metrics");
+    metrics = error ? "failed" : "ok";
+    if (error) console.error("[cron] capture_daily_metrics:", error.message);
+  } catch (err) {
+    metrics = "failed";
+    console.error("[cron] capture_daily_metrics threw:", err);
+  }
+
   return NextResponse.json({
     ok: true,
+    metrics,
     updated,
     insufficient,
     // Prices fetched but refused as implausible — see COLLAPSE_RATIO.

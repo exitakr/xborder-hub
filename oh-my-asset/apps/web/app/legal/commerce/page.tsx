@@ -76,8 +76,27 @@ export default async function CommercePage() {
     {
       label: ja ? "販売価格" : "Price",
       value: ja
-        ? `${t.planPrice}（税込）／無制限プラン・買い切り`
-        : `${t.planPrice} including tax — unlimited plan, one-time purchase`,
+        ? `月額 ${t.planPriceMonthly}（税込） ／ 年額 ${t.planPriceYearly}（税込）`
+        : `${t.planPriceMonthly} per month or ${t.planPriceYearly} per year, including tax`,
+    },
+    /*
+     * The clauses a recurring seller must publish, added by the 2022 amendment
+     * to the Specified Commercial Transactions Act. They are not a longer
+     * version of the one-time text — the Act treats 定期購入 as its own
+     * category, and omitting the renewal cadence or the cancellation route
+     * gives the buyer a statutory right to rescind.
+     */
+    {
+      label: ja ? "契約期間・自動更新" : "Term and renewal",
+      value: ja
+        ? "自動更新の継続課金です。月額プランは1ヶ月ごと、年額プランは1年ごとに、解約されるまで自動的に更新されます。最低利用期間はありません。"
+        : "A recurring subscription. Monthly plans renew every month and yearly plans every year, automatically, until cancelled. There is no minimum term.",
+    },
+    {
+      label: ja ? "解約の方法" : "How to cancel",
+      value: ja
+        ? "ログイン後の「プラン」画面から、いつでもご自身で解約できます。解約後も、お支払い済みの期間の終了日まで有料機能をご利用いただけます。次回更新日の前日までに解約された場合、次回以降の請求は発生しません。"
+        : "From the Plan screen once signed in, at any time and without contacting us. You keep the paid features until the end of the period already paid for, and cancelling before the next renewal date means you are not charged again.",
     },
     {
       label: ja ? "商品代金以外の必要料金" : "Additional charges",
@@ -93,7 +112,9 @@ export default async function CommercePage() {
     },
     {
       label: ja ? "支払時期" : "When payment is taken",
-      value: ja ? "購入手続きの完了時" : "At the time of purchase",
+      value: ja
+        ? "お申し込み時、および以降の各更新日に、ご登録のクレジットカードから決済されます。"
+        : "When you subscribe, and again on each renewal date, from the card you registered.",
     },
     {
       label: ja ? "提供時期" : "When the service is provided",
@@ -104,8 +125,8 @@ export default async function CommercePage() {
     {
       label: ja ? "返品・キャンセル" : "Returns and cancellation",
       value: ja
-        ? "デジタルサービスの性質上、購入後の返金は原則としてお受けできません。当方の障害により提供できない場合、および法令上返金が求められる場合はこの限りではありません。"
-        : "Because this is a digital service delivered immediately, purchases are not generally refundable. This does not apply where we are unable to provide the Service through our own fault, or where a refund is required by law.",
+        ? "デジタルサービスの性質上、決済済みの期間分の返金は原則としてお受けできません。解約されると次回以降の請求が停止し、お支払い済みの期間の終了日までご利用いただけます。当方の障害により提供できない場合、および法令上返金が求められる場合はこの限りではありません。"
+        : "Because this is a digital service delivered immediately, periods already paid for are not generally refundable. Cancelling stops all future charges and leaves access in place until the paid period ends. This does not apply where we are unable to provide the Service through our own fault, or where a refund is required by law.",
     },
     {
       label: ja ? "動作環境" : "Requirements",

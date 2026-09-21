@@ -20,7 +20,18 @@ const API = "https://api.stripe.com/v1";
 
 /** Configured only when a real key is present, so nothing half-wired can run. */
 export function stripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID);
+  return Boolean(
+    process.env.STRIPE_SECRET_KEY &&
+      (process.env.STRIPE_PRICE_MONTHLY || process.env.STRIPE_PRICE_YEARLY),
+  );
+}
+
+export type BillingInterval = "month" | "year";
+
+export function priceIdFor(interval: BillingInterval): string | null {
+  const id =
+    interval === "year" ? process.env.STRIPE_PRICE_YEARLY : process.env.STRIPE_PRICE_MONTHLY;
+  return id?.trim() || null;
 }
 
 function secretKey(): string {
@@ -44,30 +55,46 @@ function secretKey(): string {
 export async function createCheckoutSession(opts: {
   userId: string;
   email: string | null;
+  customerId: string | null;
+  interval: BillingInterval;
   successUrl: string;
   cancelUrl: string;
   locale: "ja" | "en";
 }): Promise<string> {
+  const price = priceIdFor(opts.interval);
+  if (!price) throw new Error(`No Stripe price configured for ${opts.interval}.`);
+
   const body = new URLSearchParams({
-    mode: "payment",
-    "line_items[0][price]": process.env.STRIPE_PRICE_ID!,
+    // A subscription, not a payment. The difference is the whole point: a
+    // one-time charge produces revenue that already happened, a subscription
+    // produces a run rate that can be discounted and capitalised.
+    mode: "subscription",
+    "line_items[0][price]": price,
     "line_items[0][quantity]": "1",
     client_reference_id: opts.userId,
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,
     locale: opts.locale,
-    // Surfaces in the Stripe dashboard and on the receipt, so a support
-    // question can be answered without a database lookup.
     "metadata[user_id]": opts.userId,
+    // Carried onto the subscription object itself, because the webhook events
+    // that matter later (renewals, cancellations) arrive as subscription
+    // events and never see the checkout session's metadata.
+    "subscription_data[metadata][user_id]": opts.userId,
   });
-  if (opts.email) body.set("customer_email", opts.email);
+
+  // Reusing the customer keeps one person's payment history in one place, which
+  // is what makes the revenue ledger reconcilable against Stripe later.
+  if (opts.customerId) body.set("customer", opts.customerId);
+  else if (opts.email) body.set("customer_email", opts.email);
 
   const res = await fetch(`${API}/checkout/sessions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${secretKey()}`,
       "Content-Type": "application/x-www-form-urlencoded",
-      "Idempotency-Key": `unlimited:${opts.userId}`,
+      // Scoped to the interval too: someone who opens monthly, backs out and
+      // then chooses annual must not be handed the monthly session again.
+      "Idempotency-Key": `sub:${opts.userId}:${opts.interval}`,
     },
     body,
   });
@@ -77,6 +104,58 @@ export async function createCheckoutSession(opts: {
     throw new Error(json.error?.message ?? `Stripe returned ${res.status}`);
   }
   return json.url;
+}
+
+/**
+ * A link to Stripe's own billing portal.
+ *
+ * This is how a subscriber cancels, changes card or downloads a receipt. It is
+ * not a convenience: Article 11 of the Specified Commercial Transactions Act,
+ * as amended in 2022 for recurring purchases, requires that cancelling be no
+ * harder than subscribing. A cancellation flow that runs through a contact
+ * form and a human is exactly the pattern the amendment exists to stop.
+ */
+export async function createPortalSession(opts: {
+  customerId: string;
+  returnUrl: string;
+  locale: "ja" | "en";
+}): Promise<string> {
+  const body = new URLSearchParams({
+    customer: opts.customerId,
+    return_url: opts.returnUrl,
+    locale: opts.locale,
+  });
+
+  const res = await fetch(`${API}/billing_portal/sessions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey()}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body,
+  });
+
+  const json = (await res.json()) as { url?: string; error?: { message?: string } };
+  if (!res.ok || !json.url) {
+    throw new Error(json.error?.message ?? `Stripe returned ${res.status}`);
+  }
+  return json.url;
+}
+
+/**
+ * Read one object back from Stripe.
+ *
+ * Webhook payloads are not always enough on their own: an `invoice.paid` names
+ * a subscription but does not carry its period end, and acting on a stale or
+ * partial payload is how an entitlement ends up with the wrong expiry. Fetching
+ * the object costs one request and removes the guesswork.
+ */
+export async function retrieve<T>(path: string): Promise<T | null> {
+  const res = await fetch(`${API}/${path}`, {
+    headers: { Authorization: `Bearer ${secretKey()}` },
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as T;
 }
 
 /**

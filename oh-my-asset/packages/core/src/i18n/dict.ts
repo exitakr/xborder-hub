@@ -45,7 +45,7 @@ const ja = {
   landingShotPortfolio: "評価額合計",
   landingShotPicker: "エルメス ケリー25",
   landingShotItem: "楽天市場・2026年8月11日 取得",
-  landingShotNote: "※ 画面はイメージです。数値はサンプルです。",
+  landingShotNote: "実際の画面。表示している銘柄と数値は説明用の構成です。",
   landingSeeTitle: "登録すると、こう見えます",
   landingSeeBody:
     "合計評価額と推移がひとつの画面にまとまります。そのままスクリーンショットして共有できます。",
@@ -58,6 +58,9 @@ const ja = {
   landingPriceTitle: "価格の出どころ",
   landingPriceBody:
     "カードは Scryfall と Pokémon TCG API、日本の相場は楽天市場、海外は eBay から取得しています。銘柄ごとに出典と取得日時を表示し、根拠が足りないときは数字を出しません。",
+  landingStatItems: "登録できる銘柄",
+  landingStatTracked: "利用者が記録中の点数",
+  landingStatSources: "価格データ提供元",
   landingPlanTitle: "無料でどこまで使えるか",
   landingPlanBody:
     "{max}件まで無料です。価格・グラフ・出典表示に制限はありません。それ以上登録したい場合のみ、買い切り{price}で無制限になります。",
@@ -354,6 +357,36 @@ const ja = {
   planRegistered: "登録数",
   planUnitItems: "件",
   planUpgradeTitle: "無制限プラン",
+  planPriceMonthly: "¥500",
+  planPriceYearly: "¥5,000",
+  planPerMonth: "／月",
+  planPerYear: "／年",
+  planYearlySave: "2ヶ月分お得",
+  planPickMonthly: "月額で申し込む",
+  planPickYearly: "年額で申し込む",
+  planManage: "支払い方法・解約",
+  planManageLead:
+    "お支払い方法の変更、領収書のダウンロード、解約はすべてこちらから行えます。",
+  planRenews: "次回更新日",
+  planEndsOn: "ご利用期限",
+  planCanceledNotice:
+    "解約済みです。{date} までは引き続きご利用いただけます。その後は無料プランに戻ります。",
+  planPastDue:
+    "お支払いの確認が取れていません。カード情報をご確認ください。{date} までは引き続きご利用いただけます。",
+  /*
+   * 特定商取引法（令和4年改正）が定期購入について最終確認画面での明示を
+   * 義務づけている事項。省略すると取消権の対象になります。
+   */
+  planSubTermsTitle: "お申し込み内容の確認",
+  planSubTerms1: "自動更新の継続課金です。解約されるまで自動的に更新されます。",
+  planSubTerms2: "更新のタイミング：月額プランは毎月、年額プランは毎年、同日に更新されます。",
+  planSubTerms3:
+    "解約はいつでも可能です。「支払い方法・解約」からお手続きいただくと、その期間の終了日まで有料機能をご利用いただけます。",
+  planSubTerms4:
+    "お支払いは申し込み時および各更新日に、ご登録のクレジットカードから決済されます。",
+  planSubTerms5: "提供開始時期：決済完了後ただちにご利用いただけます。",
+  planSubTerms6:
+    "デジタルサービスの性質上、決済後の返金は原則としてお受けできません（法令上必要な場合を除く）。",
   planPrice: "¥100",
   planPriceNote: "買い切り・月額なし",
   planBenefit1: "銘柄の登録数が無制限",
@@ -409,6 +442,20 @@ const ja = {
   adDupUnapproved: "未承認",
   adDupMerge: "統合",
   adDupRename: "名称を統一",
+  adRevenueTitle: "売上（月次）",
+  adRevenueNone: "まだ売上の記録がありません。",
+  adRevMonth: "月",
+  adRevCharges: "件数",
+  adRevGross: "総額",
+  adRevFees: "決済手数料",
+  adRevNet: "純額",
+  adHistoryTitle: "指標の推移",
+  adHistoryLead:
+    "1日1回、自動更新と同時に記録しています。MAUや継続率は時系列でしか示せないため、記録を始めた日より前には遡れません。",
+  adHistDays: "記録日数",
+  adHistMau: "MAU（30日）",
+  adHistPaying: "有料会員",
+  adHistMrr: "MRR",
   adAuditTitle: "価格の根拠",
   adAuditLead:
     "自動取得が判断できなかった銘柄です。検索リンクを開くと、中央値の計算対象になった出品そのものを確認できます。",
@@ -591,7 +638,7 @@ const en: Dict = {
   landingShotPortfolio: "Total value",
   landingShotPicker: "Hermes Kelly 25",
   landingShotItem: "Rakuten · fetched 11 Aug 2026",
-  landingShotNote: "Illustrative screens. Figures are samples.",
+  landingShotNote: "The actual screen. The holdings shown are arranged for the example.",
   landingSeeTitle: "This is what you get",
   landingSeeBody:
     "Your total and its trend in one card — ready to screenshot and send to someone.",
@@ -604,6 +651,9 @@ const en: Dict = {
   landingPriceTitle: "Where the prices come from",
   landingPriceBody:
     "Cards from Scryfall and the Pokémon TCG API, Japanese market prices from Rakuten, everything else from eBay. Every item shows its source and when it was fetched — and when the evidence is thin, we show no number at all.",
+  landingStatItems: "Items you can track",
+  landingStatTracked: "Items being tracked",
+  landingStatSources: "Price sources",
   landingPlanTitle: "What you get for nothing",
   landingPlanBody:
     "{max} items free, with no limits on prices, charts or sources. Only if you want more than that does unlimited cost {price}, once.",
@@ -894,6 +944,32 @@ const en: Dict = {
   planRegistered: "Registered",
   planUnitItems: "items",
   planUpgradeTitle: "Unlimited",
+  planPriceMonthly: "¥500",
+  planPriceYearly: "¥5,000",
+  planPerMonth: "/month",
+  planPerYear: "/year",
+  planYearlySave: "Two months free",
+  planPickMonthly: "Subscribe monthly",
+  planPickYearly: "Subscribe yearly",
+  planManage: "Billing and cancellation",
+  planManageLead:
+    "Change your card, download receipts or cancel — all from the same place.",
+  planRenews: "Renews on",
+  planEndsOn: "Access until",
+  planCanceledNotice:
+    "Cancelled. You keep access until {date}, after which the free plan applies again.",
+  planPastDue:
+    "We could not take the last payment. Please check your card. Access continues until {date}.",
+  planSubTermsTitle: "What you are agreeing to",
+  planSubTerms1: "This is a recurring subscription. It renews automatically until you cancel.",
+  planSubTerms2: "Monthly plans renew every month; yearly plans renew every year, on the same date.",
+  planSubTerms3:
+    "You can cancel at any time from \u201cBilling and cancellation\u201d, and keep the paid features until the end of the period you have paid for.",
+  planSubTerms4:
+    "Your card is charged when you subscribe and again on each renewal date.",
+  planSubTerms5: "Access begins immediately once payment completes.",
+  planSubTerms6:
+    "Because this is a digital service delivered immediately, payments are not generally refundable, except where required by law.",
   planPrice: "¥100",
   planPriceNote: "One-time. No subscription.",
   planBenefit1: "Track as many items as you like",
@@ -949,6 +1025,20 @@ const en: Dict = {
   adDupUnapproved: "Unapproved",
   adDupMerge: "Merge",
   adDupRename: "Rename",
+  adRevenueTitle: "Revenue by month",
+  adRevenueNone: "No revenue recorded yet.",
+  adRevMonth: "Month",
+  adRevCharges: "Payments",
+  adRevGross: "Gross",
+  adRevFees: "Fees",
+  adRevNet: "Net",
+  adHistoryTitle: "Metrics over time",
+  adHistoryLead:
+    "Captured once a day alongside the price refresh. MAU and retention only exist as a series, so this cannot reach back before the day capture started.",
+  adHistDays: "Days captured",
+  adHistMau: "MAU (30d)",
+  adHistPaying: "Subscribers",
+  adHistMrr: "MRR",
   adAuditTitle: "How prices were reached",
   adAuditLead:
     "Items the automation could not settle on its own. Opening the search shows the very listings the median was taken over.",

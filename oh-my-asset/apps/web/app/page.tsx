@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { brand, fill, getDict } from "@oma/core";
 import { getLocale } from "@/lib/i18n-server";
+import { createClient } from "@/lib/supabase/server";
 import { site } from "@/lib/site";
 import { CategoryGlyph } from "@/components/CategoryGlyph";
 import { CATEGORIES, CATEGORY_LABEL_KEY } from "@oma/core";
@@ -25,6 +26,32 @@ import { JsonLd } from "@/components/JsonLd";
 export default async function LandingPage() {
   const locale = await getLocale();
   const t = getDict(locale);
+
+  /*
+   * Real numbers, in place of a disclaimer.
+   *
+   * The note under the screenshot used to say the figures were samples, which
+   * is a true statement that also announces, in the product's own voice, that
+   * nobody uses it. These two counts are real, grow by themselves, and give a
+   * visitor something to weigh. Deliberately not the user count: that is the
+   * figure a buyer will diligence properly from the metrics history, and a
+   * small one on the front page argues against the product every day until it
+   * stops being small.
+   */
+  interface Traction {
+    catalogue_items: number;
+    tracked_items: number;
+  }
+  let traction: Traction | null = null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.rpc("public_traction");
+    const row = (Array.isArray(data) ? data[0] : null) as Traction | null;
+    if (row && Number(row.catalogue_items) > 0) traction = row;
+  } catch {
+    // Migration 0028 not applied, or Supabase unreachable. The page is a
+    // marketing page — it renders without this rather than failing.
+  }
 
   return (
     <div className="space-y-16 py-6 sm:space-y-24 sm:py-12">
@@ -83,6 +110,14 @@ export default async function LandingPage() {
           <p className="mt-2 text-center text-[11px] text-muted">{t.landingShotNote}</p>
         </div>
       </section>
+
+      {traction && (
+        <section className="grid grid-cols-3 gap-4 rounded-xl border border-line bg-surface p-5 text-center">
+          <Figure value={Number(traction.catalogue_items).toLocaleString()} label={t.landingStatItems} />
+          <Figure value={Number(traction.tracked_items).toLocaleString()} label={t.landingStatTracked} />
+          <Figure value="4" label={t.landingStatSources} />
+        </section>
+      )}
 
       <Showcase
         title={t.landingPickTitle}
@@ -178,5 +213,14 @@ function Showcase({
         {preview}
       </div>
     </section>
+  );
+}
+
+function Figure({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="tnum text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
+      <p className="mt-0.5 text-xs text-muted">{label}</p>
+    </div>
   );
 }

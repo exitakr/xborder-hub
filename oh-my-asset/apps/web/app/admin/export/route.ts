@@ -21,6 +21,17 @@ const EXPORTS = {
   members: { fn: "admin_user_portfolios", args: { p_limit: 5000 } },
   items: { fn: "admin_top_items", args: { p_limit: 2000 } },
   messages: { fn: "admin_contact_messages", args: { p_limit: 5000 } },
+  /*
+   * The two a buyer's accountant asks for by name.
+   *
+   * `revenue` is the line-by-line ledger that reconciles against Stripe's own
+   * statement; `metrics` is the daily series that makes MAU and retention a
+   * shape rather than a single current number. Both exist because a valuation
+   * conversation that has to wait for someone to assemble a spreadsheet is a
+   * valuation conversation that loses momentum.
+   */
+  revenue: { fn: "admin_revenue_events", args: { p_limit: 20000 } },
+  metrics: { fn: "admin_metrics_history", args: { p_days: 1825 } },
 } as const;
 
 type ExportKind = keyof typeof EXPORTS;
